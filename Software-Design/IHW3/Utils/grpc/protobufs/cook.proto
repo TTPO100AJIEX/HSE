@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+service cook
+{
+    rpc cook(cookRequest) returns(cookResult);
+}
+
+message voidNoParam { }
+
+message cookRequest
+{
+    message Operation
+    {
+        uint32 id = 1;
+        string name = 2;
+        uint32 duration = 3;
+    }
+
+    message product
+    {
+        uint32 type = 1;
+        uint32 quantity = 2;
+    }
+
+    Operation operation = 1;
+    repeated product products = 2;
+    uint32 equipment = 3;
+}
+
+message cookResult
+{
+    string food = 1;
+}

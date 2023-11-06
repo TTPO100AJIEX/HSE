@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+service kitchen
+{
+    rpc createOrder(order) returns(orderData);
+    rpc getOrderStatus(orderIdentifier) returns(orderStatus);
+    rpc getOrder(orderIdentifier) returns(orderFood);
+
+    rpc registerCook(cook) returns(voidNoParam);
+
+    rpc registerEquipment(equipment) returns(voidNoParam);
+    rpc checkEquipment(equipmentList) returns(equipmentStatus);
+
+    rpc getCookAndEquipment(CookAndEquipmentRequest) returns(CookAndEquipment);
+}
+
+message voidNoParam { }
+
+message order
+{
+    repeated uint32 dishIds = 1;
+}
+
+message orderData
+{
+    bool ok = 1;
+    string error = 2;
+    string orderId = 3;
+}
+
+message orderIdentifier
+{
+    string id = 1;
+}
+
+message orderStatus
+{
+    enum orderStage
+    {
+        UNKNOWN = 0;
+        WAITING = 1;
+        COOKING = 2;
+        READY = 3;
+    }
+    
+    orderStage status = 1;
+    uint32 waitTime = 2;
+}
+
+message orderFood
+{
+    bool ok = 1;
+    repeated string food = 2;
+}
+
+
+message cook
+{
+    uint32 port = 1;
+}
+
+
+message equipment
+{
+    uint32 port = 1;
+    uint32 type = 2;
+}
+message equipmentList
+{
+    repeated uint32 types = 1;
+}
+message equipmentStatus
+{
+    bool available = 1;
+}
+
+message CookAndEquipmentRequest
+{
+    uint32 equipmentType = 1;
+}
+message CookAndEquipment
+{
+    uint32 equipmentPort = 1;
+    uint32 cookPort = 2;
+}

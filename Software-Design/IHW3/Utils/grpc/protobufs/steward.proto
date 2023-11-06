@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+service steward
+{
+    rpc getMenu(voidNoParam) returns(menu);
+}
+
+message voidNoParam { }
+
+message menu
+{
+    message dish
+    {
+        uint32 id = 1;
+        uint32 price = 2;
+        string name = 3;
+        string description = 4;
+    }
+
+    repeated dish dishes = 1;
+}

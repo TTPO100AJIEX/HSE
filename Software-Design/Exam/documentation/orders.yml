@@ -1,0 +1,158 @@
+openapi: 3.0.3
+info:
+  version: 8.6.0
+  title: "@fastify/swagger"
+components:
+  schemas:
+    def-0:
+      type: object
+      required:
+        - title
+        - message
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+        message:
+          type: string
+      title: http_error
+    def-1:
+      type: object
+      required:
+        - ok
+      additionalProperties: false
+      properties:
+        ok:
+          enum:
+            - true
+      title: http_ok
+paths:
+  /activity:
+    post:
+      summary: Add activity data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - activity_type
+                - duration
+                - calories
+              additionalProperties: false
+              properties:
+                activity_type:
+                  type: string
+                duration:
+                  type: string
+                  pattern: ^([0123456789]+y)?([0123456789]+d)?([0123456789]+h)?([0123456789]+m)?([0123456789]+s)?$
+                calories:
+                  type: number
+        required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-0"
+  /nutrition:
+    post:
+      summary: Add nutrition data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dish_name
+                - portion
+                - calories
+              additionalProperties: false
+              properties:
+                dish_name:
+                  type: string
+                portion:
+                  type: integer
+                  exclusiveMinimum: 0
+                calories:
+                  type: number
+        required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-0"
+  /sleep:
+    post:
+      summary: Add sleep data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - duration
+              additionalProperties: false
+              properties:
+                duration:
+                  type: string
+                  pattern: ^([0123456789]+y)?([0123456789]+d)?([0123456789]+h)?([0123456789]+m)?([0123456789]+s)?$
+        required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-0"
+  /stats:
+    get:
+      summary: Get health stats
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  calories_received:
+                    type: number
+                  calories_lost:
+                    type: number
+                  activity_duration:
+                    type: string
+                    pattern: ^([0123456789]+y)?([0123456789]+d)?([0123456789]+h)?([0123456789]+m)?([0123456789]+s)?$
+                  sleep_duration:
+                    type: string
+                    pattern: ^([0123456789]+y)?([0123456789]+d)?([0123456789]+h)?([0123456789]+m)?([0123456789]+s)?$
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-0"
+servers:
+  - url: https://localhost.xyz:80
+    description: Service

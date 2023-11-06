@@ -1,0 +1,55 @@
+{
+    "name": "ihw4",
+    "type": "module",
+    "version": "1.0.0",
+    "description": "",
+    "author": "TTPO100AJIEX",
+    "license": "MIT",
+    "scripts": {
+        "authorization": "node authorization/index.js",
+        "order-handler": "node order-handler/index.js",
+        "order-manager": "node order-manager/index.js",
+        
+        "db:accounts:backup": "node databases/accounts/backup.js",
+        "db:accounts:delete": "node databases/accounts/delete.js",
+        "db:accounts:create": "node databases/accounts/create.js",
+        "db:accounts:setup": "node databases/accounts/setup.js",
+        "db:accounts:fill": "node databases/accounts/fill.js",
+        "db:accounts:recreate": "npm run db:accounts:backup && npm run db:accounts:delete && npm run db:accounts:create && npm run db:accounts:setup && npm run db:accounts:fill",
+        "db:accounts:full": "npm run db:accounts:create && npm run db:accounts:setup && npm run db:accounts:fill",
+        
+        "db:orders:backup": "node databases/orders/backup.js",
+        "db:orders:delete": "node databases/orders/delete.js",
+        "db:orders:create": "node databases/orders/create.js",
+        "db:orders:setup": "node databases/orders/setup.js",
+        "db:orders:fill": "node databases/orders/fill.js",
+        "db:orders:recreate": "npm run db:orders:backup && npm run db:orders:delete && npm run db:orders:create && npm run db:orders:setup && npm run db:orders:fill",
+        "db:orders:full": "npm run db:orders:create && npm run db:orders:setup && npm run db:orders:fill",
+
+        "db:backup": "npm run db:accounts:backup && npm run db:orders:backup",
+        "db:delete": "npm run db:accounts:delete && npm run db:orders:delete",
+        "db:create": "npm run db:accounts:create && npm run db:orders:create",
+        "db:setup": "npm run db:accounts:setup && npm run db:orders:setup",
+        "db:fill": "npm run db:accounts:fill && npm run db:orders:fill",
+        "db:recreate": "npm run db:accounts:recreate && npm run db:orders:recreate",
+        "db:full": "npm run db:accounts:full && npm run db:orders:full"
+    },
+    "dependencies": {
+        "@fastify/circuit-breaker": "^3.2.0",
+        "@fastify/compress": "^6.3.0",
+        "@fastify/cookie": "^8.3.0",
+        "@fastify/helmet": "^10.1.1",
+        "@fastify/rate-limit": "^8.0.0",
+        "@fastify/swagger": "^8.5.1",
+        "@fastify/under-pressure": "^8.2.0",
+        "ajv-formats": "^2.1.1",
+        "bcrypt": "^5.1.0",
+        "common": "file:common",
+        "fastify": "^4.17.0",
+        "fastify-plugin": "^4.5.0",
+        "ioredis": "^5.3.2",
+        "pg": "^8.11.0",
+        "pg-format": "^1.0.4",
+        "postgres-interval": "^4.0.0"
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "name": "chw1",
+    "type": "module",
+    "description": "",
+    "version": "1.0.0",
+    "author": "TTPO100AJIEX",
+    "license": "MIT",
+    "scripts": {
+        "gen": "node scripts/gen.js",
+        "debug": "node scripts/run.js DEBUG",
+        "test": "node scripts/run.js TEST",
+        "time": "node scripts/run.js COUNT_TIME",
+        "ops": "node scripts/run.js COUNT_ELEMENTARY_OPERATIONS",
+        "parse_raw": "node scripts/parse_raw.js",
+        "parse": "node scripts/parse.js",
+        "analyze": "npm run time && npm run ops && npm run parse_raw && npm run parse"
+    },
+    "dependencies": {
+        "exceljs": "^4.3.0"
+    }
+}

@@ -1,0 +1,51 @@
+# Dependencies
+- PostgreSQL v15.3
+- Redis v7.0.11
+- NodeJS v20.2.0
+- npm v9.6.7
+- Other dependencies are listed in [package.json](package.json)
+# Startup
+- Install the dependencies listed above (using brew or apt)
+- Run `npm install` to install additional dependencies listed in [package.json](package.json)
+- Specify the required settings in [common/configs/config.json](common/configs/config.json)
+    - `/stage`: `testing` or `release`
+    - `/application` is the name of the application to specify when connecting to the databases
+    - `/accounts/postgreSQL` and `/orders/postgreSQL` hold postgreSQL connection information
+    - `/accounts/redis` and `/orders/redis` hold Redis connection information
+    - `/accounts/host` and `/orders/host` specify the hosts web servers run on
+    - `/accounts/port` and `/orders/port` specify the ports web servers run on
+    - `/accounts/secret` specifies a secret key to sign cookie files
+    - `/accounts/authorization_expiration` specifies the maximum duration of a session in millliseconds
+    - `/accounts/user_data_expiration` specifies the maximum interval of user data synchronization with postgreSQL
+    - `/accounts/bcrypt/saltRounds` specifies the amount of rounds of salt application when hashing passwords
+- Run `npm run db:full` to create the required databases
+- Run `npm run authorization` to start the authorization service
+- Run `npm run order-handler` to start the order handling service that processes the orders and changes their statuses
+- Run `npm run order-manager` to start the order management service that receives requests to manage orders, dishes and the menu
+# Documentation
+- Endpoints description is given as swagger documentation stored in [documentation folder](documentation)
+- Database setup scripts can be found in [databases/accounts/setup.sql](databases/accounts/setup.sql) and [databases/orders/setup.sql](databases/orders/setup.sql). In comparison to the task, all scripts have been adapted for use with postgreSQL, and the following changes have been made:
+    - Accounts database
+        - Created types `USER_ROLE` and `EMAIL` for better data constraining
+        - Added trigger to prohibit changing `created_at` and to automatically maintatin `updated_at`
+        - Did some minor renaming
+        - Removed the table `session` as Redis is used for that
+    - Orders database
+        - Did some minor renaming
+        - Added trigger to prohibit changing `created_at` and to automatically maintatin `updated_at`
+        - Added type `ORDER_STATUS` for better data constraining
+        - Removed `id` and `price` from the order dishes table
+- For authorization sessions IDs stored in signed cookie files are used instead of JWT as the latter is not secure and is not designed to be used for authorization according to the specification
+- When processing, orders are cancelled with a 25% chance. It takes 10 to 20 seconds to process one order. One order is processed every 30 to 60 seconds.
+# Architecture
+- The program consists of 7 parts:
+    - Accounts postgreSQL database
+    - Accounts Redis cache sevice
+    - Authorization web service
+    - Orders postgreSQL database
+    - Orders Redis cache sevice
+    - Orders management web service
+    - Orders processing service
+- The connections between those parts are as follows:
+    - Accounts postgreSQL database, accounts Redis cache sevice, and the authorization web service make up the first microservice that implements endpoints to create accounts and authorize user requests.
+    - Everything else makes up the second microservice that works with user orders and does requests to the first microservice to authorize the requests.

@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+service manager
+{
+    rpc getMenu(voidNoParam) returns(menu);
+    rpc placeOrder(order) returns(orderData);
+    rpc getOrderStatus(orderIdentifier) returns(orderStatus);
+    rpc getOrder(orderIdentifier) returns(orderFood);
+}
+
+message voidNoParam { }
+
+message menu
+{
+    message dish
+    {
+        uint32 id = 1;
+        uint32 price = 2;
+        string name = 3;
+        string description = 4;
+    }
+
+    repeated dish dishes = 1;
+}
+
+message order
+{
+    repeated uint32 dishIds = 1;
+}
+
+message orderData
+{
+    bool ok = 1;
+    string error = 2;
+    string orderId = 3;
+}
+
+message orderIdentifier
+{
+    string id = 1;
+}
+
+message orderStatus
+{
+    enum orderStage
+    {
+        UNKNOWN = 0;
+        WAITING = 1;
+        COOKING = 2;
+        READY = 3;
+    }
+    
+    orderStage status = 1;
+    uint32 waitTime = 2;
+}
+
+message orderFood
+{
+    bool ok = 1;
+    repeated string food = 2;
+}

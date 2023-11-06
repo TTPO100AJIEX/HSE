@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+service equipment
+{
+    rpc nothing(voidNoParam) returns(voidNoParam);
+}
+
+message voidNoParam { }

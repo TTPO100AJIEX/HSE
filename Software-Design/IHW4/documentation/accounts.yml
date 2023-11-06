@@ -1,0 +1,181 @@
+openapi: 3.0.3
+info:
+  version: 8.5.1
+  title: "@fastify/swagger"
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: __Secure-Authorization
+      description: Default authorization
+  schemas:
+    def-0:
+      type: object
+      required:
+        - title
+        - message
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+        message:
+          type: string
+      title: http_error
+    def-1:
+      type: object
+      required:
+        - ok
+      additionalProperties: false
+      properties:
+        ok:
+          enum:
+            - true
+      title: http_ok
+    def-2:
+      type: integer
+      minimum: -2147483648
+      maximum: 2147483647
+      title: id
+    def-3:
+      type: string
+      maxLength: 50
+      title: username
+    def-4:
+      type: string
+      format: email
+      title: email
+    def-5:
+      type: string
+      format: password
+      title: password
+    def-6:
+      enum:
+        - CUSTOMER
+        - CHEF
+        - MANAGER
+      title: user_role
+paths:
+  /create:
+    post:
+      summary: Create a new account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+                - role
+              additionalProperties: false
+              properties:
+                username:
+                  $ref: "#/components/schemas/def-3"
+                email:
+                  $ref: "#/components/schemas/def-4"
+                password:
+                  $ref: "#/components/schemas/def-5"
+                role:
+                  $ref: "#/components/schemas/def-6"
+        required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-0"
+  /:
+    get:
+      summary: Get user information
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  id:
+                    $ref: "#/components/schemas/def-2"
+                  username:
+                    $ref: "#/components/schemas/def-3"
+                  role:
+                    $ref: "#/components/schemas/def-6"
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-0"
+  /login:
+    get:
+      summary: Log into an account
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/def-3"
+          in: query
+          name: username
+          required: true
+        - schema:
+            $ref: "#/components/schemas/def-5"
+          in: query
+          name: password
+          required: true
+      responses:
+        "200":
+          description: Default Response
+          headers:
+            Set-Cookie:
+              schema:
+                type: object
+                example: __Secure-authorization=; Domain=127.0.0.1; Path=/; HttpOnly;
+                  SameSite=Lax
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-0"
+  /logout:
+    get:
+      summary: Logout
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Default Response
+          headers:
+            Set-Cookie:
+              schema:
+                type: object
+                example: __Secure-authorization=abcdef.ghijkl; Domain=127.0.0.1; Path=/;
+                  HttpOnly; SameSite=Lax
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-0"
+servers:
+  - url: https://127.0.0.1:15000
+    description: Authorization server

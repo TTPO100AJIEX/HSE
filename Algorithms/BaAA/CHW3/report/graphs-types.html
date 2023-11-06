@@ -1,0 +1,110 @@
+<html>
+    <head>
+        <script src="https://www.gstatic.com/charts/loader.js"></script>
+        <style>
+            * { line-height: 1.5; margin: 0; padding: 0; }
+            [hidden] { display: none !important; content-visibility: hidden !important; }
+            
+            body > label { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 1.5rem; font-weight: bold; text-align: center; overflow: auto; }
+            ::file-selector-button { font-size: 1.25rem; padding: 0.25rem; }
+
+            main { width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 450px; gap: 1rem; }
+            p { padding: 0 1rem; overflow: auto; height: 150px; }
+        </style>
+        <script type="module">
+            if (!("google" in window)) alert("Google charts failed to load! Please check your internet connection!");
+            google.charts.load('current', { 'packages': ['corechart'] });
+            
+            document.getElementById("file_input").addEventListener("change", ev =>
+            {
+                let reader = new FileReader();
+                reader.addEventListener("load", ev => drawCharts(JSON.parse(ev.currentTarget.result)));
+                reader.readAsText(ev.target.files[0], "utf-8");
+            });
+
+
+            function algorithmToString(algorithm)
+            {
+                switch(algorithm)
+                {
+                    case "dijkstra-set": return "Алгоритм Дейкстры (set)"
+                    case "dijkstra-set-optimized": return "Алгоритм Дейкстры (set, улучшенный)"
+                    case "dijkstra-queue": return "Алгоритм Дейкстры (priority_queue)"
+                    case "dijkstra-queue-delete": return "Алгоритм Дейкстры (priority_queue с удалением)"
+                    case "ford-bellman": return "Алгоритм Форда-Беллмана"
+                    case "floyd-warshall": return "Алгоритм Флойда-Уоршелла"
+                }
+            }
+            function graphTypeToString(graphType)
+            {
+                switch(graphType)
+                {
+                    case "sparse": return "Разреженный граф"
+                    case "average": return "Средний граф"
+                    case "full": return "Полный граф"
+                }
+            }
+
+
+            function average(arr)
+            {
+                const removeItems = Math.floor(arr.length / 10); // Remove 10% worst and 10% best
+                if (removeItems != 0) arr = arr.sort().slice(removeItems, -removeItems);
+                return arr.reduce((acc, cur) => acc + cur, 0) / arr.length;
+            }
+            function drawChart(chartData, { logScale = false, hTitle = "", title = "" } = { })
+            {
+                const div = document.createElement("div");
+                document.getElementsByTagName("main").item(0).appendChild(div);
+                const chart = new google.visualization.LineChart(div);
+
+                let trendlines = [ ];
+                for (let i = 1; i < chartData[0].length; i++)
+                {
+                    trendlines[i - 1] = { type: 'polynomial', degree: 2, showR2: true, visibleInLegend: true, labelInLegend: `${chartData[0][i]} (тренд)`, lineWidth: 1, pointSize: 2 };
+                }
+                
+                chart.draw(google.visualization.arrayToDataTable(chartData),
+                {
+                    width: 900, height: 450, chartArea: { width: 600 },
+                    fontSize: 12, focusTarget: "category", pointSize: 4, lineWidth: 3,
+                    interpolateNulls: true, title: title, titleTextStyle: { fontSize: 16 },
+                    explorer: { maxZoomIn: 0.01, maxZoomOut: 1.25, zoomDelta: 1.1, axis: 'vertical' },
+                    hAxis: { title: hTitle, titleTextStyle: { fontSize: 14, bold: true }, logScale: logScale },
+                    vAxis: { title: 'Время выполнения (ns)', titleTextStyle: { fontSize: 14, bold: true } },
+                    trendlines: trendlines
+                });
+            }
+            function drawCharts(data)
+            {
+                const vertexes = Object.keys(data.vertexes).map(e => Number(e));
+                const edges = Object.keys(data.edges).map(e => Number(e));
+                const graphTypes = Object.keys(data.vertexes["10"]);
+                const algorithms = Object.keys(data.vertexes["10"].average);
+                
+                document.getElementsByTagName("label").item(0).hidden = true;
+                document.getElementsByTagName("main").item(0).hidden = false;
+                for (const graphType of graphTypes)
+                {
+                    drawChart([
+                        [ "Vertexes", ...algorithms.map(algorithmToString) ],
+                        ...vertexes.map(vertexesAmount => [ vertexesAmount, ...algorithms.map(algorithm => average(data.vertexes[vertexesAmount][graphType][algorithm])) ] )
+                    ], { hTitle: "Количество вершин", title: graphTypeToString(graphType) });
+
+                    drawChart([
+                        [ "Edges", ...algorithms.map(algorithmToString) ],
+                        ...edges.map(edgesAmount => [ edgesAmount, ...algorithms.map(algorithm => data.edges[edgesAmount][graphType] ? average(data.edges[edgesAmount][graphType][algorithm]) : null) ] )
+                    ], { logScale: true, hTitle: "Количество рёбер", title: graphTypeToString(graphType) });
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <label>
+            Пожалуйста, загрузите data.json эксперимента<br>
+            <input type="file" accept=".json" id="file_input">
+        </label>
+        <main hidden>
+        </main>
+    </body>
+</html>

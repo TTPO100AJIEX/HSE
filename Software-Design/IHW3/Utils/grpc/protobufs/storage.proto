@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+service storage
+{
+    rpc getAvailable(voidNoParam) returns(productsList);
+    rpc getProducts(productsList) returns(products);
+}
+
+message voidNoParam { }
+
+message product
+{
+    uint32 type = 1;
+    uint32 quantity = 2;
+}
+
+message productsList
+{
+    repeated product products = 1;
+}
+
+message products
+{
+    bool ok = 1;
+    repeated product products = 2;
+}

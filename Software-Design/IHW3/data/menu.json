@@ -1,0 +1,57 @@
+[
+	{
+		"id": 518,
+		"price": 59,
+		"name": "Princess Nuri tea bag in a paper cup",
+		"description": "Pouring boiled water into a paper cup + 2 bags of sugar",
+		"operations": [
+			{
+				"id": 0,
+				"name": "Take potatos from fridge",
+				"dependencies": [],
+				"duration": 0.1,
+				"equipment": 25,
+				"products": [
+					{ "type": 18, "quantity": 1 },
+					{ "type": 23, "quantity": 2 }
+				]
+			},
+			{
+				"id": 1,
+				"name": "Take tomatos from fridge",
+				"dependencies": [],
+				"duration": 0.1,
+				"equipment": 25,
+				"products": [
+					{ "type": 24, "quantity": 0.2 },
+					{ "type": 12, "quantity": 1 },
+					{ "type": 19, "quantity": 1 }
+				]
+			},
+			{
+				"id": 2,
+				"name": "Cut potatos",
+				"dependencies": [0],
+				"duration": 0.25,
+				"equipment": 25,
+				"products": []
+			},
+			{
+				"id": 3,
+				"name": "Cut tomatos",
+				"dependencies": [1],
+				"duration": 0.25,
+				"equipment": 25,
+				"products": []
+			},
+			{
+				"id": 4,
+				"name": "Collect tea",
+				"dependencies": [2, 3],
+				"duration": 1,
+				"equipment": 25,
+				"products": []
+			}
+		]
+	}
+]

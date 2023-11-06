@@ -1,0 +1,57 @@
+{
+    "stage": "testing",
+    "application": "KPO-IHW-4",
+
+    "accounts":
+    {
+        "postgreSQL":
+        {
+            "host": "localhost",
+            "port": 5432,
+            "database": "accounts",
+            "user": "postgres",
+            "password": "F3gH3!0jEq"
+        },
+        "redis":
+        {
+            "port": 6379,
+            "host": "localhost",
+            "database": 0,
+            "password": "F3gH3!0jEq"
+        },
+        
+        "host": "127.0.0.1",
+        "port": 15000,
+
+        "secret": "230odiXKUiExkHAQ3UMTqRzDnGxN2loy",
+        "authorization_expiration": 3600000,
+        "user_data_expiration": 300000,
+        
+        "bcrypt":
+        {
+            "saltRounds": 11
+        }
+    },
+    
+    "orders":
+    {
+        "postgreSQL":
+        {
+            "host": "localhost",
+            "port": 5432,
+            "database": "orders",
+            "user": "postgres",
+            "password": "F3gH3!0jEq"
+        },
+        "redis":
+        {
+            "port": 6379,
+            "host": "localhost",
+            "database": 1,
+            "password": "F3gH3!0jEq"
+        },
+
+        "host": "127.0.0.1",
+        "port": 18000
+    }
+}

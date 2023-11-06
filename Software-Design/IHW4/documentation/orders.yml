@@ -1,0 +1,352 @@
+openapi: 3.0.3
+info:
+  version: 8.5.1
+  title: "@fastify/swagger"
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: __Secure-Authorization
+      description: Default authorization
+  schemas:
+    def-0:
+      type: integer
+      minimum: -2147483648
+      maximum: 2147483647
+      title: id
+    def-1:
+      type: object
+      required:
+        - title
+        - message
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+        message:
+          type: string
+      title: http_error
+    def-2:
+      type: object
+      required:
+        - ok
+      additionalProperties: false
+      properties:
+        ok:
+          enum:
+            - true
+      title: http_ok
+paths:
+  /dish:
+    post:
+      summary: Create a dish
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - description
+                - price
+                - quantity
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                description:
+                  type: string
+                price:
+                  type: number
+                quantity:
+                  type: integer
+                  minimum: 1
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: "#/components/schemas/def-0"
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+  "/dish/{id}":
+    delete:
+      summary: Delete the dish
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/def-0"
+          in: path
+          name: id
+          required: true
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-2"
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+    get:
+      summary: Get information about the dish
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/def-0"
+          in: path
+          name: id
+          required: true
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - name
+                  - description
+                  - price
+                  - quantity
+                additionalProperties: false
+                properties:
+                  id:
+                    $ref: "#/components/schemas/def-0"
+                  name:
+                    type: string
+                    maxLength: 100
+                  description:
+                    type: string
+                  price:
+                    type: number
+                  quantity:
+                    type: integer
+                    minimum: 1
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+    patch:
+      summary: Update the dish
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - description
+                - price
+                - quantity
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                description:
+                  type: string
+                price:
+                  type: number
+                quantity:
+                  type: integer
+                  minimum: 1
+        required: true
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/def-0"
+          in: path
+          name: id
+          required: true
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-2"
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+  /menu:
+    get:
+      summary: Get the menu
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - name
+                    - description
+                    - price
+                  additionalProperties: false
+                  properties:
+                    id:
+                      $ref: "#/components/schemas/def-0"
+                    name:
+                      type: string
+                      maxLength: 100
+                    description:
+                      type: string
+                    price:
+                      type: number
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+  /order:
+    post:
+      summary: Create a new order
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dishes
+              additionalProperties: false
+              properties:
+                dishes:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required:
+                      - id
+                      - quantity
+                    additionalProperties: false
+                    properties:
+                      id:
+                        $ref: "#/components/schemas/def-0"
+                      quantity:
+                        type: integer
+                        minimum: 1
+                special_requests:
+                  type: string
+                  default: None
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: "#/components/schemas/def-0"
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+  "/order/{id}":
+    get:
+      summary: Get information about the order
+      parameters:
+        - schema:
+            $ref: "#/components/schemas/def-0"
+          in: path
+          name: id
+          required: true
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: "#/components/schemas/def-0"
+                  user_id:
+                    $ref: "#/components/schemas/def-0"
+                  status:
+                    enum:
+                      - WAITING
+                      - PROCESSING
+                      - COMPLETED
+                      - CANCELLED
+                  special_requests:
+                    type: string
+                  created_at:
+                    type: string
+                    format: iso-date-time
+                  updated_at:
+                    type: string
+                    format: iso-date-time
+                  dishes:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - name
+                        - price
+                        - quantity
+                        - description
+                      additionalProperties: false
+                      properties:
+                        id:
+                          $ref: "#/components/schemas/def-0"
+                        name:
+                          type: string
+                          maxLength: 100
+                        price:
+                          type: number
+                        quantity:
+                          type: integer
+                          minimum: 1
+                        description:
+                          type: string
+        default:
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/def-1"
+servers:
+  - url: https://127.0.0.1:18000
+    description: Order management server

@@ -1,0 +1,46 @@
+{
+	"name": "kpo_ihw3",
+	"type": "module",
+	"version": "1.0.0",
+	"author": "KPO",
+	"license": "MIT",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"codestyle": "npx prettier --write .",
+		"visitor": "node agents/visitor.js 2000",
+		"manager": "node agents/manager.js 2000 3000 5000",
+		"steward": "node agents/steward.js 3000 menu.json 4000",
+		"storage": "node agents/storage.js 4000 products.json",
+		"kitchen": "node agents/kitchen.js 5000 menu.json 4000",
+		"cook1": "node agents/cook.js 6000 5000 Ivanov A. S.",
+		"cook2": "node agents/cook.js 6001 5000 Petrov I. V.",
+		"cook3": "node agents/cook.js 6002 5000 Sidorov G. S.",
+		"equipment1": "node agents/equipment.js 7000 5000 2 LIDER 250",
+		"equipment2": "node agents/equipment.js 7001 5000 2 LIDER 150",
+		"equipment3": "node agents/equipment.js 7002 5000 25 DAZHENG LOOKYAMI"
+	},
+	"dependencies": {
+		"@grpc/grpc-js": "^1.8.12",
+		"@grpc/proto-loader": "^0.7.5",
+		"utils": "file:utils"
+	},
+	"devDependencies": {
+		"prettier": "2.8.6"
+	},
+	"prettier": {
+		"printWidth": 150,
+		"tabWidth": 4,
+		"useTabs": true,
+		"semi": true,
+		"singleQuote": false,
+		"quoteProps": "as-needed",
+		"trailingComma": "es5",
+		"bracketSpacing": true,
+		"arrowParens": "avoid",
+		"requirePragma": false,
+		"insertPragma": false,
+		"endOfLine": "crlf",
+		"singleAttributePerLine": false
+	}
+}
