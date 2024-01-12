@@ -42,11 +42,22 @@ class SDA:
         self.k_neighb_max_thr = k_neighb_max_thr
         self.n_st_edge_clusters = n_st_edge_clusters or range(n_st_edge_clusters_min, n_st_edge_clusters_max + 1)
 
-    def apply(self, features: numpy.ndarray, df_st_edges: typing.Optional[pandas.DataFrame] = None):
+    def apply(
+        self,
+        features: numpy.ndarray,
+        df_st_edges: typing.Optional[pandas.DataFrame] = None,
+        save: typing.Tuple[typing.Optional[str], typing.Optional[str]] = (None, None)
+    ):
         print('Applying to {} samples with {} features each'.format(*features.shape))
-        if df_st_edges is None: df_st_edges = self.stage1(features)
-        result = self.stage2(features, df_st_edges)
-        return result, df_st_edges
+        self.df_st_edges = df_st_edges or self.stage1(features)
+        self.result = self.stage2(features, self.df_st_edges)
+        return self.result, self.df_st_edges
+    
+    def save(self, ):
+        if save[0]: result.to_csv(save[0])
+        if save[1]: df_st_edges.to_csv(save[1])
+    
+
 
     def stage1(self, features: numpy.ndarray) -> pandas.DataFrame:
         df_st_edges = [ ]
