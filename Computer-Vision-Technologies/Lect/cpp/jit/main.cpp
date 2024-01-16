@@ -18,21 +18,24 @@ int main(int argc, const char* argv[])
         return -1;
     }
 
-    if (argc >= 3 && std::string(argv[2]) == "mps")
+    int N_RUNS = 10;
+    if (argc >= 3 && std::string(argv[2]) == "cuda")
     {
-        tensor_image = tensor_image.to(at::kMPS);
-        module.to(at::kMPS);
+        tensor_image = tensor_image.to(at::kCUDA);
+        module.to(at::kCUDA);
+        N_RUNS = 100;
     }
 
-    std::vector<c10::IValue> inputs = { tensor_image };
-    // torch::jit::setGraphExecutorOptimize(false);
-
+    module.eval();
     torch::NoGradGuard no_grad;
+    torch::jit::getProfilingMode() = false;
+    torch::jit::setGraphExecutorOptimize(false);
+    std::vector<c10::IValue> inputs = { tensor_image };
+
     c10::IValue output = module.forward(inputs);
     std::cout << output.toTensor()[0].slice(0, 0, 7).reshape({ 1, 7 }) << std::endl;
     
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-    constexpr int N_RUNS = 10;
     for (int i = 0; i < N_RUNS; i++) module.forward(inputs);
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
