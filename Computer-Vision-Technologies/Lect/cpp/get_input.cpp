@@ -4,8 +4,6 @@
 #include <opencv2/imgcodecs.hpp>
 #include <PillowResize/PillowResize.hpp>
 
-#include <iostream>
-
 std::vector<float> get_input()
 {
     cv::Mat image = cv::imread("../../../image.jpg");
@@ -36,9 +34,12 @@ std::vector<float> get_input()
         pixel[2] = (pixel[2] - 0.406) / 0.225;
     });
 
+    img = img.reshape(1, { 300, 300, 3 });
+    cv::transposeND(img, { 2, 0, 1 }, img);
+
     std::vector<float> result;
-    result.reserve(32 * img.total() * img.channels());
-    img = img.reshape(1, img.total() * img.channels());
+    result.reserve(32 * img.total());
+    img = img.reshape(1, img.total());
     for (int i = 0; i < 32; i++) result.insert(result.end(), img.begin<float>(), img.end<float>());
     return result;
 }

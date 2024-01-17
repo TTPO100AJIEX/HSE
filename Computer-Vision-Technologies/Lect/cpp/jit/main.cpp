@@ -1,22 +1,18 @@
 #include <chrono>
+#include <vector>
+#include <string>
+#include <iostream>
 #include "get_input.hpp"
 #include <torch/script.h>
 
 int main(int argc, const char* argv[])
 {
     std::vector<float> data = get_input();
-    at::Tensor tensor_image = torch::from_blob(data.data(), { 32, 300, 300, 3 });
-    tensor_image = tensor_image.permute({ 0, 3, 1, 2 });
+    at::Tensor tensor_image = torch::from_blob(data.data(), { 32, 3, 300, 300 });
     std::cout << "Input: " << tensor_image.sizes() << std::endl;
 
     if (argc < 2) throw "Model name must be specified";
-    torch::jit::script::Module module;
-    try { module = torch::jit::load(argv[1]); }
-    catch (const c10::Error& e)
-    {
-        std::cerr << "error loading the model\n" << e.what();
-        return -1;
-    }
+    torch::jit::script::Module module = torch::jit::load(argv[1]);
 
     int N_RUNS = 10;
     if (argc >= 3 && std::string(argv[2]) == "cuda")
