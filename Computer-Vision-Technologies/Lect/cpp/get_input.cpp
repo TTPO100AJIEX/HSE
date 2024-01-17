@@ -37,9 +37,10 @@ std::vector<float> get_input()
     img = img.reshape(1, { 300, 300, 3 });
     cv::transposeND(img, { 2, 0, 1 }, img);
 
+    const int batch_size = 64;
     std::vector<float> result;
-    result.reserve(32 * img.total());
     img = img.reshape(1, img.total());
-    for (int i = 0; i < 32; i++) result.insert(result.end(), img.begin<float>(), img.end<float>());
+    result.reserve(batch_size * img.total());
+    for (int i = 0; i < batch_size; i++) result.insert(result.end(), img.begin<float>(), img.end<float>());
     return result;
 }
