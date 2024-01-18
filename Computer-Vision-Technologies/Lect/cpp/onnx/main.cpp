@@ -16,6 +16,8 @@ int main(int argc, const char* argv[])
     Ort::Env env;
     OrtApi api = Ort::GetApi();
     Ort::SessionOptions session_options;
+    session_options.SetInterOpNumThreads(16);
+    session_options.SetIntraOpNumThreads(16);
     Ort::AllocatorWithDefaultOptions allocator;
 
     int N_RUNS = 10;

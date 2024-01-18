@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28 FATAL_ERROR)
 project(onnx)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -O2")
 
