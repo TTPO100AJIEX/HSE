@@ -15,9 +15,9 @@ def plot_features(df_features: pandas.DataFrame, edges: numpy.ndarray):
 
     ncols = min(num_features, 4)
     nrows = math.ceil(num_features / 4)
-    fig, axes = plt.subplots(nrows, ncols, figsize = (20, 3))
+    fig, axes = plt.subplots(nrows, ncols, figsize = (20, 3 * nrows))
     
-    for ax, feature in zip(axes, df_features):
+    for ax, feature in zip(axes.flat, df_features):
         ax.set_title(feature)
         ax.plot(df_features[feature], color = 'blue')
         ax.tick_params(axis = 'both', labelsize = 8, direction = 'in')
@@ -32,3 +32,5 @@ def plot_features(df_features: pandas.DataFrame, edges: numpy.ndarray):
         y_avg = numpy.array([ clust_stat[feature]['50%'] for clust_stat in clust_stats ])
         y_max = numpy.array([ clust_stat[feature]['75%'] for clust_stat in clust_stats ])
         ax.errorbar(st_centers, y_avg, [ y_avg - y_min, y_max - y_avg ], capsize = 4, linewidth = 2.5, color = 'red')
+
+    return fig

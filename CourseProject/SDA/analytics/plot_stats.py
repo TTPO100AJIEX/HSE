@@ -31,4 +31,6 @@ def plot_stats(features: numpy.ndarray, edges: numpy.ndarray, epochs: mne.Epochs
         color = plt.get_cmap('Set1')(idx)
         stats[column] /= stats[column].max()
         plt.plot(edges[1:-1], stats[column], linestyle = '--', marker = 'o', color = color, label = column)
-    plt.legend()
+    plt.legend(loc = 'upper right')
+
+    return plt.gcf()
