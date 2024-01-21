@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from .. import stageprocess
 
-def plot_features(df_features: pandas.DataFrame, edges: numpy.ndarray):
+def plot_features(df_features: pandas.DataFrame, edges: numpy.ndarray) -> plt.Figure:
     stats = df_features.describe()
     num_features = df_features.shape[1]
     st_bands, _ = stageprocess.form_stage_bands(edges)

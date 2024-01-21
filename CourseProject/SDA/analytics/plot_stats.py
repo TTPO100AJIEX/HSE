@@ -7,7 +7,7 @@ from .. import stageprocess
 from .stage_timing import stage_timing
 from .edge_statistics import edge_statistics
 
-def plot_stats(features: numpy.ndarray, edges: numpy.ndarray, epochs: mne.Epochs):
+def plot_stats(features: numpy.ndarray, edges: numpy.ndarray, epochs: mne.Epochs) -> plt.Figure:
     plt.xlim(0, len(features))
     ymin, ymax = -0.2, 1.1
     plt.ylim(ymin, ymax)
