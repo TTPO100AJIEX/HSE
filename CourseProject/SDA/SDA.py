@@ -5,6 +5,7 @@ import pandas
 import scipy.stats
 import scipy.sparse
 import sklearn.cluster
+import sklearn.preprocessing
 import tqdm.contrib.itertools
 
 from .clustquality import apply_cluster_method, cluster_metrics_noground, calc_stage_metr_noground
@@ -13,29 +14,33 @@ from .stageprocess import form_stages, form_stage_bands, calc_stage_distances, m
 class SDA:
     def __init__(
         self,
+        scale: bool = False,
 
         n_clusters_min: int = 2, n_clusters_max: int = 20, n_clusters: typing.Optional[int] = None,
         k_neighbours_min: int = 20, k_neighbours_max: int = 50, k_neighbours: typing.Optional[int] = None,
         len_st_thr: typing.List[int] = [0, 20, 40, 60],
-        st_dist_rate: float = 0.3,
+        dist_rate: float = 0.3,
 
         random_state: int = 0,
         n_cl_max_thr: typing.List[int] = [10, 15, 20],
         k_neighb_max_thr: typing.List[int] = [35, 40, 45, 50],
-        n_st_edge_clusters_min: int = 2, n_st_edge_clusters_max: int = 15, n_st_edge_clusters: typing.Optional[int] = None
+        n_edge_clusters_min: int = 2, n_edge_clusters_max: int = 15, n_edge_clusters: typing.Optional[int] = None
 
     ):
+        self.scale = scale
+
         self.n_clusters = n_clusters or range(n_clusters_min, n_clusters_max + 1)
         self.k_neighbours = k_neighbours or range(k_neighbours_min, k_neighbours_max + 1)
         self.len_st_thr = len_st_thr
-        self.st_dist_rate = st_dist_rate
+        self.dist_rate = dist_rate
         
         self.random_state = random_state
         self.n_cl_max_thr = n_cl_max_thr
         self.k_neighb_max_thr = k_neighb_max_thr
-        self.n_st_edge_clusters = n_st_edge_clusters or range(n_st_edge_clusters_min, n_st_edge_clusters_max + 1)
+        self.n_edge_clusters = n_edge_clusters or range(n_edge_clusters_min, n_edge_clusters_max + 1)
 
     def apply(self, features: numpy.ndarray, df_st_edges: typing.Optional[pandas.DataFrame] = None):
+        if self.scale: features = sklearn.preprocessing.StandardScaler().fit_transform(features)
         print('Applying to {} samples with {} features each'.format(*features.shape))
         if df_st_edges is None: df_st_edges = self.stage1(features)
         result = self.stage2(features, df_st_edges)
@@ -57,10 +62,10 @@ class SDA:
             st_edges = form_stages(labels) # Forming stages from clusters
 
             # Merging stages
-            for st_len_min in self.len_st_thr:
-                st_edges = merge_stages_1st_step(features, st_edges, st_len_min)
-                st_edges = merge_stages_2nd_step(features, st_edges, self.st_dist_rate)
-                df_st_edges.append({ **report, 'Len_min': st_len_min, 'St_edges': st_edges })
+            for len_min in self.len_st_thr:
+                st_edges = merge_stages_1st_step(features, st_edges, len_min)
+                st_edges = merge_stages_2nd_step(features, st_edges, self.dist_rate)
+                df_st_edges.append({ **report, 'Len_min': len_min, 'St_edges': st_edges })
         return pandas.DataFrame(df_st_edges)
     
     def stage2(self, features: numpy.ndarray, df_st_edges: pandas.DataFrame) -> pandas.DataFrame:
@@ -69,8 +74,8 @@ class SDA:
         n_samples, _ = features.shape
 
         # Forming general list of stage edges
-        for (st_len, k_nb_max, n_cl, n_st_edge_clusters) in tqdm.contrib.itertools.product(self.len_st_thr, self.k_neighb_max_thr, self.n_cl_max_thr, self.n_st_edge_clusters):
-            part_report = { 'St_len_min': st_len, 'K_nb_max': k_nb_max, 'N_cl_max': n_cl, 'N_stages': n_st_edge_clusters + 1 }
+        for (st_len, k_nb_max, n_cl, n_edge_clusters) in tqdm.contrib.itertools.product(self.len_st_thr, self.k_neighb_max_thr, self.n_cl_max_thr, self.n_edge_clusters):
+            part_report = { 'St_len_min': st_len, 'K_nb_max': k_nb_max, 'N_cl_max': n_cl, 'N_stages': n_edge_clusters + 1 }
 
             # Forming st_edges_all list
             len_min_mask = (df_st_edges['Len_min'] == st_len)
@@ -82,14 +87,14 @@ class SDA:
             st_edges_all = numpy.sort(edges_all).reshape(-1, 1)
             
             # Clustering stage edges
-            kwargs = { 'n_clusters': n_st_edge_clusters, 'random_state': self.random_state, 'n_init': 10 }
+            kwargs = { 'n_clusters': n_edge_clusters, 'random_state': self.random_state, 'n_init': 10 }
             _, labels, _ = apply_cluster_method(st_edges_all, sklearn.cluster.KMeans, **kwargs)
             
             # Form stages by centers of clusters (median, mean, mode)
             st_medians = []
             st_modes = []
             st_means = []
-            for _st in range(n_st_edge_clusters):
+            for _st in range(n_edge_clusters):
                 st_cluster = st_edges_all[numpy.where(labels == _st)[0]]
                 st_modes.append(int(scipy.stats.mode(st_cluster).mode))
                 st_medians.append(int(numpy.median(st_cluster)))
