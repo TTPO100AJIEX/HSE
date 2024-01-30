@@ -108,7 +108,7 @@ class SDA:
                 st_dist_ward, st_dist_centr = numpy.mean(calc_stage_distances(features, st_edges_centers), axis = 1)
                 overall_metrics = cluster_metrics_noground(features, new_labels)
                     
-                # Clustering metrics for pairs of adjacesnt stages
+                # Clustering metrics for pairs of adjacent stages
                 df_avg_metrics = calc_stage_metr_noground(features, st_edges_centers).mean()
                 avg_metrics = df_avg_metrics.rename(lambda col: f'Avg-{col}').to_dict()
     
