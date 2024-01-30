@@ -6,8 +6,9 @@ def plot_eeg_stages(data: mne.io.Raw, edges: numpy.ndarray, edge_epochs: mne.Epo
     events = mne.make_fixed_length_events(data, duration = resolution)
     epochs = mne.Epochs(data, events, baseline = None, tmin = 0, tmax = resolution, preload = True, verbose = False)
     data = numpy.average(epochs.get_data(copy = True), axis = 2)
+    data = data[:, data.mean(axis = 0).argsort()[::-1]] # Sort for better picture
 
-    fig, ax = plt.subplots(1, 1, figsize = (20, 5))
+    fig, ax = plt.subplots(1, 1, figsize = (20, 4))
     ax.set_title("EEG")
     ax.set_xlabel('Time (s)')
 

@@ -1,4 +1,3 @@
-import numpy
 import pandas
 
 def best_result(result: pandas.DataFrame, key: str, n_stages: int, min_stage_length: int = 0) -> dict:
