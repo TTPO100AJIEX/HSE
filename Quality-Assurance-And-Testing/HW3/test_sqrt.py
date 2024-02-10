@@ -65,7 +65,7 @@ def test_rounding(adv_sqrt, input, expected_rounding):
         [ doub.MAX_VALUE, doub.longBitsToDouble(6913025428013711359) ], # Max Normal
         [ doub.MIN_NORMAL, 'Trivial' ], # Min Normal
         [ math.nextafter(doub.MIN_NORMAL, -math.inf), 'Trivial' ], # Max Subnormal
-        [ doub.MIN_VALUE, 'Trivial' ] # Min value
+        [ doub.MIN_VALUE, 'Trivial' ] # Min Subnormal
     ]
 )
 def test_special(adv_sqrt, input, answer):
