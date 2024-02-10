@@ -41,7 +41,7 @@ class AdvSqrt:
             x = doub.longBitsToDouble(b)
             res = x
             
-            while(abs(x-res*res)/x > AdvSqrt.eps):
+            while(abs(x-res*res)/x > AdvSqrt.eps) and (i < 5):
                 i += 1
                 tmp = res
                 res = (tmp+x/tmp)/2

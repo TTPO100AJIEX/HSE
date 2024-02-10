@@ -1,6 +1,7 @@
 import math
 
 import pytest
+import itertools
 
 import doub
 from AdvSqrt import AdvSqrt
@@ -17,8 +18,8 @@ def trivial_checker(sqrt, input):
     second_sqrt = math.nextafter(sqrt, side)
 
     lower, upper = sorted([ sqrt, second_sqrt ])
-    assert (lower ** 2) < input
-    assert (upper ** 2) > input
+    assert (lower ** 2) <= input
+    assert (upper ** 2) >= input
 
 
 @pytest.mark.parametrize(
@@ -74,3 +75,17 @@ def test_special(adv_sqrt, input, answer):
         case 'NaN': assert doub.isnan(result)
         case 'Trivial': trivial_checker(result, input)
         case _: assert result == answer
+
+@pytest.mark.slow
+@pytest.mark.timeout(1)
+def test_comprehensive():
+    for bits in itertools.product([ 0, 1 ], repeat = 12):
+        exp = f"{bits[0]}{bits[1]}0000000{bits[2]}{bits[3]}"
+    
+        man1 = f"{bits[4]}{bits[5]}{bits[6]}{bits[7]}"
+        man2 = f"{bits[8]}{bits[9]}{bits[10]}{bits[11]}"
+        man = man1 + "0" * (52 - 8) + man2
+        
+        input = doub.longBitsToDouble(int(f"0{exp}{man}", 2))
+        result = AdvSqrt().sqrt(input)
+        trivial_checker(result, input)

@@ -86,8 +86,6 @@ def fpclassify(value):
     """
     bits = doubleToRawLongBits(value)
     exponent = (bits >> 52) & 0x7ff
-    print(exponent)
-    print(bits & 0x000fFfffFfffFfff)
     if exponent == 0x7ff:
         # INFINITE or NAN
         mantissa = bits & 0x000fFfffFfffFfff
