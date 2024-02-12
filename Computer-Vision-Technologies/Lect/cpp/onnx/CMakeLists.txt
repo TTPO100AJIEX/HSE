@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.28 FATAL_ERROR)
+project(onnx)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -O2")
+
+find_package(OpenCV REQUIRED)
+find_package(PillowResize REQUIRED)
+
+add_executable(main main.cpp ../get_input.cpp)
+include_directories(main "../")
+include_directories (main "${CMAKE_SOURCE_DIR}/onnxruntime/include")
+if(NOT APPLE)
+    add_compile_definitions(WITH_CUDA PROFILE)
+    target_link_libraries(main "${CMAKE_SOURCE_DIR}/onnxruntime/lib/libonnxruntime.so.1.16.3")
+    target_link_libraries(main "${CMAKE_SOURCE_DIR}/onnxruntime/lib/libonnxruntime_providers_cuda.so")
+else()
+    target_link_libraries(main "${CMAKE_SOURCE_DIR}/onnxruntime/lib/libonnxruntime.1.16.3.dylib")
+endif()
+target_link_libraries(main PillowResize)
+target_link_libraries(main ${OpenCV_LIBS})
