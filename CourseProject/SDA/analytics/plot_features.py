@@ -16,8 +16,10 @@ def plot_features(df_features: pandas.DataFrame, edges: numpy.ndarray) -> plt.Fi
     ncols = min(num_features, 4)
     nrows = math.ceil(num_features / 4)
     fig, axes = plt.subplots(nrows, ncols, figsize = (20, 3 * nrows))
+    if num_features != 1: axes = axes.flat
+    else: axes = [ axes ]
     
-    for ax, feature in zip(axes.flat, df_features):
+    for ax, feature in zip(axes, df_features):
         ax.set_title(feature)
         ax.plot(df_features[feature], color = 'blue')
         ax.tick_params(axis = 'both', labelsize = 8, direction = 'in')
