@@ -62,3 +62,42 @@
 Ожидаемое: `INVALID_PARAM`
 4)  `if p1 <= 0 or p2 <= 0:`
 `return VendingMachine.Response.INVALID_PARAM`
+
+# Ошибка 10
+1) `self.__coins1 -= self.__balance // self.__coinval2`
+`self.__coins2 -= 1`
+2) Вызов `returnMoney`, когда автомат находится в рабочем режиме с 21 монетой 1 типа и 12 монетами 2 типа, баланс - 13.
+3) Полученное: после перехода в режим отладки `getCoins1() == 15`, `getCoins2() == 11`
+Ожидаемое: после перехода в режим отладки `getCoins1() == 20`, `getCoins2() == 6`
+4)  `self.__coins2 -= self.__balance // self.__coinval2`
+`self.__coins1 -= 1`
+
+# Ошибка 11
+1) `if number <= 0 or number >= self.__max1:`
+2) Вызов `giveProduct1(30)`, когда автомат в рабочем режиме с максимальным количеством продуктов, но без монет
+3) Полученное: `INVALID_PARAM`
+Ожидаемое: `INSUFFICIENT_MONEY`
+4)  `if number <= 0 or number > self.__max1:`
+
+# Ошибка 12
+1) `self.__coins1 -= res // self.__coinval2`
+`self.__coins2 -= 1`
+2) Вызов `giveProduct2(2)`, когда автомат в рабочем режиме с 32 монетами 1 типа, 6 монетами 2 типа, балансом 27 при цене предмета типа 2, равной 8
+3) Полученное: после перехода в режим отладки `getCoins1() == 27`, `getCoins2() == 5`
+Ожидаемое: после перехода в режим отладки `getCoins1() == 31`, `getCoins2() == 1`
+4)  `self.__coins2 -= res // self.__coinval2`
+`self.__coins1 -= 1`
+
+# Ошибка 13
+1) `if number <= 0 or number >= self.__max2:`
+2) Вызов `giveProduct2(40)`, когда автомат в рабочем режиме с максимальным количеством продуктов, но без монет
+3) Полученное: `INVALID_PARAM`
+Ожидаемое: `INSUFFICIENT_MONEY`
+4)  `if number <= 0 or number > self.__max2:`
+
+# Ошибка 14
+1) `if res > self.__coins1 * self.__coinval1 + self.__coins2 * self.__coinval2:`
+`return VendingMachine.Response.INSUFFICIENT_MONEY`
+2, 3) Методом "серой коробки" не воспроизводится
+4)  `if res > self.__coins1 * self.__coinval1 + self.__coins2 * self.__coinval2:`
+`return VendingMachine.Response.TOO_BIG_CHANGE`

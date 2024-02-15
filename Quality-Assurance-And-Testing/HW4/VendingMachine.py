@@ -146,15 +146,15 @@ class VendingMachine:
             # using coinval1 == 1
             return VendingMachine.Response.UNSUITABLE_CHANGE
         # using coinval1 == 1
-        self.__coins1 -= self.__balance // self.__coinval2
-        self.__coins2 -= 1
+        self.__coins2 -= self.__balance // self.__coinval2
+        self.__coins1 -= 1
         self.__balance = 0
         return VendingMachine.Response.OK
 
     def giveProduct1(self, number: int):
         if self.__mode == VendingMachine.Mode.ADMINISTERING:
             return VendingMachine.Response.ILLEGAL_OPERATION
-        if number <= 0 or number >= self.__max1:
+        if number <= 0 or number > self.__max1:
             return VendingMachine.Response.INVALID_PARAM
         if number > self.__num1:
             return VendingMachine.Response.INSUFFICIENT_PRODUCT
@@ -187,7 +187,7 @@ class VendingMachine:
     def giveProduct2(self, number: int):
         if self.__mode == VendingMachine.Mode.ADMINISTERING:
             return VendingMachine.Response.ILLEGAL_OPERATION
-        if number <= 0 or number >= self.__max2:
+        if number <= 0 or number > self.__max2:
             return VendingMachine.Response.INVALID_PARAM
         if number > self.__num2:
             return VendingMachine.Response.INSUFFICIENT_PRODUCT
@@ -196,7 +196,7 @@ class VendingMachine:
         if res < 0:
             return VendingMachine.Response.INSUFFICIENT_MONEY
         if res > self.__coins1 * self.__coinval1 + self.__coins2 * self.__coinval2:
-            return VendingMachine.Response.INSUFFICIENT_MONEY
+            return VendingMachine.Response.TOO_BIG_CHANGE
         if res > self.__coins2 * self.__coinval2:
             # using coinval1 == 1
             self.__coins1 -= res - self.__coins2 * self.__coinval2
@@ -211,8 +211,8 @@ class VendingMachine:
             return VendingMachine.Response.OK
         if self.__coins1 == 0:
             return VendingMachine.Response.UNSUITABLE_CHANGE
-        self.__coins1 -= res // self.__coinval2
-        self.__coins2 -= 1
+        self.__coins2 -= res // self.__coinval2
+        self.__coins1 -= 1
         self.__balance = 0
         self.__num2 -= number
         return VendingMachine.Response.OK
