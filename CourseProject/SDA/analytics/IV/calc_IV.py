@@ -5,7 +5,7 @@ def calc_IV(feature: numpy.ndarray, target: numpy.ndarray, bins: int = 10) -> fl
     if len(numpy.unique(feature)) > 10:
         feature = pandas.qcut(feature, bins, duplicates = 'drop')
     df = pandas.DataFrame({ 'x': feature, 'y': target })
-    df = df.groupby("x", as_index = False).agg({ "y": [ "count", "sum" ] })
+    df = df.groupby("x", as_index = False, observed = False).agg({ "y": [ "count", "sum" ] })
     df.columns = [ 'Cutoff', 'N', 'Events' ]
 
     # Calculate % of events in each group.
