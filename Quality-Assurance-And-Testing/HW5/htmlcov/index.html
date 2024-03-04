@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Coverage report</title>
+    <link rel="icon" sizes="32x32" href="favicon_32.png">
+    <link rel="stylesheet" href="style.css" type="text/css">
+    <script type="text/javascript" src="coverage_html.js" defer></script>
+
+<style>
+@charset "UTF-8";
+/* Licensed under the Apache License: http://www.apache.org/licenses/LICENSE-2.0 */
+/* For details: https://github.com/nedbat/coveragepy/blob/master/NOTICE.txt */
+/* Don't edit this .css file. Edit the .scss file instead! */
+html, body, h1, h2, h3, p, table, td, th { margin: 0; padding: 0; border: 0; font-weight: inherit; font-style: inherit; font-size: 100%; font-family: inherit; vertical-align: baseline; }
+
+body { font-family: georgia, serif; font-size: 1em; }
+
+html > body { font-size: 16px; }
+
+p { font-size: .75em; line-height: 1.33333333em; }
+
+table { border-collapse: collapse; }
+
+td { vertical-align: top; }
+
+table tr.hidden { display: none !important; }
+
+p#no_rows { display: none; font-size: 1.2em; }
+
+a.nav { text-decoration: none; color: inherit; }
+a.nav:hover { text-decoration: underline; color: inherit; }
+
+#header { background: #f8f8f8; width: 100%; border-bottom: 1px solid #eee; }
+
+.indexfile #footer { margin: 1em 3em; }
+
+.pyfile #footer { margin: 1em 1em; }
+
+#footer .content { padding: 0; font-size: 85%; font-family: verdana, sans-serif; color: #666666; font-style: italic; }
+
+#index { margin: 1em 0 0 3em; }
+
+#header .content { padding: 1em 3rem; }
+
+h1 { font-size: 1.25em; display: inline-block; }
+
+#filter_container { display: inline-block; float: right; margin: 0 2em 0 0; }
+#filter_container input { width: 10em; }
+
+h2.stats { margin-top: .5em; font-size: 1em; }
+
+.stats span { border: 1px solid; border-radius: .1em; padding: .1em .5em; margin: 0 .1em; cursor: pointer; border-color: #ccc #999 #999 #ccc; }
+.stats span.run { background: #eeffee; }
+.stats span.run.show_run { border-color: #999 #ccc #ccc #999; background: #ddffdd; }
+.stats span.mis { background: #ffeeee; }
+.stats span.mis.show_mis { border-color: #999 #ccc #ccc #999; background: #ffdddd; }
+.stats span.exc { background: #f7f7f7; }
+.stats span.exc.show_exc { border-color: #999 #ccc #ccc #999; background: #eeeeee; }
+.stats span.par { background: #ffffd5; }
+.stats span.par.show_par { border-color: #999 #ccc #ccc #999; background: #ffffaa; }
+
+#source p .annotate.long, .help_panel { display: none; position: absolute; z-index: 999; background: #ffffcc; border: 1px solid #888; border-radius: .2em; box-shadow: #cccccc .2em .2em .2em; color: #333; padding: .25em .5em; }
+
+#source p .annotate.long { white-space: normal; float: right; top: 1.75em; right: 1em; height: auto; }
+
+#keyboard_icon { float: right; margin: 5px; cursor: pointer; }
+
+.help_panel { padding: .5em; border: 1px solid #883; }
+.help_panel .legend { font-style: italic; margin-bottom: 1em; }
+.indexfile .help_panel { width: 20em; height: 4em; }
+.pyfile .help_panel { width: 16em; height: 8em; }
+
+#panel_icon { float: right; cursor: pointer; }
+
+.keyhelp { margin: .75em; }
+.keyhelp .key { border: 1px solid black; border-color: #888 #333 #333 #888; padding: .1em .35em; font-family: monospace; font-weight: bold; background: #eee; }
+
+#source { padding: 1em 0 1em 3rem; font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace; }
+#source p { position: relative; white-space: pre; }
+#source p * { box-sizing: border-box; }
+#source p .n { float: left; text-align: right; width: 3rem; box-sizing: border-box; margin-left: -3rem; padding-right: 1em; color: #999999; font-family: verdana, sans-serif; }
+#source p .n a { text-decoration: none; color: #999999; font-size: .8333em; line-height: 1em; }
+#source p .n a:hover { text-decoration: underline; color: #999999; }
+#source p.highlight .n { background: #ffdd00; }
+#source p .t { display: inline-block; width: 100%; box-sizing: border-box; margin-left: -.5em; padding-left: 0.3em; border-left: 0.2em solid white; }
+#source p .t:hover { background: #f2f2f2; }
+#source p .t:hover ~ .r .annotate.long { display: block; }
+#source p .t .com { color: green; font-style: italic; line-height: 1px; }
+#source p .t .key { font-weight: bold; line-height: 1px; }
+#source p .t .str { color: #000080; }
+#source p.mis .t { border-left: 0.2em solid #ff0000; }
+#source p.mis.show_mis .t { background: #ffdddd; }
+#source p.mis.show_mis .t:hover { background: #f2d2d2; }
+#source p.run .t { border-left: 0.2em solid #00ff00; }
+#source p.run.show_run .t { background: #ddffdd; }
+#source p.run.show_run .t:hover { background: #d2f2d2; }
+#source p.exc .t { border-left: 0.2em solid #808080; }
+#source p.exc.show_exc .t { background: #eeeeee; }
+#source p.exc.show_exc .t:hover { background: #e2e2e2; }
+#source p.par .t { border-left: 0.2em solid #eeee99; }
+#source p.par.show_par .t { background: #ffffaa; }
+#source p.par.show_par .t:hover { background: #f2f2a2; }
+#source p .r { position: absolute; top: 0; right: 2.5em; font-family: verdana, sans-serif; }
+#source p .annotate { font-family: georgia; color: #666; padding-right: .5em; }
+#source p .annotate.short:hover ~ .long { display: block; }
+#source p .annotate.long { width: 30em; right: 2.5em; }
+#source p input { display: none; }
+#source p input ~ .r label.ctx { cursor: pointer; border-radius: .25em; }
+#source p input ~ .r label.ctx::before { content: "▶ "; }
+#source p input ~ .r label.ctx:hover { background: #d5f7ff; color: #666; }
+#source p input:checked ~ .r label.ctx { background: #aaeeff; color: #666; border-radius: .75em .75em 0 0; padding: 0 .5em; margin: -.25em 0; }
+#source p input:checked ~ .r label.ctx::before { content: "▼ "; }
+#source p input:checked ~ .ctxs { padding: .25em .5em; overflow-y: scroll; max-height: 10.5em; }
+#source p label.ctx { color: #999; display: inline-block; padding: 0 .5em; font-size: .8333em; }
+#source p .ctxs { display: block; max-height: 0; overflow-y: hidden; transition: all .2s; padding: 0 .5em; font-family: verdana, sans-serif; white-space: nowrap; background: #aaeeff; border-radius: .25em; margin-right: 1.75em; }
+#source p .ctxs span { display: block; text-align: right; }
+
+#index td, #index th { text-align: right; width: 5em; padding: .25em .5em; border-bottom: 1px solid #eee; }
+#index td.left, #index th.left { padding-left: 0; }
+#index td.right, #index th.right { padding-right: 0; }
+#index td.name, #index th.name { text-align: left; width: auto; }
+#index th { font-style: italic; color: #333; border-bottom: 1px solid #ccc; cursor: pointer; }
+#index th:hover { background: #eee; border-bottom: 1px solid #999; }
+#index th.headerSortDown, #index th.headerSortUp { border-bottom: 1px solid #000; white-space: nowrap; background: #eee; }
+#index th.headerSortDown:after { content: " ↓"; }
+#index th.headerSortUp:after { content: " ↑"; }
+#index td.name a { text-decoration: none; color: #000; }
+#index tr.total td, #index tr.total_dynamic td { font-weight: bold; border-top: 1px solid #ccc; border-bottom: none; }
+#index tr.file:hover { background: #eeeeee; }
+#index tr.file:hover td.name { text-decoration: underline; color: #000; }
+
+#scroll_marker { position: fixed; right: 0; top: 0; width: 16px; height: 100%; background: white; border-left: 1px solid #eee; will-change: transform; }
+#scroll_marker .marker { background: #ddd; position: absolute; min-height: 3px; width: 100%; }
+
+/* Following are edits to improve the look on Azure DevOps portal.
+   Some elements are hidden since JavaScript cannot run in the iframe where the HTML report is displayed. */
+
+body {
+  font-family: sans-serif;
+}
+
+#index {
+  margin: 1em 0 0 2em;
+}
+
+#header .content {
+  padding: 1em 2rem;
+}
+
+#source {
+  background: white;
+}
+
+#source p .t .key {
+  color: #da092e;
+}
+
+#source p .t .str {
+  color: #3a0ed9;
+}
+
+#source p .t .com {
+  color: #e68a00;
+  font-style: italic;
+  line-height: 1px;
+}
+
+#keyboard_icon, #filter_container {
+  display: none;
+}
+
+.op {
+  color: #9d19df;
+}
+
+</style>
+</head>
+<body class="indexfile">
+<header>
+    <div class="content">
+        <h1>Coverage report:
+            <span class="pc_cov">36%</span>
+        </h1>
+        <aside id="help_panel_wrapper">
+            <input id="help_panel_state" type="checkbox">
+            <label for="help_panel_state">
+                <img id="keyboard_icon" src="keybd_closed.png" alt="Show/hide keyboard shortcuts" />
+            </label>
+            <div id="help_panel">
+                <p class="legend">Shortcuts on this page</p>
+                <div class="keyhelp">
+                    <p>
+                        <kbd>n</kbd>
+                        <kbd>s</kbd>
+                        <kbd>m</kbd>
+                        <kbd>x</kbd>
+                        <kbd>b</kbd>
+                        <kbd>p</kbd>
+                        <kbd>c</kbd>
+                        &nbsp; change column sorting
+                    </p>
+                    <p>
+                        <kbd>[</kbd>
+                        <kbd>]</kbd>
+                        &nbsp; prev/next file
+                    </p>
+                    <p>
+                        <kbd>?</kbd> &nbsp; show/hide this help
+                    </p>
+                </div>
+            </div>
+        </aside>
+        <form id="filter_container">
+            <input id="filter" type="text" value="" placeholder="filter..." />
+        </form>
+        <p class="text">
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.4.0">coverage.py v7.4.0</a>,
+            created at 2024-03-04 14:48 +0300
+        </p>
+    </div>
+</header>
+<main id="index">
+    <table class="index" data-sortable>
+        <thead>
+            <tr class="tablehead" title="Click to sort">
+                <th class="name left" aria-sort="none" data-shortcut="n">Module</th>
+                <th aria-sort="none" data-default-sort-order="descending" data-shortcut="s">statements</th>
+                <th aria-sort="none" data-default-sort-order="descending" data-shortcut="m">missing</th>
+                <th aria-sort="none" data-default-sort-order="descending" data-shortcut="x">excluded</th>
+                <th aria-sort="none" data-default-sort-order="descending" data-shortcut="b">branches</th>
+                <th aria-sort="none" data-default-sort-order="descending" data-shortcut="p">partial</th>
+                <th class="right" aria-sort="none" data-shortcut="c">coverage</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="file">
+                <td class="name left"><a href="d_0688a1d22186f8c7_AccountManager_py.html">src/ru/hse/AccountManager.py</a></td>
+                <td>88</td>
+                <td>74</td>
+                <td>0</td>
+                <td>54</td>
+                <td>0</td>
+                <td class="right" data-ratio="14 142">10%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_0688a1d22186f8c7_AccountManagerResponse_py.html">src/ru/hse/AccountManagerResponse.py</a></td>
+                <td>23</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="23 23">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_0688a1d22186f8c7_IPasswordEncoder_py.html">src/ru/hse/IPasswordEncoder.py</a></td>
+                <td>7</td>
+                <td>1</td>
+                <td>0</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="right" data-ratio="8 9">89%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_0688a1d22186f8c7_IServer_py.html">src/ru/hse/IServer.py</a></td>
+                <td>17</td>
+                <td>5</td>
+                <td>0</td>
+                <td>10</td>
+                <td>0</td>
+                <td class="right" data-ratio="22 27">81%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_0688a1d22186f8c7_ServerResponse_py.html">src/ru/hse/ServerResponse.py</a></td>
+                <td>12</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="10 12">83%</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr class="total">
+                <td class="name left">Total</td>
+                <td>147</td>
+                <td>82</td>
+                <td>0</td>
+                <td>66</td>
+                <td>0</td>
+                <td class="right" data-ratio="77 213">36%</td>
+            </tr>
+        </tfoot>
+    </table>
+    <p id="no_rows">
+        No items found using the specified filter.
+    </p>
+</main>
+<footer>
+    <div class="content">
+        <p>
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.4.0">coverage.py v7.4.0</a>,
+            created at 2024-03-04 14:48 +0300
+        </p>
+    </div>
+    <aside class="hidden">
+        <a id="prevFileLink" class="nav" href="d_0688a1d22186f8c7_ServerResponse_py.html"/>
+        <a id="nextFileLink" class="nav" href="d_0688a1d22186f8c7_AccountManager_py.html"/>
+        <button type="button" class="button_prev_file" data-shortcut="["/>
+        <button type="button" class="button_next_file" data-shortcut="]"/>
+        <button type="button" class="button_show_hide_help" data-shortcut="?"/>
+    </aside>
+</footer>
+</body>
+</html>
