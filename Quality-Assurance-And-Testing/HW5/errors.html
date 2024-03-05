@@ -60,6 +60,18 @@
                 <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
                 <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
             </tr>
+            <tr>
+                <td> 6 </td>
+                <td> Вызов <code>callLogin</code>, при шифровании произошла ошибка <code>NullPointerException</code> </td>
+                <td> Ошибка не была обработана </td>
+                <td> Ошибка корректно обработана и произведён Возврат кода <code>ENCODING_ERROR</code> с пустым телом ответа </td>
+                <td>
+                    Заменить <code>ret: ServerResponse = self.server.login(login, self.passEncoder.makeSecure(password))</code> на <br>
+                    <code>try: hash = self.passEncoder.makeSecure(password)</code> <br>
+                    <code>except: return AccountManagerResponse.ENCODING_ERROR_RESPONSE</code> <br>
+                    <code>ret: ServerResponse = self.server.login(login, hash)</code> <br>
+                </td>
+            </tr>
         </table>
     </body>
 </html>

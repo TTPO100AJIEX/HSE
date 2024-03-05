@@ -1,12 +1,15 @@
 import pytest
 
 from ru.hse.ServerResponse import ServerResponse
+from ru.hse.IPasswordEncoder import IPasswordEncoder
+from ru.hse.IPasswordEncoder import NullPointerException
 from ru.hse.AccountManagerResponse import AccountManagerResponse
 
 LOGIN = "tester"
 PASSWORD = "123321"
 SESSION_ID = 1234567
 PASSWORD_HASH = "abcdefghijklmnopqrstuvwxyz"
+
 
 def test_succeed(account_manager, mock_password_encoder, mock_server):
     password_encoder_stats = mock_password_encoder("makeSecure", ( PASSWORD, ), PASSWORD_HASH)
@@ -23,6 +26,7 @@ def test_succeed(account_manager, mock_password_encoder, mock_server):
     assert server_stats['calls'] == 1
 
     assert account_manager.activeAccounts == { LOGIN: SESSION_ID }
+
 
 @pytest.mark.parametrize([ 'server_code', 'server_response', 'expected_code', 'expected_response' ], [
     # Valid responses
@@ -58,18 +62,32 @@ def test_different_server_responses(
     assert server_stats['calls'] == 1
 
 
+def test_encoding_error(account_manager, monkeypatch):
+    def mock_make_secure(self, password: str):
+        raise NullPointerException()
+    monkeypatch.setattr(IPasswordEncoder, "makeSecure", mock_make_secure)
+
+    response = account_manager.callLogin(LOGIN, PASSWORD)
+    assert response.code == AccountManagerResponse.ENCODING_ERROR
+    assert response.response is None
 
 
-def test_encoding_error():
-    # При неудаче шифрования
-    # или передаче null
-    pass
+def test_already_logged(account_manager, mock_password_encoder, mock_server):
+    password_encoder_stats = mock_password_encoder("makeSecure", ( PASSWORD, ), PASSWORD_HASH)
+    server_stats = mock_server("login", ( LOGIN, PASSWORD_HASH ), ServerResponse.SUCCESS, SESSION_ID)
 
-def test_wrong_password():
-    pass
+    response = account_manager.callLogin(LOGIN, PASSWORD)
+    assert response.code == AccountManagerResponse.SUCCEED
+    assert response.response == SESSION_ID
+    
+    response2 = account_manager.callLogin(LOGIN, PASSWORD)
+    assert response2.code == AccountManagerResponse.ALREADY_LOGGED
+    assert response2.response is None
 
-def test_wrong_login():
-    pass
+    assert password_encoder_stats['ok'] == True
+    assert password_encoder_stats['calls'] == 1
 
-def test_already_logged():
-    pass
+    assert server_stats['ok'] == True
+    assert server_stats['calls'] == 1
+
+    assert account_manager.activeAccounts == { LOGIN: SESSION_ID }

@@ -17,7 +17,9 @@ class AccountManager:
         sess: int = self.activeAccounts.get(login, None)
         if sess is not None:
             return AccountManagerResponse.ACCOUNT_MANAGER_RESPONSE
-        ret: ServerResponse = self.server.login(login, self.passEncoder.makeSecure(password))
+        try: hash = self.passEncoder.makeSecure(password)
+        except: return AccountManagerResponse.ENCODING_ERROR_RESPONSE
+        ret: ServerResponse = self.server.login(login, hash)
         match ret.code:
             case ServerResponse.ALREADY_LOGGED:
                 return AccountManagerResponse.ACCOUNT_MANAGER_RESPONSE

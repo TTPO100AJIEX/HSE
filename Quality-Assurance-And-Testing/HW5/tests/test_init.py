@@ -2,6 +2,7 @@ from ru.hse.IServer import IServer
 from ru.hse.AccountManager import AccountManager
 from ru.hse.IPasswordEncoder import IPasswordEncoder
 
+
 def test_class():
     # The fields should be set to instances, not statically
     # And the memory should not be shared between static and instance fields
