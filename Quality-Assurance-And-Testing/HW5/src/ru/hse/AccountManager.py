@@ -82,14 +82,12 @@ class AccountManager:
         match resp.code:
             case ServerResponse.NOT_LOGGED:
                 return AccountManagerResponse.NOT_LOGGED_RESPONSE
-            case ServerResponse.NO_MONEY:
-                r = resp.response
-                if r is not None and (isinstance(r, float)):
-                    return AMR(AMR.NO_MONEY, r)
             case ServerResponse.SUCCESS:
                 r = resp.response
                 if r is not None and (isinstance(r, float)):
                     return AMR(AMR.SUCCEED, r)
+            case ServerResponse.UNDEFINED_ERROR:
+                return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE
         return AMR(AMR.INCORRECT_RESPONSE, resp)
 
     def getBalance(self, user: str, session: int) -> AMR:

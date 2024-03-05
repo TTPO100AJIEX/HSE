@@ -56,7 +56,7 @@
             <tr>
                 <td> 5 </td>
                 <td> Вызов <code>callLogin</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
-                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </td>
                 <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
                 <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
             </tr>
@@ -75,7 +75,7 @@
             <tr>
                 <td> 7 </td>
                 <td> Вызов <code>callLogout</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
-                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </td>
                 <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
                 <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
             </tr>
@@ -93,9 +93,23 @@
             <tr>
                 <td> 9 </td>
                 <td> Вызов <code>withdraw</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
-                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </td>
                 <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
                 <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
+            </tr>
+            <tr>
+                <td> 10 </td>
+                <td> Вызов <code>deposit</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </td>
+                <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
+                <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
+            </tr>
+            <tr>
+                <td> 11 </td>
+                <td> Вызов <code>deposit</code>, сервер вернул <code>NO_MONEY</code> с числом в теле ответа </td>
+                <td> Возврат кода <code>NO_MONEY</code> с числом в теле ответа </td>
+                <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
+                <td> Удалить <code>case ServerResponse.NO_MONEY:</code> со всем содержимым</td>
             </tr>
         </table>
     </body>
