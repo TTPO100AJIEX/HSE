@@ -38,12 +38,16 @@ class AccountManager:
         rem: int = self.activeAccounts.pop(user, None)
         if rem is None:
             return AccountManagerResponse.NOT_LOGGED_RESPONSE
+        if rem != session:
+            return AccountManagerResponse.INCORRECT_SESSION_RESPONSE
         resp: ServerResponse = self.server.logout(session)
         match resp.code:
             case ServerResponse.NOT_LOGGED:
                 return AccountManagerResponse.NOT_LOGGED_RESPONSE
             case ServerResponse.SUCCESS:
                 return AccountManagerResponse.SUCCEED_RESPONSE
+            case ServerResponse.UNDEFINED_ERROR:
+                return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE
         return AMR(AMR.INCORRECT_RESPONSE, resp)
 
     def withdraw(self, user: str, session: int, amount: float):

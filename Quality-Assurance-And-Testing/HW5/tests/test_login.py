@@ -12,18 +12,18 @@ PASSWORD_HASH = "abcdefghijklmnopqrstuvwxyz"
 
 
 def test_succeed(account_manager, mock_password_encoder, mock_server):
-    password_encoder_stats = mock_password_encoder("makeSecure", ( PASSWORD, ), PASSWORD_HASH)
-    server_stats = mock_server("login", ( LOGIN, PASSWORD_HASH ), ServerResponse.SUCCESS, SESSION_ID)
+    makesecure_stats = mock_password_encoder("makeSecure", ( PASSWORD, ), PASSWORD_HASH)
+    login_stats = mock_server("login", ( LOGIN, PASSWORD_HASH ), ServerResponse.SUCCESS, SESSION_ID)
 
     response = account_manager.callLogin(LOGIN, PASSWORD)
     assert response.code == AccountManagerResponse.SUCCEED
     assert response.response == SESSION_ID
 
-    assert password_encoder_stats['ok'] == True
-    assert password_encoder_stats['calls'] == 1
+    assert makesecure_stats['ok'] == True
+    assert makesecure_stats['calls'] == 1
 
-    assert server_stats['ok'] == True
-    assert server_stats['calls'] == 1
+    assert login_stats['ok'] == True
+    assert login_stats['calls'] == 1
 
     assert account_manager.activeAccounts == { LOGIN: SESSION_ID }
 
@@ -43,8 +43,8 @@ def test_different_server_responses(
     account_manager, mock_password_encoder, mock_server,
     server_code, server_response, expected_code, expected_response
 ):
-    password_encoder_stats = mock_password_encoder("makeSecure", ( PASSWORD, ), PASSWORD_HASH)
-    server_stats = mock_server("login", ( LOGIN, PASSWORD_HASH ), server_code, server_response)
+    makesecure_stats = mock_password_encoder("makeSecure", ( PASSWORD, ), PASSWORD_HASH)
+    login_stats = mock_server("login", ( LOGIN, PASSWORD_HASH ), server_code, server_response)
 
     response = account_manager.callLogin(LOGIN, PASSWORD)
     assert response.code == expected_code
@@ -55,11 +55,11 @@ def test_different_server_responses(
     else:
         assert response.response == expected_response
 
-    assert password_encoder_stats['ok'] == True
-    assert password_encoder_stats['calls'] == 1
+    assert makesecure_stats['ok'] == True
+    assert makesecure_stats['calls'] == 1
 
-    assert server_stats['ok'] == True
-    assert server_stats['calls'] == 1
+    assert login_stats['ok'] == True
+    assert login_stats['calls'] == 1
 
 
 def test_encoding_error(account_manager, monkeypatch):
@@ -73,8 +73,8 @@ def test_encoding_error(account_manager, monkeypatch):
 
 
 def test_already_logged(account_manager, mock_password_encoder, mock_server):
-    password_encoder_stats = mock_password_encoder("makeSecure", ( PASSWORD, ), PASSWORD_HASH)
-    server_stats = mock_server("login", ( LOGIN, PASSWORD_HASH ), ServerResponse.SUCCESS, SESSION_ID)
+    makesecure_stats = mock_password_encoder("makeSecure", ( PASSWORD, ), PASSWORD_HASH)
+    login_stats = mock_server("login", ( LOGIN, PASSWORD_HASH ), ServerResponse.SUCCESS, SESSION_ID)
 
     response = account_manager.callLogin(LOGIN, PASSWORD)
     assert response.code == AccountManagerResponse.SUCCEED
@@ -84,10 +84,10 @@ def test_already_logged(account_manager, mock_password_encoder, mock_server):
     assert response2.code == AccountManagerResponse.ALREADY_LOGGED
     assert response2.response is None
 
-    assert password_encoder_stats['ok'] == True
-    assert password_encoder_stats['calls'] == 1
+    assert makesecure_stats['ok'] == True
+    assert makesecure_stats['calls'] == 1
 
-    assert server_stats['ok'] == True
-    assert server_stats['calls'] == 1
+    assert login_stats['ok'] == True
+    assert login_stats['calls'] == 1
 
     assert account_manager.activeAccounts == { LOGIN: SESSION_ID }

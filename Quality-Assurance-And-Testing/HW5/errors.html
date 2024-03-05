@@ -64,12 +64,30 @@
                 <td> 6 </td>
                 <td> Вызов <code>callLogin</code>, при шифровании произошла ошибка <code>NullPointerException</code> </td>
                 <td> Ошибка не была обработана </td>
-                <td> Ошибка корректно обработана и произведён Возврат кода <code>ENCODING_ERROR</code> с пустым телом ответа </td>
+                <td> Ошибка корректно обработана и произведён возврат кода <code>ENCODING_ERROR</code> с пустым телом ответа </td>
                 <td>
                     Заменить <code>ret: ServerResponse = self.server.login(login, self.passEncoder.makeSecure(password))</code> на <br>
                     <code>try: hash = self.passEncoder.makeSecure(password)</code> <br>
                     <code>except: return AccountManagerResponse.ENCODING_ERROR_RESPONSE</code> <br>
                     <code>ret: ServerResponse = self.server.login(login, hash)</code> <br>
+                </td>
+            </tr>
+            <tr>
+                <td> 7 </td>
+                <td> Вызов <code>callLogout</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </code> </td>
+                <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
+                <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
+            </tr>
+            <tr>
+                <td> 8 </td>
+                <td> Вызов <code>callLogout</code> с верным <code>login</code> и неверным <code>session</code> </td>
+                <td> Совершение вызова к IServer </td>
+                <td> Возврат кода <code>INCORRECT_SESSION</code> с пустым телом ответа без вызова IServer </td>
+                <td>
+                    Добавить <br>
+                    <code>if rem != session:</code> <br>
+                    <code>&nbsp;&nbsp;&nbsp;&nbsp;return AccountManagerResponse.INCORRECT_SESSION_RESPONSE</code>
                 </td>
             </tr>
         </table>
