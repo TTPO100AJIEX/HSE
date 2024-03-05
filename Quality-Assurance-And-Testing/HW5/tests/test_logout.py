@@ -1,8 +1,6 @@
 import pytest
 
 from ru.hse.ServerResponse import ServerResponse
-from ru.hse.IPasswordEncoder import IPasswordEncoder
-from ru.hse.IPasswordEncoder import NullPointerException
 from ru.hse.AccountManagerResponse import AccountManagerResponse
 
 LOGIN = "tester"
