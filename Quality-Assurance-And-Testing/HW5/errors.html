@@ -111,6 +111,13 @@
                 <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
                 <td> Удалить <code>case ServerResponse.NO_MONEY:</code> со всем содержимым</td>
             </tr>
+            <tr>
+                <td> 12 </td>
+                <td> Вызов <code>getBalance</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </td>
+                <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
+                <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
+            </tr>
         </table>
     </body>
 </html>
