@@ -90,6 +90,13 @@
                     <code>&nbsp;&nbsp;&nbsp;&nbsp;return AccountManagerResponse.INCORRECT_SESSION_RESPONSE</code>
                 </td>
             </tr>
+            <tr>
+                <td> 9 </td>
+                <td> Вызов <code>withdraw</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </code> </td>
+                <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
+                <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
+            </tr>
         </table>
     </body>
 </html>

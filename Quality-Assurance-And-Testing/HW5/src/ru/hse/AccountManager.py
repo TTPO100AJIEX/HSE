@@ -68,6 +68,8 @@ class AccountManager:
                 r = resp.response
                 if r is not None and (isinstance(r, float)):
                     return AMR(AMR.SUCCEED, r)
+            case ServerResponse.UNDEFINED_ERROR:
+                return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE
         return AMR(AMR.INCORRECT_RESPONSE, resp)
 
     def deposit(self, user: str, session: int, amount: float) -> AMR:
