@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            td:first-child, th { text-align: center; }
+            table { border-collapse: collapse; width: 100%; }
+            td, th { border: 1px solid black; padding: 1ch; }
+            code { background: rgb(225, 225, 225); padding: 0.33ch; border-radius: 3px; }
+        </style>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <th> № </th>
+                <th> Действия, приводящие к ошибке </th>
+                <th> Наблюдаемый результат </th>
+                <th> Ожидаемый результат </th>
+                <th> Исправление </th>
+            </tr>
+            <tr>
+                <td> 1 </td>
+                <td> Создание <code>AccountManager</code> </td>
+                <td> Поле <code>activeAccounts</code> является статическим, и все копии класса указывают на один и тот же словарь </td>
+                <td> Поле <code>activeAccounts</code> инициализируется отдельно для каждой копии </td>
+                <td>
+                    Заменить <code>activeAccounts = dict[str, int]()</code> на <code>activeAccounts: dict[str, int]</code> <br>
+                    Добавить <code>self.activeAccounts = { }</code> в <code>__init__</code>
+                </td>
+            </tr>
+            <tr>
+                <td> 2 </td>
+                <td> Создание <code>AccountManager</code> </td>
+                <td> Поле <code>passEncoder</code> не содержит значения </td>
+                <td> Поле <code>passEncoder</code> содержит копию <code>IPasswordEncoder</code> </td>
+                <td> Добавить <code>self.passEncoder = encoder</code> в <code>__init__</code> </td>
+            </tr>
+            <tr>
+                <td> 3 </td>
+                <td> Успешная авторизация с помощью <code>callLogin</code> </td>
+                <td> Поле <code>activeAccounts</code> пусто </td>
+                <td> Поле <code>activeAccounts</code> содержит одну запись об авторизованном пользователе </td>
+                <td> Добавить <code>self.activeAccounts[login] = resp</code> в <code>case ServerResponse.SUCCESS</code> </td>
+            </tr>
+            <tr>
+                <td> 4 </td>
+                <td> Вызов <code>callLogin</code>, сервер вернул <code>ALREADY_LOGGED</code> </td>
+                <td> <code>AttributeError: type object 'AccountManagerResponse' has no attribute 'ACCOUNT_MANAGER_RESPONSE'</code> </td>
+                <td> Возврат кода <code>ALREADY_LOGGED</code> с пустым телом ответа </td>
+                <td>
+                    Исправить конфликт имён (<code>AccountManagerResponse</code>) при импортировании.
+                    Например, изменить <code>from ru.hse.AccountManagerResponse import AccountManagerResponse</code>
+                        на <code>from ru.hse.AccountManagerResponse import AccountManagerResponse as AMR</code>
+                        и заменить в коде все обращения к <code>AccountManagerResponse</code> как к классу на <code>AMR</code> (см. код).
+                </td>
+            </tr>
+            <tr>
+                <td> 5 </td>
+                <td> Вызов <code>callLogin</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </td>
+                <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
+                <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
+            </tr>
+            <tr>
+                <td> 6 </td>
+                <td> Вызов <code>callLogin</code>, при шифровании произошла ошибка <code>NullPointerException</code> </td>
+                <td> Ошибка не была обработана </td>
+                <td> Ошибка корректно обработана и произведён возврат кода <code>ENCODING_ERROR</code> с пустым телом ответа </td>
+                <td>
+                    Заменить <code>ret: ServerResponse = self.server.login(login, self.passEncoder.makeSecure(password))</code> на <br>
+                    <code>try: hash = self.passEncoder.makeSecure(password)</code> <br>
+                    <code>except: return AccountManagerResponse.ENCODING_ERROR_RESPONSE</code> <br>
+                    <code>ret: ServerResponse = self.server.login(login, hash)</code> <br>
+                </td>
+            </tr>
+            <tr>
+                <td> 7 </td>
+                <td> Вызов <code>callLogout</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </td>
+                <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
+                <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
+            </tr>
+            <tr>
+                <td> 8 </td>
+                <td> Вызов <code>callLogout</code> с верным <code>login</code> и неверным <code>session</code> </td>
+                <td> Совершение вызова к IServer </td>
+                <td> Возврат кода <code>INCORRECT_SESSION</code> с пустым телом ответа без вызова IServer </td>
+                <td>
+                    Добавить <br>
+                    <code>if rem != session:</code> <br>
+                    <code>&nbsp;&nbsp;&nbsp;&nbsp;return AccountManagerResponse.INCORRECT_SESSION_RESPONSE</code>
+                </td>
+            </tr>
+            <tr>
+                <td> 9 </td>
+                <td> Вызов <code>withdraw</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </td>
+                <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
+                <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
+            </tr>
+            <tr>
+                <td> 10 </td>
+                <td> Вызов <code>deposit</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </td>
+                <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
+                <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
+            </tr>
+            <tr>
+                <td> 11 </td>
+                <td> Вызов <code>deposit</code>, сервер вернул <code>NO_MONEY</code> с числом в теле ответа </td>
+                <td> Возврат кода <code>NO_MONEY</code> с числом в теле ответа </td>
+                <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
+                <td> Удалить <code>case ServerResponse.NO_MONEY:</code> со всем содержимым</td>
+            </tr>
+            <tr>
+                <td> 12 </td>
+                <td> Вызов <code>getBalance</code>, сервер вернул <code>UNDEFINED_ERROR</code> </td>
+                <td> Возврат кода <code>INCORRECT_RESPONSE</code> с пустым телом ответа </td>
+                <td> Возврат кода <code>UNDEFINED_ERROR</code> с пустым телом ответа </td>
+                <td> Добавить <code>case ServerResponse.UNDEFINED_ERROR</code>, выполняющий <code>return AccountManagerResponse.UNDEFINED_ERROR_RESPONSE</code> </td>
+            </tr>
+        </table>
+    </body>
+</html>
