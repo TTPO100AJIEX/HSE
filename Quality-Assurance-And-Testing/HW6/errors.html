@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            td:first-child, th { text-align: center; }
+            table { border-collapse: collapse; width: 100%; }
+            td, th { border: 1px solid black; padding: 1ch; }
+            code { background: rgb(225, 225, 225); padding: 0.33ch; border-radius: 3px; white-space: pre; }
+        </style>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <th> № </th>
+                <th> Ошибка </th>
+                <th> Исправление - до </th>
+                <th> Исправление - после </th>
+            </tr>
+            <tr>
+                <td> 1 </td>
+                <td>
+<code>>       return stack.pop()
+E       IndexError: pop from empty list</code>
+                </td>
+                <td>
+<code>85    if len(stack) > 1:</code>
+                </td>
+                <td>
+<code>85    if len(stack) != 1:</code>
+                </td>
+            </tr>
+            <tr>
+                <td> 2 </td>
+                <td>
+<code>>                   match s_tmp[1]: #get first character
+                        case '+':
+E                       IndexError: string index out of range</code>
+                </td>
+                <td>
+<code>match s_tmp[1]: #get first character</code>
+                </td>
+                <td>
+<code>match s_tmp[0]: #get first character</code>
+                </td>
+            </tr>
+            <tr>
+                <td> 3 </td>
+                <td>
+<code>>                           raise NotImplementedError("TODO: Не забыть реализовать оператор !")
+E                           NotImplementedError: TODO: Не забыть реализовать оператор !</code>
+                </td>
+                <td>
+<code>case '!':
+    # This operation is not implemented
+    raise NotImplementedError("TODO: Не забыть реализовать оператор !")</code>
+                </td>
+                <td>
+<code></code>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>
