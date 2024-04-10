@@ -6,3 +6,4 @@ pytest --hypothesis-show-statistics ./fuzz.py > history/$1/output.txt
 rm -rf `find . -type d -name __pycache__`
 rm -rf .pytest_cache
 rm -rf .hypothesis
+pip3 freeze > requirements.txt
