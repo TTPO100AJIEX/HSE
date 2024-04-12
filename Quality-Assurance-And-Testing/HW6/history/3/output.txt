@@ -1,0 +1,19 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.2, pytest-8.0.0, pluggy-1.4.0
+rootdir: /mnt/d/HSE/year-3/HSE/Quality-Assurance-And-Testing/HW6
+plugins: hypothesis-6.100.0, cov-4.1.0, timeout-2.2.0, skip-slow-0.0.5
+collected 1 item
+
+fuzz.py .                                                                [100%]
+============================ Hypothesis Statistics =============================
+
+fuzz.py::test_calculate_with_processed_input:
+
+  - during generate phase (104.47 seconds):
+    - Typical runtimes: < 1ms, of which < 1ms in data generation
+    - 134467 passing examples, 0 failing examples, 0 invalid examples
+
+  - Stopped because nothing left to do
+
+
+======================== 1 passed in 105.50s (0:01:45) =========================
