@@ -88,7 +88,9 @@ class SDA:
             st_means = []
             for _st in range(n_edge_clusters):
                 st_cluster = st_edges_all[numpy.where(labels == _st)[0]]
-                st_modes.append(int(scipy.stats.mode(st_cluster).mode))
+                if len(st_cluster) == 0:
+                    continue
+                st_modes.append(int(scipy.stats.mode(st_cluster, nan_policy = 'omit').mode))
                 st_medians.append(int(numpy.median(st_cluster)))
                 st_means.append(int(numpy.mean(st_cluster)))
 
