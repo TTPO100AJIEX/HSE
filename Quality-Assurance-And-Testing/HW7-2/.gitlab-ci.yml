@@ -1,0 +1,56 @@
+image: openjdk:11
+
+before_script:
+  - export GRADLE_USER_HOME=`pwd`/.gradle
+  
+stages:
+    - build
+    - test
+    - package_registry
+    - mutation_analysis
+
+build:
+    stage: build
+    script:
+        - ./gradlew :shadowJar
+    artifacts:
+        paths:
+            - build/libs/SimpleRequestsBot-1.0-SNAPSHOT-all.jar
+
+test:
+    stage: test
+    script:
+        - ./gradlew :test
+    artifacts:
+            reports:
+                junit: build/test-results/**/*.xml
+            paths:
+                - build/jacocoReport/test/html
+    dependencies:
+        - build
+
+package_registry:
+    stage: package_registry
+    rules:
+        - when: on_success
+    script:
+        - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file build/libs/SimpleRequestsBot-1.0-SNAPSHOT-all.jar "http://ruswizard.ddns.net:8080/api/v4/projects/$CI_PROJECT_ID/packages/generic/my-package/0.0.1/SimpleRequestsBot-1.0-SNAPSHOT-all.jar"'
+    dependencies:
+        - build
+        - test
+
+
+mutation_analysis:
+    stage: mutation_analysis
+    when: manual
+    allow_failure: true
+    script:
+        - ./gradlew :pitest
+    artifacts:
+        paths:
+            - build/reports/pitest
+    dependencies:
+        - build
+        - test
+        - package_registry
+  

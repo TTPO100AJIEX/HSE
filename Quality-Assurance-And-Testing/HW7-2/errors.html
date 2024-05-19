@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            td:first-child, th { text-align: center; }
+            table { border-collapse: collapse; width: 100%; }
+            td, th { border: 1px solid black; padding: 1ch; }
+            code { background: rgb(225, 225, 225); padding: 0.33ch; border-radius: 3px; white-space: pre; }
+        </style>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <th> № </th>
+                <th> Действия, приводящие к ошибке </th>
+                <th> Наблюдаемый результат </th>
+                <th> Ожидаемый результат </th>
+                <th> Исправление - до </th>
+                <th> Исправление - после </th>
+            </tr>
+            <tr>
+                <td> 1 </td>
+                <td> Переход в Welcome из buy_actions </td>
+                <td> Корзина очистилась </td>
+                <td> "Содержимое корзины при этом сохраняется" </td>
+                <td> <code>65    flushBucket(userid, storage);</code> </td>
+                <td> Удалить </td>
+            </tr>
+            <tr>
+                <td> 2 </td>
+                <td> Положить в корзину 5 едииниц товара 1, а затем еще 99 </td>
+                <td> В коризне 104 единицы товара, а на складе - 100 </td>
+                <td> Выводится сообщение об ошибке </td>
+                <td colspan="2"> Требуется детальное изучение исходного кода </td>
+            </tr>
+            <tr>
+                <td> 3 </td>
+                <td> Переход в состояние account без средств на балансе </td>
+                <td> "У вас на счету null у.е. ..." </td>
+                <td> "У вас на счету 0 у.е. ..." </td>
+                <td> <code>307                sb.append(money);</code> </td>
+                <td> <code>307                sb.append(money == null ? "0" : money);</code> </td>
+            </tr>
+            <tr>
+                <td> 4 </td>
+                <td> Создание заказа </td>
+                <td> В хранилище по ключам 'orders' и 'order_*' дублируется информация о товарах </td>
+                <td> 'orders' не содержит лишней информации, которая не используется </td>
+                <td> <code>394        newRec.setGoods(bucket);</code> </td>
+                <td> Удалить </td>
+            </tr>
+            <tr>
+                <td> 5 </td>
+                <td> Переход в состояние Orders при наличии заказов с товарами </td>
+                <td> В конце списка товаров отображается запятая </td>
+                <td> Запятой в конце строки быть не должно </td>
+                <td> <code>29            if(i>0)<br>30                sb.append(", ");<br>31            if(!git.hasNext())<br>32                return;</code> </td>
+                <td> <code>29            if(!git.hasNext())<br>30                return;<br>31            if(i>0)<br>32                sb.append(", ");</code> </td>
+            </tr>
+            <tr>
+                <td> 6 </td>
+                <td> Переход в состояние Orders и отправка числа - запроса на полную информацию о заказе </td>
+                <td> Запятая в списке отображается на новой строке </td>
+                <td> Запятая должна быть на той же строке </td>
+                <td> <code>48                sb.append(",\n");<br>...<br>59            sb.append("\n");<br>60        }</code> </td>
+                <td> <code>48                sb.append(",\n");<br>...<br>59        }<br>60        sb.append("\n");</code> </td>
+            </tr>
+            <tr>
+                <td> 7 </td>
+                <td> Переход в состояние Orders и отправка числа - запроса на полную инфомрацию о заказе </td>
+                <td> Описание отображается отдельно от товара </td>
+                <td> Данные одного товара должны быть явно отделимы от данных другого товара </td>
+                <td> <code>54             sb.append(")\n");</code> </td>
+                <td> <code>54             sb.append(") - ");</code> </td>
+            </tr>
+            <tr>
+                <td> 8 </td>
+                <td> Переход в состояние Orders и отправка числа - запроса на полную инфомрацию о заказе </td>
+                <td> Описание товара не отображается (всегда возвращается "Описания нет") </td>
+                <td> Должно отображаться корректное расписание </td>
+                <td colspan="2"> Требуется детальное изучение исходного кода. Кажется, что-то с разбором JSON </td>
+            </tr>
+        </table>
+    </body>
+</html>
