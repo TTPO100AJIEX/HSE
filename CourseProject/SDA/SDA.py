@@ -25,7 +25,6 @@ class SDA:
         n_cl_max_thr: typing.List[int] = [10, 15, 20],
         k_neighb_max_thr: typing.List[int] = [35, 40, 45, 50],
         n_edge_clusters_min: int = 2, n_edge_clusters_max: int = 15, n_edge_clusters: typing.Optional[int] = None
-
     ):
         self.scale = scale
 
