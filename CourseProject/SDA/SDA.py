@@ -1,4 +1,5 @@
 import typing
+import itertools
 
 import numpy
 import pandas
@@ -15,6 +16,7 @@ class SDA:
     def __init__(
         self,
         scale: bool = False,
+        verbose: bool = True,
 
         n_clusters_min: int = 2, n_clusters_max: int = 20, n_clusters: typing.Optional[int] = None,
         k_neighbours_min: int = 20, k_neighbours_max: int = 50, k_neighbours: typing.Optional[int] = None,
@@ -27,6 +29,7 @@ class SDA:
         n_edge_clusters_min: int = 2, n_edge_clusters_max: int = 15, n_edge_clusters: typing.Optional[int] = None
     ):
         self.scale = scale
+        self.verbose = verbose
 
         self.n_clusters = n_clusters or range(n_clusters_min, n_clusters_max + 1)
         self.k_neighbours = k_neighbours or range(k_neighbours_min, k_neighbours_max + 1)
@@ -40,16 +43,22 @@ class SDA:
 
     def apply(self, features: numpy.ndarray, df_st_edges: typing.Optional[pandas.DataFrame] = None):
         if self.scale: features = sklearn.preprocessing.StandardScaler().fit_transform(features)
-        print('Applying to {} samples with {} features each'.format(*features.shape))
+        if self.verbose: print('Applying to {} samples with {} features each'.format(*features.shape))
         if df_st_edges is None: df_st_edges = self.stage1(features)
         result = self.stage2(features, df_st_edges)
         return result, df_st_edges
 
     def stage1(self, features: numpy.ndarray) -> pandas.DataFrame:
         df_st_edges = [ ]
-        print('Running stage 1')
+        if self.verbose: print('Running stage 1')
         n_samples, _ = features.shape
-        for (n_clusters, k_neighbours) in tqdm.contrib.itertools.product(self.n_clusters, self.k_neighbours):
+
+        if self.verbose:
+            loop_over = tqdm.contrib.itertools.product(self.n_clusters, self.k_neighbours)
+        else:
+            loop_over = itertools.product(self.n_clusters, self.k_neighbours)
+
+        for (n_clusters, k_neighbours) in loop_over:
             diag_nums = numpy.arange(-k_neighbours, k_neighbours + 1)
             diag_values = numpy.ones_like(diag_nums)
             connectivity = scipy.sparse.diags(diag_values, diag_nums, (n_samples, n_samples), 'csr', numpy.int8)
@@ -69,11 +78,16 @@ class SDA:
     
     def stage2(self, features: numpy.ndarray, df_st_edges: pandas.DataFrame) -> pandas.DataFrame:
         result = [ ]
-        print('Running stage 2')
+        if self.verbose: print('Running stage 2')
         n_samples, _ = features.shape
 
         # Forming general list of stage edges
-        for (st_len, k_nb_max, n_cl, n_edge_clusters) in tqdm.contrib.itertools.product(self.len_st_thr, self.k_neighb_max_thr, self.n_cl_max_thr, self.n_edge_clusters):
+        if self.verbose:
+            loop_over = tqdm.contrib.itertools.product(self.len_st_thr, self.k_neighb_max_thr, self.n_cl_max_thr, self.n_edge_clusters)
+        else:
+            loop_over = itertools.product(self.len_st_thr, self.k_neighb_max_thr, self.n_cl_max_thr, self.n_edge_clusters)
+
+        for (st_len, k_nb_max, n_cl, n_edge_clusters) in loop_over:
             part_report = { 'St_len_min': st_len, 'K_nb_max': k_nb_max, 'N_cl_max': n_cl, 'N_stages': n_edge_clusters + 1 }
 
             # Clustering stage edges
