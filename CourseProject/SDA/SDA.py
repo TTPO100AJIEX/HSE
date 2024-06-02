@@ -95,12 +95,10 @@ class SDA:
     ) -> pandas.DataFrame:
         n_samples, _ = features.shape
         part_report = { 'St_len_min': st_len, 'K_nb_max': k_nb_max, 'N_cl_max': n_cl, 'N_stages': n_edge_clusters + 1 }
-
         # Clustering stage edges
         st_edges_all = form_edges_all(df_st_edges, st_len, k_nb_max, n_cl)
         kwargs = { 'n_clusters': n_edge_clusters, 'random_state': self.random_state, 'n_init': 10 }
         _, labels, _ = apply_cluster_method(st_edges_all, sklearn.cluster.KMeans, **kwargs)
-        
         # Form stages by centers of clusters (median, mean, mode)
         st_medians = []
         st_modes = []
