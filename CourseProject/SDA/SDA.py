@@ -20,6 +20,9 @@ class StageMerging(enum.Enum):
     SECOND = 2
     BOTH = 3
 
+def to_list(item: typing.Union[int, typing.List[int]]) -> typing.List[int]:
+    return item if isinstance(item, list) else [ item ]
+
 class SDA:
     def __init__(
         self,
@@ -34,7 +37,7 @@ class SDA:
         
         # stage 1 - merging
         st1_merging: StageMerging = StageMerging.BOTH,
-        st1_len_thresholds: typing.List[int] = [0, 20, 40, 60],
+        st1_len_thresholds: typing.Union[int, typing.List[int]] = [0, 20, 40, 60],
         st1_dist_rate: float = 0.3,
 
         # stage 2
@@ -44,7 +47,7 @@ class SDA:
         
         # stage 2 - merging
         st2_merging: StageMerging = StageMerging.BOTH,
-        st2_len_thresholds: typing.List[int] = [0, 20, 40, 60],
+        st2_len_thresholds: typing.Union[int, typing.List[int]] = [0, 20, 40, 60],
         st2_dist_rate: float = 0.2
     ):
         self.scale = scale
@@ -56,7 +59,7 @@ class SDA:
         self.k_neighbours = k_neighbours or range(k_neighbours_min, k_neighbours_max + 1)
         
         self.st1_merging = st1_merging
-        self.st1_len_thresholds = st1_len_thresholds
+        self.st1_len_thresholds = to_list(st1_len_thresholds)
         self.st1_dist_rate = st1_dist_rate
         
         self.n_cl_max_thr = n_cl_max_thr
@@ -64,7 +67,7 @@ class SDA:
         self.n_edge_clusters = n_edge_clusters or range(n_edge_clusters_min, n_edge_clusters_max + 1)
         
         self.st2_merging = st2_merging
-        self.st2_len_thresholds = st2_len_thresholds
+        self.st2_len_thresholds = to_list(st2_len_thresholds)
         self.st2_dist_rate = st2_dist_rate
 
     def apply(self, features: numpy.ndarray, df_st_edges: typing.Optional[pandas.DataFrame] = None):
@@ -147,7 +150,7 @@ class SDA:
         n_edge_clusters: int
     ) -> pandas.DataFrame:
         n_samples, _ = features.shape
-        part_report = { 'St_len_min': st_len, 'K_nb_max': k_nb_max, 'N_cl_max': n_cl, 'N_stages': n_edge_clusters + 1 }
+        part_report = { 'St_len_min': st_len, 'K_nb_max': k_nb_max, 'N_cl_max': n_cl }
         # Clustering stage edges
         st_edges_all = form_edges_all(df_st_edges, st_len, k_nb_max, n_cl)
         kwargs = { 'n_clusters': n_edge_clusters, 'random_state': self.random_state, 'n_init': 10 }
@@ -176,8 +179,11 @@ class SDA:
                 df_avg_metrics = calc_stage_metr_noground(features, st_edges).mean()
                 avg_metrics = df_avg_metrics.rename(lambda col: f'Avg-{col}').to_dict()
 
+                stage_lengths = st_edges[1:] - st_edges[:-1]
                 result.append({
-                    **part_report, 'Cl_cen': cl_center_type, 'St_edges': st_edges, 'Len_min': len_min,
+                    **part_report, 'Cl_cen': cl_center_type, 'Len_min': len_min, 'St_edges': st_edges,
+                    'N_stages': len(st_edges) - 1, 'Shortest_stage': numpy.min(stage_lengths),
+                    'Longest_stage': numpy.max(stage_lengths), 'Avg_stage_length': numpy.average(stage_lengths),
                     'Ward_dist': st_dist_ward, 'Cen_dist': st_dist_centr, **overall_metrics, **avg_metrics
                 })
         return result
