@@ -47,7 +47,7 @@ def stage2_iter(
         st_means.append(int(numpy.mean(st_cluster)))
 
     result = [ ]
-    for (st_centers, cl_center_type) in zip((st_medians, st_modes, st_means), ('Median', 'Mode', 'Mean')):
+    for (st_centers, cl_center_type) in zip((st_medians, st_modes, st_means), ('Median', 'Mode')):
         # Calculate and merge stages
         st_edges_centers = numpy.array([ 0 ] + sorted(st_centers) + [ features.shape[0] ])
         edges_lists = merge_stages(features, st_edges_centers, merging, len_thresholds, dist_rate)
