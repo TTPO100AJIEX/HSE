@@ -20,7 +20,7 @@ def merge_stages_1st_step_iter(features: numpy.ndarray, st_edges: numpy.ndarray)
     return numpy.delete(st_edges, ind + (st_dist_left > st_dist_right))
 
 def should_stop(st_edges: numpy.ndarray, len_threshold: int) -> bool:
-    return len(st_edges) < 3 or (st_edges[1:] - st_edges[:-1]).min() > len_threshold
+    return len(st_edges) <= 3 or (st_edges[1:] - st_edges[:-1]).min() > len_threshold
 
 # Merge small stages with neighbours
 def merge_stages_1st_step(features: numpy.ndarray, st_edges: numpy.ndarray, len_threshold: int) -> numpy.ndarray:

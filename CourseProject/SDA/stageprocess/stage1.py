@@ -61,18 +61,16 @@ def stage1(
     verbose: bool,
     calc_quality: bool
 ) -> pandas.DataFrame:
-    if verbose:
-        print('Running stage 1')
-        loop_over = tqdm.contrib.itertools.product(n_clusters, k_neighbours)
-    else:
-        loop_over = itertools.product(n_clusters, k_neighbours)
-        
-    df_st_edges = joblib.Parallel(n_jobs = n_jobs)(
+    loop = list(itertools.product(n_clusters, k_neighbours))
+    df_st_edges = joblib.Parallel(return_as = 'generator', n_jobs = n_jobs)(
         joblib.delayed(stage1_iter)(
             features,
             n_clust, k_neighb,
             merging, len_thresholds, dist_rate,
             calc_quality
-        ) for n_clust, k_neighb in loop_over
+        ) for n_clust, k_neighb in loop
     )
+
+    if verbose:
+        df_st_edges = tqdm.tqdm(df_st_edges, total = len(loop), desc = 'stage 1')
     return pandas.DataFrame(list(itertools.chain(*df_st_edges)))

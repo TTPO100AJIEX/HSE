@@ -7,7 +7,7 @@ def merge_stages_2nd_step_iter(features: numpy.ndarray, st_edges: numpy.ndarray)
 
 def should_stop(features: numpy.ndarray, st_edges: numpy.ndarray, dist_threshold: float) -> bool:
     st_dist_list = calc_stage_distances_ward(features, st_edges)
-    return len(st_edges) < 3 or st_dist_list.min() > dist_threshold * numpy.mean(st_dist_list)
+    return len(st_edges) <= 3 or st_dist_list.min() > dist_threshold * numpy.mean(st_dist_list)
 
 # Merge stages if length > n_stages
 def merge_stages_2nd_step(features: numpy.ndarray, st_edges: numpy.ndarray, dist_threshold: float) -> numpy.ndarray:

@@ -95,18 +95,16 @@ def stage2(
 ) -> pandas.DataFrame:
     st1_len_thresholds = set(df_st_edges['Len_min'])
 
-    if verbose:
-        print('Running stage 2')
-        loop_over = tqdm.contrib.itertools.product(st1_len_thresholds, k_neighb_max_thr, n_cl_max_thr, n_edge_clusters)
-    else:
-        loop_over = itertools.product(st1_len_thresholds, k_neighb_max_thr, n_cl_max_thr, n_edge_clusters)
-        
-    result = joblib.Parallel(n_jobs = n_jobs)(
+    loop = list(itertools.product(st1_len_thresholds, k_neighb_max_thr, n_cl_max_thr, n_edge_clusters))
+    result = joblib.Parallel(return_as = 'generator', n_jobs = n_jobs)(
         joblib.delayed(stage2_iter)(
             features, df_st_edges,
             st_len, k_nb_max, n_cl, n_edge_clusters,
             merging, len_thresholds, dist_rate,
             random_state, calc_quality
-        ) for st_len, k_nb_max, n_cl, n_edge_clusters in loop_over
+        ) for st_len, k_nb_max, n_cl, n_edge_clusters in loop
     )
+    
+    if verbose:
+        result = tqdm.tqdm(result, total = len(loop), desc = 'stage 2')
     return pandas.DataFrame(list(itertools.chain(*result)))
