@@ -15,27 +15,27 @@ class SDA:
         n_jobs: int = -1,
         scale: bool = False,
         verbose: bool = True,
-        random_state: int = 0,
+        random_state: int = 42,
 
         # stage 1
         st1_calc_quality: bool = True,
-        n_clusters_min: int = 2, n_clusters_max: int = 20, n_clusters: typing.Optional[typing.List[int]] = None,
-        k_neighbours_min: int = 20, k_neighbours_max: int = 50, k_neighbours: typing.Optional[typing.List[int]] = None,
+        n_clusters_min: typing.Optional[int] = 2, n_clusters_max: typing.Optional[int] = 20, n_clusters: typing.Optional[typing.Iterable[int]] = None,
+        k_neighbours_min: typing.Optional[int] = 20, k_neighbours_max: typing.Optional[int] = 50, k_neighbours: typing.Optional[typing.Iterable[int]] = None,
         
         # stage 1 - merging
         st1_merging: StageMerging = StageMerging.BOTH,
-        st1_len_thresholds: typing.Union[int, typing.List[int]] = [0, 20, 40, 60],
+        st1_len_thresholds: typing.Union[int, typing.Iterable[int]] = [0, 20, 40, 60],
         st1_dist_rate: float = 0.3,
 
         # stage 2
         st2_calc_quality: bool = True,
-        n_cl_max_thr: typing.List[int] = [10, 15, 20],
-        k_neighb_max_thr: typing.List[int] = [35, 40, 45, 50],
-        n_edge_clusters_min: int = 2, n_edge_clusters_max: int = 15, n_edge_clusters: typing.Optional[typing.List[int]] = None,
+        n_cl_max_thr: typing.Iterable[int] = [10, 15, 20],
+        k_neighb_max_thr: typing.Iterable[int] = [35, 40, 45, 50],
+        n_edge_clusters_min: int = 2, n_edge_clusters_max: int = 15, n_edge_clusters: typing.Optional[typing.Iterable[int]] = None,
         
         # stage 2 - merging
         st2_merging: StageMerging = StageMerging.BOTH,
-        st2_len_thresholds: typing.Union[int, typing.List[int]] = [40],
+        st2_len_thresholds: typing.Union[int, typing.Iterable[int]] = [40],
         st2_dist_rate: float = 0.2
     ):
         self.scale = scale

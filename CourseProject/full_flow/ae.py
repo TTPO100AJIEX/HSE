@@ -78,6 +78,7 @@ class AutoEncoder:
         set_random_seed(self.random_state)
         data = torch.Tensor(features).to(device)
         self.fit(data)
+        self.encoder.eval()
         return self.encoder(data).detach().cpu().numpy()
     
 features = pandas.read_feather(f"{subj}/{exp}/features/features.feather").to_numpy()
