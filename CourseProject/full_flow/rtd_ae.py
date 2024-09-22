@@ -28,7 +28,7 @@ class RTDAutoEncoder(BaseAutoEncoder):
         return loss
 
 features = numpy.load(f"{subj}/{exp}/qsda/best_features.npy")
-TRY_NUM_FEATURES = numpy.cumsum(numpy.array(range(0, 75, 3))) + 10
+TRY_NUM_FEATURES = list(range(25, 1000, 50))
 
 for n_components in TRY_NUM_FEATURES:
     folder = f"{subj}/{exp}/features_reduced/rtd_ae/{n_components}"
