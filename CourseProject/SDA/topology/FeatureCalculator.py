@@ -1,3 +1,6 @@
+import os
+import random
+
 import tqdm
 import numpy
 import pandas
@@ -13,6 +16,12 @@ def determine_filtering_epsilon(diagrams: numpy.ndarray, percentile: int):
 def apply_filtering(diagrams: numpy.ndarray, eps: float):
     filtering = gtda.diagrams.Filtering(epsilon = eps)
     return filtering.fit_transform(diagrams)
+
+
+def set_random_seed(seed: int):
+    random.seed(seed)
+    numpy.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
 
 
 AMPLITUDE_METRICS = [
@@ -40,9 +49,11 @@ class FeatureCalculator:
     def __init__(
         self,
         n_jobs: int = -1,
+        random_state: int = 42,
         filtering_percentile: int = 10
     ):
         self.n_jobs = n_jobs
+        self.random_state = random_state
         self.filtering_percentile = filtering_percentile
 
 
@@ -162,6 +173,8 @@ class FeatureCalculator:
         
 
     def calc_features(self, diagrams: numpy.ndarray, prefix: str = "") -> pandas.DataFrame:
+        set_random_seed(self.random_state)
+        
         eps = determine_filtering_epsilon(diagrams, self.filtering_percentile)
         diagrams = apply_filtering(diagrams, eps)
         print('Filtered diagrams:', diagrams.shape)

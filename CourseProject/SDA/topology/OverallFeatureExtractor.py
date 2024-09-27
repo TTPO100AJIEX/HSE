@@ -1,4 +1,5 @@
 import os
+import random
 import typing
 
 import numpy
@@ -8,6 +9,11 @@ import gtda.homology
 import gtda.time_series
 
 from .FeatureCalculator import FeatureCalculator
+
+def set_random_seed(seed: int):
+    random.seed(seed)
+    numpy.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
 
 class OverallFeatureExtractor:
     def __init__(
@@ -22,6 +28,7 @@ class OverallFeatureExtractor:
         filtering_percentile: int = 10,
 
         n_jobs: int = -1,
+        random_state: int = 42,
         print_obj: typing.Optional[int] = 0,
         folder: typing.Optional[str] = None
     ):
@@ -35,6 +42,7 @@ class OverallFeatureExtractor:
 
         self.n_jobs = n_jobs
         self.print_obj = print_obj
+        self.random_state = random_state
         
         self.diagrams_file = f'{folder}/diagrams.npy' if folder else None
         self.features_file = f"{folder}/features.feather" if folder else None
@@ -96,6 +104,8 @@ class OverallFeatureExtractor:
 
 
     def extract(self, data: numpy.ndarray) -> pandas.DataFrame:
+        set_random_seed(self.random_state)
+
         if self.features_file is not None and os.path.exists(self.features_file):
             return self.calculate_features(None)
         
