@@ -1,4 +1,4 @@
-subj = "Subj1"
+subj = "Subj2"
 exp = "exp_full_flow"
 
 import os
