@@ -15,7 +15,6 @@ import SDA.clustquality
 import SDA.stageprocess
 
 subjs = range(1, 31, 1)
-subjs = [ 3 ]
 
 for subj_num in subjs:
     subj = f"phase2/Subj{subj_num}"
@@ -30,7 +29,6 @@ for subj_num in subjs:
     N_STAGES = int(numpy.loadtxt(f"{subj}/src/n_stages.txt"))
     print('Stages: ', N_STAGES)
 
-    epochs.average().plot_joint().savefig(f"{subj}/{exp}/eeg.svg")
     data = epochs.get_data(copy = True)
     print(data.shape)
 
