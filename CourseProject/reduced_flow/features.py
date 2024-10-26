@@ -15,7 +15,6 @@ import SDA.clustquality
 import SDA.stageprocess
 
 subjs = range(1, 31, 1)
-subjs = [ 3 ]
 
 for subj_num in subjs:
     subj = f"phase2/Subj{subj_num}"
@@ -30,7 +29,6 @@ for subj_num in subjs:
     N_STAGES = int(numpy.loadtxt(f"{subj}/src/n_stages.txt"))
     print('Stages: ', N_STAGES)
 
-    epochs.average().plot_joint().savefig(f"{subj}/{exp}/eeg.svg")
     data = epochs.get_data(copy = True)
     print(data.shape)
 
@@ -63,17 +61,4 @@ for subj_num in subjs:
     features.to_feather(f"{subj}/{exp}/features/features.feather")
 
     numpy.save(f"{subj}/{exp}/features/features.npy", features.to_numpy())
-
-    os.makedirs(f"{subj}/{exp}/qsda", exist_ok = True)
-    qsda = SDA.QSDA(
-        n_jobs = 1,
-        qsda_n_jobs = -1,
-        scores_folder = f"{subj}/{exp}/qsda",
-
-        threshold = 1000,
-        min_unique_values = UNIQUE_VALUES_THRESHOLD
-    )
-    best_features, scores = qsda.select(features)
-
-    best_features.to_feather(f"{subj}/{exp}/qsda/best_features.feather")
-    numpy.save(f"{subj}/{exp}/qsda/best_features.npy", features.to_numpy())
+    print(features.shape)

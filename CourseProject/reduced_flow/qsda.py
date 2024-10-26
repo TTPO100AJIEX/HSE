@@ -70,7 +70,7 @@ for subj_num in subjs:
         qsda_n_jobs = -1,
         scores_folder = f"{subj}/{exp}/qsda",
 
-        threshold = 1000,
+        threshold = 1150,
         min_unique_values = UNIQUE_VALUES_THRESHOLD
     )
     best_features, scores = qsda.select(features)
