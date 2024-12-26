@@ -1,11 +1,9 @@
 import os
 import random
+import typing
 
 import tqdm
 import numpy
-import pandas
-import joblib
-import scipy.stats
 import gtda.curves
 import gtda.diagrams
 
@@ -46,7 +44,12 @@ AMPLITUDE_METRICS = [
     { "id": "heat-1-1.6", "metric": "heat", "metric_params": { "p": 1, "sigma": 1.6, 'n_bins': -1 } },
     { "id": "heat-1-3.2", "metric": "heat", "metric_params": { "p": 1, "sigma": 3.2, 'n_bins': -1 } },
     { "id": "heat-2-1.6", "metric": "heat", "metric_params": { "p": 2, "sigma": 1.6, 'n_bins': -1 } },
-    { "id": "heat-2-3.2", "metric": "heat", "metric_params": { "p": 2, "sigma": 3.2, 'n_bins': -1 } }
+    { "id": "heat-2-3.2", "metric": "heat", "metric_params": { "p": 2, "sigma": 3.2, 'n_bins': -1 } },
+
+    { "id": "persistence_image-1-1.6", "metric": "persistence_image", "metric_params": { "p": 1, "sigma": 1.6, 'n_bins': -1 } },
+    { "id": "persistence_image-1-3.2", "metric": "persistence_image", "metric_params": { "p": 1, "sigma": 3.2, 'n_bins': -1 } },
+    { "id": "persistence_image-2-1.6", "metric": "persistence_image", "metric_params": { "p": 2, "sigma": 1.6, 'n_bins': -1 } },
+    { "id": "persistence_image-2-3.2", "metric": "persistence_image", "metric_params": { "p": 2, "sigma": 3.2, 'n_bins': -1 } }
 ]
 
 class FeatureCalculator:
@@ -63,142 +66,114 @@ class FeatureCalculator:
         self.filtering_percentile = filtering_percentile
 
 
-    def calc_stats(self, data: numpy.ndarray, prefix: str = "") -> pandas.DataFrame:
-        assert len(data.shape) == 1
-        if data.shape == (0,): data = numpy.array([ 0 ])
+    def calc_stats_bulk(self, data: numpy.ndarray) -> numpy.ndarray:
+        return numpy.ma.hstack([
+            numpy.ma.max(data, axis = 1, keepdims = True),
+            numpy.ma.mean(data, axis = 1, keepdims = True),
+            numpy.ma.std(data, axis = 1, keepdims = True),
+            numpy.ma.sum(data, axis = 1, keepdims = True),
+            numpy.ma.median(data, axis = 1, keepdims = True),
+            numpy.ma.sqrt(numpy.ma.sum(data ** 2, axis = 1, keepdims = True))
+        ]).filled(0)
 
-        stats = numpy.array([
-            numpy.max(data), numpy.mean(data), numpy.std(data), numpy.sum(data),
-            numpy.percentile(data, 25), numpy.median(data), numpy.percentile(data, 75),
-            scipy.stats.kurtosis(data), scipy.stats.skew(data), numpy.linalg.norm(data, ord = 1), numpy.linalg.norm(data, ord = 2)
-        ])
-        names = [ "max", "mean", "std", "sum", "percentile-25", "median", "percentile-75", "kurtosis", "skew", "norm-1", "norm-2" ]
-
-        return pandas.DataFrame([ numpy.nan_to_num(stats) ], columns = [ f"{prefix} {name}" for name in names ])
-
-    def calc_batch_stats(self, data: numpy.ndarray, homology_dimensions: numpy.ndarray, prefix: str = "") -> pandas.DataFrame:
-        def process_batch(batch: numpy.ndarray) -> pandas.DataFrame:
-            features = [ ]
-            for dim, vec in zip(homology_dimensions, batch):
-                features.append(self.calc_stats(vec, prefix = f'{prefix} dim-{dim}'))
-            return pandas.concat(features, axis = 1)
-
-        features = joblib.Parallel(return_as = 'generator', n_jobs = self.n_jobs)(
-            joblib.delayed(process_batch)(batch) for batch in data
-        )
-        if self.verbose:
-            features = tqdm.tqdm(features, total = len(data), desc = prefix)
-        return pandas.concat(features, axis = 0)
+    def calc_batch_stats(self, data: numpy.ndarray, homology_dimensions: typing.Iterable[int]) -> numpy.ndarray:
+        return numpy.hstack([ self.calc_stats_bulk(data[:, d, :]) for d in homology_dimensions ])
     
 
-    def calc_betti_features(self, diagrams: numpy.ndarray, prefix: str = "") -> pandas.DataFrame:
+    def calc_betti_features(self, diagrams: numpy.ndarray) -> numpy.ndarray:
         if self.verbose:
             print('Calculating Betti features')
-        betti_curve = gtda.diagrams.BettiCurve(n_bins = 100, n_jobs = self.n_jobs)
-        betti_derivative = gtda.curves.Derivative()
-        betti_curves = betti_curve.fit_transform(diagrams)
-        betti_curves = betti_derivative.fit_transform(betti_curves)
-        return self.calc_batch_stats(betti_curves, betti_curve.homology_dimensions_, f'{prefix} betti')
 
-    def calc_landscape_features(self, diagrams: numpy.ndarray, prefix: str = "") -> pandas.DataFrame:
+        betti_curve = gtda.diagrams.BettiCurve(n_bins = 100, n_jobs = self.n_jobs)
+        betti_curves = betti_curve.fit_transform(diagrams)
+
+        betti_derivative = gtda.curves.Derivative()
+        betti_curves = betti_derivative.fit_transform(betti_curves)
+        
+        return self.calc_batch_stats(betti_curves, betti_curve.homology_dimensions_)
+        
+    def calc_landscape_features(self, diagrams: numpy.ndarray) -> numpy.ndarray:
         if self.verbose:
             print('Calculating landscape features')
         persistence_landscape = gtda.diagrams.PersistenceLandscape(n_layers = 1, n_bins = 100, n_jobs = self.n_jobs)
         landscape = persistence_landscape.fit_transform(diagrams)
-        return self.calc_batch_stats(landscape, persistence_landscape.homology_dimensions_, f'{prefix} landscape')
+        return self.calc_batch_stats(landscape, persistence_landscape.homology_dimensions_)
 
-    def calc_silhouette_features(self, diagrams: numpy.ndarray, prefix: str = "", powers: int = [ 1, 2 ]) -> pandas.DataFrame:
+    def calc_silhouette_features(self, diagrams: numpy.ndarray, powers: typing.Union[int, typing.List[int]] = [ 1, 2 ]) -> numpy.ndarray:
         if isinstance(powers, int):
             silhouette = gtda.diagrams.Silhouette(power = powers, n_bins = 100, n_jobs = self.n_jobs)
             silhouettes = silhouette.fit_transform(diagrams)
-            return self.calc_batch_stats(silhouettes, silhouette.homology_dimensions_, f'{prefix} silhouette-{powers}')
+            return self.calc_batch_stats(silhouettes, silhouette.homology_dimensions_)
         else:
             if self.verbose:
                 print('Calculating silhouette features')
-            features = [ ]
-            for power in powers:
-                features.append(self.calc_silhouette_features(diagrams, prefix, power))
-            return pandas.concat(features, axis = 1)
-    
+            return numpy.hstack([ self.calc_silhouette_features(diagrams, power) for power in powers ])
 
-    def calc_entropy_features(self, diagrams: numpy.ndarray, prefix: str = "") -> pandas.DataFrame:
+    def calc_entropy_features(self, diagrams: numpy.ndarray) -> numpy.ndarray:
         if self.verbose:
             print('Calculating entropy features')
         entropy = gtda.diagrams.PersistenceEntropy(normalize = True, nan_fill_value = 0, n_jobs = self.n_jobs)
-        features = entropy.fit_transform(diagrams)
-        names = [ f'{prefix} entropy dim-{dim}' for dim in entropy.homology_dimensions_ ]
-        return pandas.DataFrame(features, columns = names)
+        return entropy.fit_transform(diagrams)
     
-    def calc_number_of_points_features(self, diagrams: numpy.ndarray, prefix: str = "") -> pandas.DataFrame:
+    def calc_number_of_points_features(self, diagrams: numpy.ndarray) -> numpy.ndarray:
         if self.verbose:
             print('Calculating number of points features')
         number_of_points = gtda.diagrams.NumberOfPoints(n_jobs = self.n_jobs)
-        features = number_of_points.fit_transform(diagrams)
-        names = [ f'{prefix} numberofpoints dim-{dim}' for dim in number_of_points.homology_dimensions_ ]
-        return pandas.DataFrame(features, columns = names)
+        return number_of_points.fit_transform(diagrams)
     
-    def calc_amplitude_features(self, diagrams: numpy.ndarray, prefix: str = "", **metric) -> pandas.DataFrame:
+    def calc_amplitude_features(self, diagrams: numpy.ndarray, **metric) -> numpy.ndarray:
         if len(metric) == 0:
-            features = [ ]
-            metrics = AMPLITUDE_METRICS
-            if self.verbose:
-                print('Calculating amplitude features')
-                metrics = tqdm.tqdm(metrics, desc = f'{prefix} amplitudes')
-            for metric in metrics:
-                features.append(self.calc_amplitude_features(diagrams, prefix, **metric))
-            return pandas.concat(features, axis = 1)
-        else:
-            metric_params = metric['metric_params'].copy()
-            if metric_params.get('n_bins', None) == -1:
-                metric_params['n_bins'] = 100
-            amplitude = gtda.diagrams.Amplitude(metric = metric['metric'], metric_params = metric_params, n_jobs = self.n_jobs)
-            features = amplitude.fit_transform(diagrams)
-            return pandas.concat([
-                pandas.DataFrame(features, columns = [ f'{prefix} amplitude-{metric["id"]} dim-{dim}' for dim in amplitude.homology_dimensions_ ]),
-                pandas.DataFrame(numpy.linalg.norm(features, axis = 1, ord = 1).reshape(-1, 1), columns = [ f'{prefix} amplitude-{metric["id"]} norm-1' ]),
-                pandas.DataFrame(numpy.linalg.norm(features, axis = 1, ord = 2).reshape(-1, 1), columns = [ f'{prefix} amplitude-{metric["id"]} norm-2' ])
-            ], axis = 1)
-    
-    def calc_lifetime_features(self, diagrams: numpy.ndarray, prefix: str = "", eps: float = 0.0) -> pandas.DataFrame:
-        if len(diagrams.shape) == 3:
-            if self.verbose:
-                print('Calculating lifetime features')
-            features = joblib.Parallel(return_as = 'generator', n_jobs = self.n_jobs)(
-                joblib.delayed(self.calc_lifetime_features)(diag, prefix, eps)
-                for diag in diagrams
-            )
-            if self.verbose:
-                features = tqdm.tqdm(features, total = len(diagrams), desc = f'{prefix} lifetime')
-            return pandas.concat(features, axis = 0)
-
-        birth, death, dim = diagrams[:, 0], diagrams[:, 1], diagrams[:, 2]
-        life = death - birth
+            metrics = tqdm.tqdm(AMPLITUDE_METRICS, desc = 'amplitudes') if self.verbose else AMPLITUDE_METRICS
+            return numpy.hstack([ self.calc_amplitude_features(diagrams, **metric) for metric in metrics ])
         
-        birth, death, dim = birth[life >= eps], death[life >= eps], dim[life >= eps]
+        metric_params = metric['metric_params'].copy()
+        if metric_params.get('n_bins', None) == -1:
+            metric_params['n_bins'] = 100
+
+        amplitude = gtda.diagrams.Amplitude(metric = metric['metric'], metric_params = metric_params, n_jobs = self.n_jobs)
+        features = amplitude.fit_transform(diagrams)
+        return numpy.hstack([
+            features,
+            numpy.linalg.norm(features, axis = 1, ord = 1).reshape(-1, 1),
+            numpy.linalg.norm(features, axis = 1, ord = 2).reshape(-1, 1),
+        ])
+
+    def calc_lifetime_features(self, diagrams: numpy.ndarray, eps: float = 0.0) -> numpy.ndarray:
+        if self.verbose:
+            print('Calculating lifetime features')
+
+        birth, death, dim = diagrams[:, :, 0], diagrams[:, :, 1], diagrams[:, :, 2]
         bd2 = (birth + death) / 2.0
         life = death - birth
-
-        bd2_features = [ self.calc_stats(bd2, f'{prefix} bd2 all') ]
-        life_features = [ self.calc_stats(life, f'{prefix} life all') ]
-        for d in numpy.unique(diagrams[:, 2]).astype(int):
-            bd2_features.append(self.calc_stats(bd2[dim == d], f'{prefix} bd2 dim-{d}'))
-            life_features.append(self.calc_stats(life[dim == d], f'{prefix} life dim-{d}'))
-        return pandas.concat([ *life_features, *bd2_features ], axis = 1)
         
+        mask = (life < eps)
+        bd2 = numpy.ma.array(bd2, mask = mask)
+        life = numpy.ma.array(life, mask = mask)
 
-    def calc_features(self, diagrams: numpy.ndarray, prefix: str = "") -> pandas.DataFrame:
+        bd2_features = [ self.calc_stats_bulk(bd2) ]
+        life_features = [ self.calc_stats_bulk(life) ]
+        for d in range(0, int(numpy.max(dim)) + 1):
+            mask = (dim != d)
+            dim_bd2 = numpy.ma.array(bd2, mask = mask)
+            dim_life = numpy.ma.array(life, mask = mask)
+            bd2_features.append(self.calc_stats_bulk(dim_bd2))
+            life_features.append(self.calc_stats_bulk(dim_life))
+
+        return numpy.hstack([ *life_features, *bd2_features ])
+
+    def calc_features(self, diagrams: numpy.ndarray) -> numpy.ndarray:
         set_random_seed(self.random_state)
         
         eps = determine_filtering_epsilon(diagrams, self.filtering_percentile)
         diagrams = apply_filtering(diagrams, eps)
         if self.verbose:
             print('Filtered diagrams:', diagrams.shape)
-        return pandas.concat([
-           self.calc_betti_features           (diagrams, prefix     ).reset_index(drop = True),
-           self.calc_landscape_features       (diagrams, prefix     ).reset_index(drop = True),
-           self.calc_silhouette_features      (diagrams, prefix     ).reset_index(drop = True),
-           self.calc_entropy_features         (diagrams, prefix     ).reset_index(drop = True),
-           self.calc_number_of_points_features(diagrams, prefix     ).reset_index(drop = True),
-           self.calc_amplitude_features       (diagrams, prefix     ).reset_index(drop = True),
-           self.calc_lifetime_features        (diagrams, prefix, eps).reset_index(drop = True)
-        ], axis = 1)
+        return numpy.hstack([
+           self.calc_betti_features           (diagrams     ),
+           self.calc_landscape_features       (diagrams     ),
+           self.calc_silhouette_features      (diagrams     ),
+           self.calc_entropy_features         (diagrams     ),
+           self.calc_number_of_points_features(diagrams     ),
+           self.calc_amplitude_features       (diagrams     ),
+           self.calc_lifetime_features        (diagrams, eps)
+        ])
