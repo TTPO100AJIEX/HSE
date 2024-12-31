@@ -1,2 +1,3 @@
 from .FeatureCalculator import FeatureCalculator
-from .GreyscaleImageToFiltration import GreyscaleImageToFiltration
+from .GreyscaleToFiltrations import GreyscaleToFiltrations
+from .GreyscaleToPointClouds import GreyscaleToPointClouds

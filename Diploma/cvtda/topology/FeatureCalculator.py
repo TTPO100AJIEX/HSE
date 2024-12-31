@@ -75,7 +75,7 @@ class FeatureCalculator(sklearn.base.TransformerMixin):
         self.logger_.print('Fitting the persistence landscape')
         self.persistence_landscape_.fit(diagrams)
         
-        for silhouette in self.logger_.progress_bar(self.silhouettes_, desc = 'Fitting the silhouettes'):
+        for silhouette in self.logger_.loop(self.silhouettes_, desc = 'Fitting the silhouettes'):
             silhouette.fit(diagrams)
         
         self.logger_.print('Fitting the persistence entropy')
@@ -84,17 +84,17 @@ class FeatureCalculator(sklearn.base.TransformerMixin):
         self.logger_.print('Fitting the number of points')
         self.number_of_points_.fit(diagrams)
 
-        for heat_kernel in self.logger_.progress_bar(self.heat_kernels_, desc = 'Fitting the heat kernels'):
+        for heat_kernel in self.logger_.loop(self.heat_kernels_, desc = 'Fitting the heat kernels'):
             heat_kernel.fit(diagrams)
             
-        for persistence_image in self.logger_.progress_bar(self.persistence_images_, desc = 'Fitting the persistence images'):
+        for persistence_image in self.logger_.loop(self.persistence_images_, desc = 'Fitting the persistence images'):
             persistence_image.fit(diagrams)
 
         self.logger_.print('Fitting complete')
         self.fitted_ = True
         return self
     
-    def transform(self, diagrams: numpy.ndarray):
+    def transform(self, diagrams: numpy.ndarray) -> numpy.ndarray:
         assert self.fitted_ is True
         set_random_seed(self.random_state_)
         
@@ -117,7 +117,7 @@ class FeatureCalculator(sklearn.base.TransformerMixin):
             for batch_start in loop
         )
 
-        collector = self.logger_.progress_bar(features, total = len(loop), desc = 'Batch')
+        collector = self.logger_.loop(features, total = len(loop), desc = 'Batch')
         return numpy.vstack(list(collector))
 
 
@@ -186,7 +186,7 @@ class FeatureCalculator(sklearn.base.TransformerMixin):
         return self.persistence_entropy_.transform(diagrams)
     
     def calc_number_of_points_features_(self, diagrams: numpy.ndarray) -> numpy.ndarray:
-        return self.number_of_points_.fit_transform(diagrams)
+        return self.number_of_points_.transform(diagrams)
     
     def calc_heat_features_(self, diagrams: numpy.ndarray) -> numpy.ndarray:
         flat_shape = (len(diagrams), len(self.homology_dimensions_), -1)

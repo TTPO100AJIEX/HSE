@@ -9,5 +9,18 @@ class BaseLogger(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def progress_bar(self, data: typing.Iterable[T], total: int = None, desc: typing.Optional[str] = None) -> typing.Iterable[T]:
+    def loop(
+        self,
+        data: typing.Iterable[T],
+        total: int = None,
+        desc: typing.Optional[str] = None
+    ) -> typing.Iterable[T]:
+        pass
+
+    @abc.abstractmethod
+    def zip(
+        self,
+        *iterables, 
+        desc: typing.Optional[str] = None
+    ):
         pass

@@ -8,5 +8,17 @@ class DevNullLogger(BaseLogger):
     def print(self, data: T) -> None:
         pass
 
-    def progress_bar(self, data: typing.Iterable[T], total: int = None, desc: typing.Optional[str] = None) -> typing.Iterable[T]:
+    def progress_bar(
+        self,
+        data: typing.Iterable[T],
+        total: int = None,
+        desc: typing.Optional[str] = None
+    ) -> typing.Iterable[T]:
         return data
+
+    def zip(
+        self,
+        *iterables, 
+        desc: typing.Optional[str] = None
+    ):
+        return zip(*iterables)

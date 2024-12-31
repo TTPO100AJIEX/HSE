@@ -1,6 +1,7 @@
 import typing
 
 import tqdm
+import tqdm.contrib
 
 from .base import BaseLogger
 
@@ -13,5 +14,17 @@ class CLILogger(BaseLogger):
     def print(self, data: T) -> None:
         print(data)
 
-    def progress_bar(self, data: typing.Iterable[T], total: int = None, desc: typing.Optional[str] = None) -> typing.Iterable[T]:
+    def loop(
+        self,
+        data: typing.Iterable[T],
+        total: int = None,
+        desc: typing.Optional[str] = None
+    ) -> typing.Iterable[T]:
         return tqdm.tqdm(data, total = total, desc = desc)
+
+    def zip(
+        self,
+        *iterables, 
+        desc: typing.Optional[str] = None
+    ):
+        return tqdm.contrib.tzip(*iterables, desc = desc)
