@@ -95,7 +95,7 @@ class GreyscaleToFiltrations(sklearn.base.TransformerMixin):
         return self
     
     def transform(self, images: numpy.ndarray) -> numpy.ndarray:
-        assert self.fitted_ is True
+        assert self.fitted_ is True, 'fit() must be called before transform()'
         set_random_seed(self.random_state_)
         
         images_bin = self.binarizer_.transform(images)
