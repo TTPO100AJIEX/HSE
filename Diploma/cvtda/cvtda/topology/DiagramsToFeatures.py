@@ -10,7 +10,7 @@ import numpy.ma.core
 from cvtda.utils import set_random_seed
 from cvtda.logging import DevNullLogger, CLILogger
 
-class FeatureCalculator(sklearn.base.TransformerMixin):
+class DiagramsToFeatures(sklearn.base.TransformerMixin):
     def __init__(
         self,
         n_jobs: int = -1,

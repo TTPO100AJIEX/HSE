@@ -22,3 +22,6 @@ class DevNullLogger(BaseLogger):
         desc: typing.Optional[str] = None
     ):
         return zip(*iterables)
+
+    def set_pbar_postfix(self, pbar: typing.Any, data: dict):
+        pass

@@ -15,7 +15,7 @@ class GreyscaleToPointClouds(sklearn.base.TransformerMixin):
         random_state: int = 42,
 
         binarizer_threshold: float = 0.1,
-        inverted_binarizer_threshold: float = 0.1,
+        inverted_binarizer_threshold: float = 0.9,
     ):
         self.fitted_ = False
         self.n_jobs_ = n_jobs
@@ -68,16 +68,17 @@ class GreyscaleToPointClouds(sklearn.base.TransformerMixin):
             images, self.converter_theshold_,
             desc = 'Converting images to point clouds'
         )
-        inv_point_cloud = self.make_point_clouds_(
-            images_inv, self.converter_theshold_,
-            desc = 'Converting inverted images to point clouds'
-        )
+        # inv_point_cloud = self.make_point_clouds_(
+        #     images_inv, self.inverted_converter_theshold_,
+        #     desc = 'Converting inverted images to point clouds'
+        # )
 
         self.logger_.print('Converting binary to point clouds')
         bin_point_cloud = self.image_to_point_cloud_.transform(images_bin)
-        inverted_bin_point_cloud = self.inverted_image_to_point_cloud_.transform(images_inv_bin)
+        # inverted_bin_point_cloud = self.inverted_image_to_point_cloud_.transform(images_inv_bin)
 
-        point_clouds = (point_cloud, inv_point_cloud, bin_point_cloud, inverted_bin_point_cloud)
+        # point_clouds = (point_cloud, inv_point_cloud, bin_point_cloud, inverted_bin_point_cloud)
+        point_clouds = (point_cloud, bin_point_cloud)
         return list(self.logger_.zip(*point_clouds, desc = 'Combining the point clouds'))
     
 

@@ -28,3 +28,6 @@ class CLILogger(BaseLogger):
         desc: typing.Optional[str] = None
     ):
         return tqdm.contrib.tzip(*iterables, desc = desc)
+
+    def set_pbar_postfix(self, pbar: typing.Any, data: dict):
+        pbar.set_postfix(data)

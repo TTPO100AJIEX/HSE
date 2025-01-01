@@ -1,3 +1,5 @@
-from .FeatureCalculator import FeatureCalculator
+from .DiagramsToFeatures import DiagramsToFeatures
+from .FiltrationsToDiagrams import FiltrationsToDiagrams
 from .GreyscaleToFiltrations import GreyscaleToFiltrations
 from .GreyscaleToPointClouds import GreyscaleToPointClouds
+from .PointCloudsToDiagrams import PointCloudsToDiagrams

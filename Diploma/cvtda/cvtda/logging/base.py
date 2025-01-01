@@ -24,3 +24,7 @@ class BaseLogger(abc.ABC):
         desc: typing.Optional[str] = None
     ):
         pass
+
+    @abc.abstractmethod
+    def set_pbar_postfix(self, pbar: typing.Any, data: dict):
+        pass
