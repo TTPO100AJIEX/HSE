@@ -8,7 +8,7 @@ class DevNullLogger(BaseLogger):
     def print(self, data: T) -> None:
         pass
 
-    def progress_bar(
+    def loop(
         self,
         data: typing.Iterable[T],
         total: int = None,

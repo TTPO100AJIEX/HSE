@@ -70,7 +70,7 @@ def assert_iterables_equal(lhs, rhs):
     ]
 )
 def test_there_and_back(fit_data, transform_data, inverse_transform_data):
-    flatten_batch = cvtda.utils.FlattenBatch().fit(fit_data['input'])
+    flatten_batch = cvtda.utils.flatten_batch().fit(fit_data['input'])
     assert_iterables_equal(
         flatten_batch.transform(transform_data['input']),
         transform_data['flat']
@@ -90,7 +90,7 @@ def test_there_and_back(fit_data, transform_data, inverse_transform_data):
     ]
 )
 def test_fit_bad_data(data, expected_error):
-    flatten_batch = cvtda.utils.FlattenBatch()
+    flatten_batch = cvtda.utils.flatten_batch()
     with pytest.raises(expected_error):
         flatten_batch.fit(data)
 
@@ -105,7 +105,7 @@ def test_fit_bad_data(data, expected_error):
     ]
 )
 def test_transform_bad_data(data, expected_error):
-    flatten_batch = cvtda.utils.FlattenBatch().fit(numpy_data()['input'])
+    flatten_batch = cvtda.utils.flatten_batch().fit(numpy_data()['input'])
     with pytest.raises(expected_error):
         flatten_batch.transform(data)
 
@@ -118,18 +118,18 @@ def test_transform_bad_data(data, expected_error):
     ]
 )
 def test_inverse_transform_bad_data(data, expected_error):
-    flatten_batch = cvtda.utils.FlattenBatch().fit(numpy_data()['input'])
+    flatten_batch = cvtda.utils.flatten_batch().fit(numpy_data()['input'])
     with pytest.raises(expected_error):
         flatten_batch.inverse_transform(data)
 
 
 def test_transform_before_fit():
-    flatten_batch = cvtda.utils.FlattenBatch()
+    flatten_batch = cvtda.utils.flatten_batch()
     with pytest.raises(AssertionError):
         flatten_batch.transform(numpy_data()['input'])
 
 
 def test_inverse_transform_before_fit():
-    flatten_batch = cvtda.utils.FlattenBatch()
+    flatten_batch = cvtda.utils.flatten_batch()
     with pytest.raises(AssertionError):
         flatten_batch.inverse_transform(numpy_data()['flat'])

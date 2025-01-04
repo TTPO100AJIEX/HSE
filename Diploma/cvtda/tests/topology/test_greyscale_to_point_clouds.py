@@ -5,7 +5,7 @@ import cvtda.topology
 
 
 def test_fit_transform():
-    greyscale_to_pointclouds = cvtda.topology.GreyscaleToPointClouds()
+    greyscale_to_pointclouds = cvtda.topology.greyscale_to_point_clouds()
     output = greyscale_to_pointclouds.fit_transform(numpy.random.rand(10, 28, 28))
     assert len(output) == 10
     assert numpy.all([
@@ -30,12 +30,12 @@ def test_handmade_pointcloud():
         [ 3, 1, 240 ]
     ])
 
-    greyscale_to_pointclouds = cvtda.topology.GreyscaleToPointClouds()
+    greyscale_to_pointclouds = cvtda.topology.greyscale_to_point_clouds()
     output = greyscale_to_pointclouds.fit_transform(numpy.array([ input ]))
     assert numpy.all(output[0][0] == expected_output)
 
 
 def test_transform_before_fit():
-    greyscale_to_pointclouds = cvtda.topology.GreyscaleToPointClouds()
+    greyscale_to_pointclouds = cvtda.topology.greyscale_to_point_clouds()
     with pytest.raises(AssertionError):
         greyscale_to_pointclouds.transform(numpy.random.rand(10, 28, 28))

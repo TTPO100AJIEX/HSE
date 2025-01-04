@@ -1,4 +1,3 @@
-import tqdm
 import numpy
 import pandas
 import joblib

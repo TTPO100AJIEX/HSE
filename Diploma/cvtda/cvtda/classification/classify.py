@@ -10,7 +10,8 @@ import sklearn.neighbors
 import sklearn.preprocessing
 import matplotlib.pyplot as plt
 
-import cvtda.classification
+from cvtda.classification.nn_classifier import NNClassifier
+from cvtda.classification.estimate_quality import estimate_quality
 
 def classify(
     train_features: numpy.ndarray,
@@ -21,14 +22,14 @@ def classify(
     n_jobs: int = -1,
     random_state: int = 42,
 
-    knn_neighbours: int = 10,
+    knn_neighbours: int = 50,
 
     random_forest_estimators: int = 100,
 
     nn_device: torch.device = torch.device('cuda'),
-    nn_batch_size: int = 1024,
-    nn_learning_rate: float = 5e-4,
-    nn_epochs: int = 50,
+    nn_batch_size: int = 128,
+    nn_learning_rate: float = 1e-4,
+    nn_epochs: int = 25,
 
     grad_boost_max_iter: int = 20,
     grad_boost_max_depth: int = 4,
@@ -45,11 +46,14 @@ def classify(
     def classify_one(classifier: sklearn.base.ClassifierMixin, ax: plt.Axes):
         print(f'Fitting {classifier}')
         ax.set_title(type(classifier).__name__)
-        classifier.fit(train_features, train_labels)
+        if type(classifier) == NNClassifier:
+            classifier.fit(train_features, train_labels, test_features, test_labels)
+        else:
+            classifier.fit(train_features, train_labels)
         y_pred_proba = classifier.predict_proba(test_features)
         return {
             'classifier': type(classifier).__name__,
-            **cvtda.classification.estimate_quality(y_pred_proba, test_labels, ax)
+            **estimate_quality(y_pred_proba, test_labels, ax)
         }
 
     classifiers = [
@@ -62,7 +66,7 @@ def classify(
             random_state = random_state,
             n_jobs = n_jobs
         ),
-        cvtda.classification.NNClassifier(
+        NNClassifier(
             random_state = random_state,
             device = nn_device,
             batch_size = nn_batch_size,
