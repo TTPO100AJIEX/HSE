@@ -26,7 +26,7 @@ class PointCloudsToDiagrams(sklearn.base.TransformerMixin):
 
         self.persistence_ = gtda.homology.VietorisRipsPersistence(
             metric = metric,
-            homology_dimensions=homology_dimensions,
+            homology_dimensions = homology_dimensions,
             coeff = coeff,
             n_jobs = n_jobs
         )

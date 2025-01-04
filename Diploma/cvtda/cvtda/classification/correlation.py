@@ -1,5 +1,6 @@
 import numpy
 import sklearn.base
+import matplotlib.pyplot as plt
 
 from cvtda.logging import DevNullLogger, CLILogger
 
@@ -25,8 +26,8 @@ class CorrelationSelector(sklearn.base.TransformerMixin):
     def fit(self, features: numpy.ndarray, target: numpy.ndarray):
         self.logger_.print('Fitting the correlations feature selector')
 
-        correlations = correlate_with_target(features, target)
-        self.good_features_idx_ = numpy.nonzero(correlations >= self.threshold_)[0]
+        self.correlations_ = correlate_with_target(features, target)
+        self.good_features_idx_ = numpy.nonzero(self.correlations_ >= self.threshold_)[0]
         
         self.logger_.print('Fitting complete')
         self.fitted_ = True
@@ -35,3 +36,7 @@ class CorrelationSelector(sklearn.base.TransformerMixin):
     def transform(self, features: numpy.ndarray) -> numpy.ndarray:
         assert self.fitted_ is True, 'fit() must be called before transform()'
         return features[:, self.good_features_idx_]
+
+    def hist(self, bins: int = 50):
+        assert self.fitted_ is True, 'fit() must be called before hist()'
+        return plt.hist(self.correlations_, bins = bins)

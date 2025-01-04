@@ -15,7 +15,6 @@ class GreyscaleToFiltrations(sklearn.base.TransformerMixin):
         random_state: int = 42,
 
         binarizer_threshold: float = 0.1,
-        inverted_binarizer_threshold: float = 0.1,
         
         height_filtration_directions: typing.Iterable[typing.Tuple[float, float]] = [
             [ -1, -1 ], [ 1, 1 ], [ 1, -1 ], [ -1, 1 ],
@@ -35,28 +34,7 @@ class GreyscaleToFiltrations(sklearn.base.TransformerMixin):
 
         self.binarizer_ = gtda.images.Binarizer(threshold = binarizer_threshold, n_jobs = n_jobs)
 
-        self.inverter_ = gtda.images.Inverter(n_jobs = n_jobs)
-        self.inverted_binarizer_ = gtda.images.Binarizer(threshold = inverted_binarizer_threshold, n_jobs = n_jobs)
-        
         self.filtrations_ = [
-            *[
-                gtda.images.HeightFiltration(direction = numpy.array(direction), n_jobs = n_jobs)
-                for direction in height_filtration_directions
-            ],
-            *[
-                gtda.images.RadialFiltration(center = numpy.array(center), n_jobs = n_jobs)
-                for center in radial_filtration_centers
-            ],
-            gtda.images.DilationFiltration(n_jobs = n_jobs),
-            gtda.images.ErosionFiltration(n_jobs = n_jobs),
-            gtda.images.SignedDistanceFiltration(n_jobs = n_jobs),
-            *[
-                gtda.images.DensityFiltration(radius = radius, n_jobs = n_jobs)
-                for radius in density_filtration_radiuses
-            ]
-        ]
-
-        self.inverted_filtrations_ = [
             *[
                 gtda.images.HeightFiltration(direction = numpy.array(direction), n_jobs = n_jobs)
                 for direction in height_filtration_directions
@@ -83,13 +61,6 @@ class GreyscaleToFiltrations(sklearn.base.TransformerMixin):
         for filtration in self.logger_.loop(self.filtrations_, desc = "Fitting the filtrations"):
             filtration.fit(images_bin)
 
-        self.logger_.print('Fitting the inverter')
-        images_inv = self.inverter_.fit_transform(images)
-        images_inv_bin = self.inverted_binarizer_.fit_transform(images_inv)
-
-        for filtration in self.logger_.loop(self.inverted_filtrations_, desc = "Fitting the inverted filtrations"):
-            filtration.fit(images_inv_bin)
-
         self.logger_.print('Fitting complete')
         self.fitted_ = True
         return self
@@ -100,19 +71,10 @@ class GreyscaleToFiltrations(sklearn.base.TransformerMixin):
         
         images_bin = self.binarizer_.transform(images)
 
-        images_inv = self.inverter_.transform(images)
-        images_inv_bin = self.inverted_binarizer_.transform(images_inv)
-
         return numpy.stack([
             images_bin,
             *[
                 filtration.transform(images_bin)
                 for filtration in self.logger_.loop(self.filtrations_, desc = "Filtrations")
-            ],
-            images_inv,
-            images_inv_bin,
-            *[
-                filtration.transform(images_bin)
-                for filtration in self.logger_.loop(self.inverted_filtrations_, desc = "Inverted filtrations")
             ]
         ], axis = 1)

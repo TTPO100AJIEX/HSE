@@ -66,14 +66,14 @@ class InformationValueFeatureSelector(sklearn.base.TransformerMixin):
 
     def fit(self, features: numpy.ndarray, target: numpy.ndarray):
         self.logger_.print('Fitting the information value feature selector')
-        IV = calculate_information_value(
+        self.IV_ = calculate_information_value(
             features,
             target,
             bins = self.bins_,
             n_jobs = self.n_jobs_,
             logger = self.logger_
         )
-        self.good_features_idx_ = IV[IV['IV'] >= self.threshold_]['Feature'].to_numpy()
+        self.good_features_idx_ = self.IV_[self.IV_['IV'] >= self.threshold_]['Feature'].to_numpy()
         
         self.logger_.print('Fitting complete')
         self.fitted_ = True
@@ -82,3 +82,7 @@ class InformationValueFeatureSelector(sklearn.base.TransformerMixin):
     def transform(self, features: numpy.ndarray) -> numpy.ndarray:
         assert self.fitted_ is True, 'fit() must be called before transform()'
         return features[:, self.good_features_idx_]
+
+    def hist(self, bins: int = 50):
+        assert self.fitted_ is True, 'fit() must be called before hist()'
+        return self.IV_['IV'].hist(bins = bins)
