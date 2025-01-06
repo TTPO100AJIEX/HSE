@@ -1,30 +1,34 @@
+import tqdm
 import typing
 
 import numpy
+import joblib
 import sklearn.base
 
 from cvtda.logging import CLILogger, DevNullLogger
-from cvtda.utils.set_random_seed import set_random_seed
 
 class DuplicateFeaturesRemover(sklearn.base.TransformerMixin):
     def __init__(
         self,
         n_jobs: int = -1,
         verbose: bool = True,
-        random_state: int = 42,
 
-        tolerance: float = 1e-8
+        tolerance: float = 1e-8,
+
+        partition_search_batch_size: int = 2000,
+        naive_threshold: int = 300
     ):
         self.fitted_ = False
         self.n_jobs_ = n_jobs
-        self.random_state_ = random_state
-        set_random_seed(self.random_state_)
         self.logger_ = CLILogger() if verbose else DevNullLogger()
 
         self.tolerance_ = tolerance
+
+        self.partition_search_batch_size_ = partition_search_batch_size
+        self.naive_threshold_ = naive_threshold
     
     def fit(self, features: numpy.ndarray):
-        self.non_duplicates_ = self.find_non_duplicate_columns_(features)
+        self.non_duplicates_ = self.analyze_columns_(features)[0]
         self.fitted_ = True
         return self
     
@@ -33,7 +37,7 @@ class DuplicateFeaturesRemover(sklearn.base.TransformerMixin):
         return features[:, self.non_duplicates_]
 
 
-    def find_duplicate_columns_(self, features: numpy.ndarray) -> set:
+    def naive_find_duplicate_columns_(self, features: numpy.ndarray) -> set:
         duplicates = set()
         features = features.transpose()
         for i in range(features.shape[0]):
@@ -46,18 +50,62 @@ class DuplicateFeaturesRemover(sklearn.base.TransformerMixin):
                 duplicates.add(j)
         return duplicates
 
-    def find_non_duplicate_columns_(self, features: numpy.ndarray) -> typing.List[int]:
+    def analyze_columns_(
+        self,
+        features: numpy.ndarray,
+        with_logs: bool = True,
+        force_naive: bool = False,
+        depth: int = 0
+    ) -> typing.List[int]:
+        if (features.shape[1] < self.naive_threshold_) or force_naive:
+            if force_naive:
+                self.logger_.print(f"Naive check for {features.shape[1]} features at depth {depth}")
+            duplicates = self.naive_find_duplicate_columns_(features)
+            return list(set(range(features.shape[1])) - duplicates), list(duplicates)
+        
+        logger = self.logger_ if with_logs else DevNullLogger()
+        
+        partition_by = self.find_best_partition_(features)
+        partition_item = features[partition_by, :]
         duplicates = set()
 
-        partition_by = numpy.random.randint(low = 0, high = features.shape[0])
-        partition_item = features[partition_by, :]
-        for partition_value in self.logger_.loop(numpy.unique(partition_item)):
+        prev_value = numpy.min(partition_item) - 5 * self.tolerance_
+        pbar = logger.loop(numpy.unique(partition_item))
+        for partition_value in pbar:
+            if partition_value - prev_value < self.tolerance_:
+                continue
+
             partition_idxs = numpy.where(numpy.abs(partition_item - partition_value) < self.tolerance_)[0]
             partition_idxs = numpy.setdiff1d(partition_idxs, numpy.array(list(duplicates)), assume_unique = True)
 
-            partition_duplicates = list(self.find_duplicate_columns_(features[:, partition_idxs]))
-            for item in partition_idxs[partition_duplicates]:
-                duplicates.add(item)
+            logger.set_pbar_postfix(pbar, {
+                'partition_by': partition_by,
+                'num_features': len(partition_idxs),
+                'duplicates': len(duplicates)
+            })
 
-        self.logger_.print(f'Found {len(duplicates)} duplicates')
-        return list(set(range(features.shape[1])) - duplicates)
+            is_bad_partition = (len(partition_idxs) == features.shape[1])
+            _, partition_duplicates = self.analyze_columns_(
+                features[:, partition_idxs],
+                with_logs = False,
+                force_naive = is_bad_partition,
+                depth = depth + 1
+            )
+
+            for item in partition_idxs[list(partition_duplicates)]:
+                duplicates.add(item)
+            prev_value = partition_value
+
+        logger.print(f'Found {len(duplicates)} duplicates')
+        return list(set(range(features.shape[1])) - duplicates), list(duplicates)
+
+    def find_best_partition_(self, features: numpy.ndarray) -> int:
+        def bulk_biggest_partition_(items: numpy.ndarray) -> list:
+            return [ numpy.max(numpy.unique(item, return_counts = True)[1]) for item in items ]
+        
+        partitions = joblib.Parallel(return_as = 'generator', n_jobs = self.n_jobs_)(
+            joblib.delayed(bulk_biggest_partition_)(features[batch_start:batch_start + self.partition_search_batch_size_])
+            for batch_start in range(0, features.shape[0], self.partition_search_batch_size_)
+        )
+        partitions = numpy.hstack(list(partitions))
+        return numpy.argmin(partitions)

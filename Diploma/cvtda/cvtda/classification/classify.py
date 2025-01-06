@@ -51,10 +51,12 @@ def classify(
         else:
             classifier.fit(train_features, train_labels)
         y_pred_proba = classifier.predict_proba(test_features)
-        return {
+        result = {
             'classifier': type(classifier).__name__,
             **estimate_quality(y_pred_proba, test_labels, ax)
         }
+        print(result)
+        return result
 
     classifiers = [
         sklearn.neighbors.KNeighborsClassifier(
@@ -79,12 +81,6 @@ def classify(
             max_depth = grad_boost_max_depth,
             max_features = grad_boost_max_features
         ),
-        xgboost.XGBClassifier(
-            n_jobs = n_jobs,
-            n_estimators = xgboost_n_classifiers,
-            max_depth = xgboost_max_depth,
-            device = xgboost_device
-        ),
         catboost.CatBoostClassifier(
             iterations = catboost_iterations,
             depth = catboost_depth,
@@ -93,6 +89,12 @@ def classify(
             devices = '0-3',
             task_type = catboost_device,
             verbose = True
+        ),
+        xgboost.XGBClassifier(
+            n_jobs = n_jobs,
+            n_estimators = xgboost_n_classifiers,
+            max_depth = xgboost_max_depth,
+            device = xgboost_device
         )
     ]
 

@@ -95,10 +95,10 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         ).to(self.device_).train()
 
         self.model_list_ = torch.nn.ModuleList([ self.model_ ])
-        if example_features.shape[1] > 130:
-            self.model_list_.append(self.per_dim_model_)
-        if example_features.shape[1] > 260:
-            self.model_list_.append(self.cross_dim_model_)
+        # if example_features.shape[2] > 130:
+        #     self.model_list_.append(self.per_dim_model_)
+        # if example_features.shape[2] > 260:
+        #     self.model_list_.append(self.cross_dim_model_)
 
         self.optimizer_ = torch.optim.AdamW(
             params = self.model_list_.parameters(),
@@ -111,19 +111,20 @@ class NNClassifier(sklearn.base.ClassifierMixin):
 
     def forward_(self, X: numpy.ndarray):
         X = X.to(self.device_)
-        if X.shape[1] <= 130:
-            X = torch.squeeze(X)
-        elif X.shape[1] <= 260:
-            X = torch.hstack([
-                torch.squeeze(X),
-                self.per_dim_model_(X)
-            ])
-        else:
-            X = torch.hstack([
-                torch.squeeze(X),
-                self.cross_dim_model_(X),
-                self.per_dim_model_(X)
-            ])
+        X = torch.squeeze(X)
+        # if X.shape[2] <= 130:
+        #     X = torch.squeeze(X)
+        # elif X.shape[2] <= 260:
+        #     X = torch.hstack([
+        #         torch.squeeze(X),
+        #         self.per_dim_model_(X)
+        #     ])
+        # else:
+        #     X = torch.hstack([
+        #         torch.squeeze(X),
+        #         self.cross_dim_model_(X),
+        #         self.per_dim_model_(X)
+        #     ])
         return self.model_(X)
 
     def make_dataloader_(

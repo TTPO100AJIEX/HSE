@@ -90,17 +90,20 @@ class GreyscaleToFeatures(sklearn.base.TransformerMixin):
         out_shape = (len(images), -1)
 
         self.logger_.print("> Filtrations")
-        filtrations = self.process_iter_dump_(self.greyscale_to_filtrations_, images, do_fit, dumper, "filtrations")
+        filtrations = self.process_iter_(self.greyscale_to_filtrations_, images, do_fit)
         filtrations = self.process_iter_(self.filtrations_flatten_, filtrations, do_fit)
         filtration_diagrams = self.process_iter_dump_(self.filtrations_to_diagrams_, filtrations, do_fit, dumper, "filtration_diagrams")
         del filtrations
+        self.logger_.print(f"> Filtration diagrams shape: {filtration_diagrams.shape}")
 
         self.logger_.print("> Filtration features")
         filtration_features = self.process_iter_dump_(self.filtration_features_, filtration_diagrams, do_fit, dumper, "filtration_features")
+        self.logger_.print(f"> Filtration features shape: {filtration_features.shape}")
         del filtration_diagrams
         filtration_features = self.filtrations_flatten_.inverse_transform(filtration_features).reshape(out_shape)
 
         if not self.with_pointclouds_:
+            self.logger_.print(f"> Features shape: {filtration_features.shape}")
             return filtration_features
         
         self.logger_.print("> Point clouds")
@@ -108,10 +111,13 @@ class GreyscaleToFeatures(sklearn.base.TransformerMixin):
         pointclouds = self.process_iter_(self.pointclouds_flatten_, pointclouds, do_fit)
         pointclouds_diagrams = self.process_iter_dump_(self.pointclouds_to_diagrams_, pointclouds, do_fit, dumper, "pointclouds_diagrams")
         del pointclouds
+        self.logger_.print(f"> Point cloud diagrams shape: {filtration_diagrams.shape}")
 
         self.logger_.print("> Point cloud features")
         pointclouds_features = self.process_iter_dump_(self.pointclouds_features_, pointclouds_diagrams, do_fit, dumper, "pointclouds_features")
+        self.logger_.print(f"> Point cloud features shape: {filtration_features.shape}")
         del pointclouds_diagrams
         pointclouds_features = self.pointclouds_flatten_.inverse_transform(pointclouds_features).reshape(out_shape)
 
+        self.logger_.print(f"> Features shape: {filtration_features.shape} + {pointclouds_features.shape}")
         return numpy.hstack([ filtration_features, pointclouds_features ])
