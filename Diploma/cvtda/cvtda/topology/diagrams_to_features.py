@@ -45,7 +45,7 @@ class DiagramsToFeatures(sklearn.base.TransformerMixin):
             for power in silhouette_powers
         ]
         
-        self.persistence_entropy_ = gtda.diagrams.PersistenceEntropy(normalize = True, nan_fill_value = 0, n_jobs = 1)
+        self.persistence_entropy_ = gtda.diagrams.PersistenceEntropy(nan_fill_value = 0, n_jobs = 1)
         
         self.number_of_points_ = gtda.diagrams.NumberOfPoints(n_jobs = 1)
         
