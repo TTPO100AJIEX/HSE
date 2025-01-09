@@ -1,42 +1,32 @@
 import os
 import sys
+import itertools
 sys.path.append(os.path.abspath(os.path.join('../../cvtda')))
 
+import tqdm
 import numpy
 import torch
+import gtda.images
 import torchvision
 import torchvision.transforms.v2
+
+import cvtda.utils
+import cvtda.topology
 
 transform = torchvision.transforms.v2.Compose([
     torchvision.transforms.v2.ToImage(),
     torchvision.transforms.v2.ToDtype(torch.float32, scale = True)
 ])
 
-train = torchvision.datasets.CIFAR10('cifar-10', transform = transform, train = True, download = False)
-test = torchvision.datasets.CIFAR10('cifar-10', transform = transform, train = False, download = False)
+train_ds = torchvision.datasets.CIFAR10('cifar-10', transform = transform, train = True, download = False)
+test_ds = torchvision.datasets.CIFAR10('cifar-10', transform = transform, train = False, download = False)
 
-train_images = numpy.array([ numpy.array(item[0]) for item in train ])
-train_labels = numpy.array([ item[1] for item in train ])
-
-test_images = numpy.array([ numpy.array(item[0]) for item in test ])
-test_labels = numpy.array([ item[1] for item in test ])
-
-print(train_images.shape, test_images.shape)
-
-
-import tqdm
-import cvtda.utils
-import cvtda.topology
-
-def make_features(
-    train: numpy.ndarray,
-    test: numpy.ndarray,
-    name: str,
-    binarizer,
-    filtration
-):
+def make_features(name: str, binarizer, filtration):
     if os.path.exists(f"6/{name}/test_features.npy"):
         return
+
+    train = numpy.array([ numpy.array(item[0]) for item in train_ds ])
+    test = numpy.array([ numpy.array(item[0]) for item in test_ds ])
     
     if binarizer is not None:
         train = binarizer.fit_transform(train)
@@ -75,10 +65,7 @@ def make_features(
     numpy.save(f"6/{name}/test_features.npy", test)
 
 
-make_features(train_images, test_images, "raw", binarizer = None, filtration = None)
-
-import itertools
-import gtda.images
+make_features("raw", binarizer = None, filtration = None)
 
 greyscale_to_filtrations = cvtda.topology.GreyscaleToFiltrations(
     binarizer_threshold = 0.4,
@@ -88,8 +75,6 @@ greyscale_to_filtrations = cvtda.topology.GreyscaleToFiltrations(
 for i, filtration in enumerate(greyscale_to_filtrations.filtrations_):
     print(f"{i}/{len(greyscale_to_filtrations.filtrations_)}). {filtration}")
     make_features(
-        train_images,
-        test_images,
         f"{type(filtration).__name__}{i}",
         binarizer = gtda.images.Binarizer(threshold = 0.4),
         filtration = filtration

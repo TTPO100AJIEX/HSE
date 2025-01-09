@@ -72,7 +72,7 @@ class GreyscaleToFiltrations(sklearn.base.TransformerMixin):
         images_bin = self.binarizer_.transform(images)
 
         return numpy.stack([
-            images_bin,
+            images,
             *[
                 filtration.transform(images_bin)
                 for filtration in self.logger_.loop(self.filtrations_, desc = "Filtrations")
