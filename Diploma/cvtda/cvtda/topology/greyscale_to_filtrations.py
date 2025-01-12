@@ -43,13 +43,13 @@ class GreyscaleToFiltrations(sklearn.base.TransformerMixin):
                 gtda.images.RadialFiltration(center = numpy.array(center), n_jobs = n_jobs)
                 for center in radial_filtration_centers
             ],
-            gtda.images.DilationFiltration(n_jobs = n_jobs),
-            gtda.images.ErosionFiltration(n_jobs = n_jobs),
-            gtda.images.SignedDistanceFiltration(n_jobs = n_jobs),
-            *[
-                gtda.images.DensityFiltration(radius = radius, n_jobs = n_jobs)
-                for radius in density_filtration_radiuses
-            ]
+            # gtda.images.DilationFiltration(n_jobs = n_jobs),
+            # gtda.images.ErosionFiltration(n_jobs = n_jobs),
+            # gtda.images.SignedDistanceFiltration(n_jobs = n_jobs),
+            # *[
+            #     gtda.images.DensityFiltration(radius = radius, n_jobs = n_jobs)
+            #     for radius in density_filtration_radiuses
+            # ]
         ]
 
     def fit(self, images: numpy.ndarray):

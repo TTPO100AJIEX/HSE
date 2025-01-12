@@ -21,10 +21,12 @@ class DiagramsToFeatures(sklearn.base.TransformerMixin):
         batch_size: int = 4096,
         filtering_percentile: int = 10,
         
-        persistence_landscape_layers: int = 4,
+        persistence_landscape_layers: int = 3,
         silhouette_powers: typing.List[int] = [ 1, 2 ],
-        heat_kernel_sigmas: typing.List[float] = [ 0.1, 1.0, numpy.pi ],
-        persistence_image_sigmas: typing.List[float] = [ 0.1, 1.0, numpy.pi ]
+        # heat_kernel_sigmas: typing.List[float] = [ 0.1, 1.0, numpy.pi ],
+        # persistence_image_sigmas: typing.List[float] = [ 0.1, 1.0, numpy.pi ]
+        heat_kernel_sigmas: typing.List[float] = [ 1.0 ],
+        persistence_image_sigmas: typing.List[float] = [ 1.0 ]
     ):
         self.fitted_ = False
         self.n_jobs_ = n_jobs
@@ -131,22 +133,22 @@ class DiagramsToFeatures(sklearn.base.TransformerMixin):
         # if axis = 1, data should be of shape (n_diagrams, sequence_length)
         if type(data) == numpy.ma.core.MaskedArray:
             return numpy.ma.concatenate([
-                numpy.ma.max(data, axis = axis, keepdims = True),
-                numpy.ma.sum(data, axis = axis, keepdims = True),
-                numpy.ma.mean(data, axis = axis, keepdims = True),
-                numpy.ma.std(data, axis = axis, keepdims = True),
-                numpy.ma.median(data, axis = axis, keepdims = True),
+                # numpy.ma.max(data, axis = axis, keepdims = True),
+                # numpy.ma.sum(data, axis = axis, keepdims = True),
+                # numpy.ma.mean(data, axis = axis, keepdims = True),
+                # numpy.ma.std(data, axis = axis, keepdims = True),
+                # numpy.ma.median(data, axis = axis, keepdims = True),
                 numpy.ma.sum(numpy.ma.abs(data), axis = axis, keepdims = True), # manhattan norm
                 numpy.ma.sqrt(numpy.ma.sum(data ** 2, axis = axis, keepdims = True)), # euclidean norm
                 numpy.ma.max(numpy.ma.abs(data), axis = axis, keepdims = True), # infinity norm
             ], axis = axis).filled(0)
         else:
             return numpy.concatenate([
-                numpy.max(data, axis = axis, keepdims = True),
-                numpy.sum(data, axis = axis, keepdims = True),
-                numpy.mean(data, axis = axis, keepdims = True),
-                numpy.std(data, axis = axis, keepdims = True),
-                numpy.median(data, axis = axis, keepdims = True),
+                # numpy.max(data, axis = axis, keepdims = True),
+                # numpy.sum(data, axis = axis, keepdims = True),
+                # numpy.mean(data, axis = axis, keepdims = True),
+                # numpy.std(data, axis = axis, keepdims = True),
+                # numpy.median(data, axis = axis, keepdims = True),
                 numpy.sum(numpy.abs(data), axis = axis, keepdims = True), # manhattan norm
                 numpy.sqrt(numpy.sum(data ** 2, axis = axis, keepdims = True)), # euclidean norm
                 numpy.max(numpy.abs(data), axis = axis, keepdims = True), # infinity norm
