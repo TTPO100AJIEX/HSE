@@ -111,7 +111,7 @@ class GreyscaleToFeatures(sklearn.base.TransformerMixin):
         pointclouds = self.process_iter_(self.pointclouds_flatten_, pointclouds, do_fit)
         pointclouds_diagrams = self.process_iter_dump_(self.pointclouds_to_diagrams_, pointclouds, do_fit, dumper, "pointclouds_diagrams")
         del pointclouds
-        self.logger_.print(f"> Point cloud diagrams shape: {filtration_diagrams.shape}")
+        self.logger_.print(f"> Point cloud diagrams shape: {pointclouds_diagrams.shape}")
 
         self.logger_.print("> Point cloud features")
         pointclouds_features = self.process_iter_dump_(self.pointclouds_features_, pointclouds_diagrams, do_fit, dumper, "pointclouds_features")

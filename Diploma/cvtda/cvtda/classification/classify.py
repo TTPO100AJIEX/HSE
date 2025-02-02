@@ -1,3 +1,5 @@
+import typing
+
 import numpy
 import torch
 import pandas
@@ -18,6 +20,8 @@ def classify(
     train_labels: numpy.ndarray,
     test_features: numpy.ndarray,
     test_labels: numpy.ndarray,
+    
+    label_names: typing.Optional[typing.List[str]] = None,
 
     n_jobs: int = -1,
     random_state: int = 42,
@@ -53,7 +57,7 @@ def classify(
         y_pred_proba = classifier.predict_proba(test_features)
         result = {
             'classifier': type(classifier).__name__,
-            **estimate_quality(y_pred_proba, test_labels, ax)
+            **estimate_quality(y_pred_proba, test_labels, ax, label_names = label_names)
         }
         print(result)
         return result

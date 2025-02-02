@@ -5,16 +5,15 @@ sys.path.append(os.path.abspath(os.path.join('../../cvtda')))
 
 import typing
 
+import tqdm
 import numpy
+import joblib
 import gtda.images
 import torchvision
 import skimage.color
 
 import cvtda.utils
 import cvtda.topology
-
-train_ds = torchvision.datasets.CIFAR10('cifar-10', train = True, download = False)
-test_ds = torchvision.datasets.CIFAR10('cifar-10', train = False, download = False)
 
 def make_image(image, channel: int, split_idx: typing.Optional[int]) -> numpy.ndarray:
     image = numpy.array(image)
@@ -45,13 +44,27 @@ def make_image(image, channel: int, split_idx: typing.Optional[int]) -> numpy.nd
             else:
                 split_idx -= 1
 
-def make_features(channel: int, split_idx: typing.Optional[int], inverter, binarizer, filtration) -> typing.Tuple[numpy.ndarray, numpy.ndarray]:
-    print(f'channel = {channel}, split_idx = {split_idx}, inverter = {inverter}, binarizer = {binarizer}, filtration = {filtration}')
+def make_features(
+    channel: int,
+    split_idx: typing.Optional[int],
+    inverter,
+    binarizer,
+    filtration,
+    n_jobs: int = 1
+) -> typing.Tuple[numpy.ndarray, numpy.ndarray]:
+    train = numpy.array(
+        joblib.Parallel(n_jobs = n_jobs)(
+            joblib.delayed(make_image)(item[0], channel, split_idx)
+            for item in torchvision.datasets.CIFAR10('cifar-10', train = True, download = False)
+        )
+    )
+    test = numpy.array(
+        joblib.Parallel(n_jobs = n_jobs)(
+            joblib.delayed(make_image)(item[0], channel, split_idx)
+            for item in torchvision.datasets.CIFAR10('cifar-10', train = False, download = False)
+        )
+    )
 
-    train = numpy.array([ make_image(item[0], channel, split_idx) for item in train_ds ])
-    test = numpy.array([ make_image(item[0], channel, split_idx) for item in test_ds ])
-    print(f'Datasets: {train.shape}, {test.shape}')
-    
     if inverter is not None:
         train = inverter.fit_transform(train)
         test = inverter.transform(test)
@@ -64,10 +77,9 @@ def make_features(channel: int, split_idx: typing.Optional[int], inverter, binar
         train = filtration.fit_transform(train)
         test = filtration.transform(test)
     
-    filtrations_to_diagrams = cvtda.topology.FiltrationsToDiagrams(verbose = False)
+    filtrations_to_diagrams = cvtda.topology.FiltrationsToDiagrams(verbose = False, n_jobs = n_jobs)
     train = filtrations_to_diagrams.fit_transform(train)
     test = filtrations_to_diagrams.transform(test)
-    print(f'Diagrams: {train.shape}, {test.shape}')
 
     if len(train[0]) < 96:
         n_bins = 32
@@ -75,32 +87,18 @@ def make_features(channel: int, split_idx: typing.Optional[int], inverter, binar
         n_bins = 64
     else:
         n_bins = 128
-    print(f"Bins: {n_bins}")
 
-    digrams_to_features = cvtda.topology.DiagramsToFeatures(batch_size = 850, n_bins = n_bins, verbose = False)
+    digrams_to_features = cvtda.topology.DiagramsToFeatures(batch_size = 500, n_bins = n_bins, verbose = False, n_jobs = n_jobs)
     train = digrams_to_features.fit_transform(train)
     test = digrams_to_features.transform(test)
-    print(f'Features: {train.shape}, {test.shape}')
     return train, test
 
-def process(inverted: bool, channel: int, split_idx: typing.Optional[int]) -> typing.Tuple[numpy.ndarray, numpy.ndarray]:
-    dir = f"11/inv_{channel}/{split_idx}" if inverted else f"11/{channel}/{split_idx}"
+def process(inverted: bool, channel: int, split_idx: typing.Optional[int], binarizer_threshold: float) -> typing.Tuple[numpy.ndarray, numpy.ndarray]:
+    dir_suffix = f"{channel}/{split_idx}"
+    dir_prefix = f"E:/{int(binarizer_threshold * 10)}"
+    dir = f"{dir_prefix}/inv_{dir_suffix}" if inverted else f"{dir_prefix}/{dir_suffix}"
     if os.path.exists(f"{dir}/test.npy"):
         return
-    
-    train_features, test_features = [ ], [ ]
-
-    train, test = make_features(
-        channel,
-        split_idx,
-        inverter = (gtda.images.Inverter(n_jobs = -1) if inverted else None),
-        binarizer = None,
-        filtration = None
-    )
-    train_features.append(train)
-    test_features.append(test)
-    del train
-    del test
     
     if split_idx is None:
         centers = [ 5, 12, 18, 25 ]
@@ -108,31 +106,57 @@ def process(inverted: bool, channel: int, split_idx: typing.Optional[int]) -> ty
         centers = [ 5, 10 ]
 
     greyscale_to_filtrations = cvtda.topology.GreyscaleToFiltrations(
+        n_jobs = 1,
         radial_filtration_centers = list(itertools.product(centers, centers))
     )
-    for filtration in greyscale_to_filtrations.filtrations_:
-        train, test = make_features(
+    features = joblib.Parallel(return_as = 'generator', n_jobs = -1)(
+        joblib.delayed(make_features)(
             channel,
             split_idx,
-            inverter = (gtda.images.Inverter(n_jobs = -1) if inverted else None),
-            binarizer = gtda.images.Binarizer(threshold = 0.4),
-            filtration = filtration
+            inverter = (gtda.images.Inverter(n_jobs = 1) if inverted else None),
+            binarizer = gtda.images.Binarizer(threshold = binarizer_threshold, n_jobs = 1),
+            filtration = filtration,
+            n_jobs = 1
         )
+        for filtration in greyscale_to_filtrations.filtrations_
+    )
+
+    train_features, test_features = [ ], [ ]
+
+    desc = f'channel = {channel}, split_idx = {split_idx}, inverted = {inverted}, binarizer_threshold = {binarizer_threshold}'
+    for train, test in tqdm.tqdm(features, desc = desc, total = len(greyscale_to_filtrations.filtrations_)):
         train_features.append(train)
         test_features.append(test)
-    
-    os.makedirs(dir, exist_ok = True)
-    numpy.save(f"{dir}/train.npy", numpy.hstack(train_features))
-    numpy.save(f"{dir}/test.npy", numpy.hstack(test_features))
 
-for channel in [ 'red', 'green', 'blue', 'gray', 'saturation', 'value' ]:
-    print(f'>>> Calculating channel {channel}')
-    process(False, channel, None)
-    for split in range(9):
-        process(False, channel, split)
-        
-for channel in [ 'red', 'green', 'blue', 'gray', 'saturation', 'value' ]:
-    print(f'>>> Calculating channel {channel} for an inverted image')
-    process(True, channel, None)
-    for split in range(9):
-        process(True, channel, split)
+    train, test = make_features(
+        channel,
+        split_idx,
+        inverter = (gtda.images.Inverter(n_jobs = -1) if inverted else None),
+        binarizer = None,
+        filtration = None,
+        n_jobs = -1
+    )
+    train_features.append(train)
+    test_features.append(test)
+    
+    train_features = numpy.hstack(train_features)
+    test_features = numpy.hstack(test_features)
+
+    os.makedirs(dir, exist_ok = True)
+    numpy.save(f"{dir}/train.npy", train_features)
+    numpy.save(f"{dir}/test.npy", test_features)
+
+for binarizer_threshold_mul in range(1, 9):
+    binarizer_threshold = binarizer_threshold_mul / 10
+
+    for channel in [ 'red', 'green', 'blue', 'gray', 'saturation', 'value' ]:
+        print(f'>>> Calculating channel {channel} with binarizer_threshold = {binarizer_threshold}')
+        process(False, channel, None, binarizer_threshold)
+        for split in range(9):
+            process(False, channel, split, binarizer_threshold)
+            
+    for channel in [ 'red', 'green', 'blue', 'gray', 'saturation', 'value' ]:
+        print(f'>>> Calculating channel {channel} for an inverted image with binarizer_threshold = {binarizer_threshold}')
+        process(True, channel, None, binarizer_threshold)
+        for split in range(9):
+            process(True, channel, split, binarizer_threshold)
