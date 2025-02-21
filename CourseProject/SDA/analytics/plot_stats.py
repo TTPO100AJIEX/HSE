@@ -9,8 +9,9 @@ from .. import stageprocess
 from .stage_timing import stage_timing
 from .edge_statistics import edge_statistics
 
-def plot_stats(features: numpy.ndarray, epochs: mne.Epochs, result: dict, df_st_edges: pandas.DataFrame) -> plt.Figure:
-    fig, ax = plt.subplots(1, 1, figsize = (7.5, 4))
+def plot_stats(features: numpy.ndarray, epochs: mne.Epochs, result: dict, df_st_edges: pandas.DataFrame, ax = None) -> plt.Figure:
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize = (7.5, 4))
     edges = numpy.array(result['St_edges'])
 
     ymin, ymax = -0.2, 1.225
@@ -27,8 +28,8 @@ def plot_stats(features: numpy.ndarray, epochs: mne.Epochs, result: dict, df_st_
         center = (smin + smax) / 2
         color = plt.get_cmap('Set3')(i)
         ax.axvspan(smin, smax, alpha = 0.3, color = color) # Background color
-        ax.text(center, ymax - 0.15, i + 1, fontsize = 10, fontweight = 'bold', horizontalalignment = 'center') # Name
-        ax.text(center, -0.13, '{}s'.format(round(length)), fontsize = 9, fontstyle = 'italic', horizontalalignment = 'center') # Length
+        ax.text(center, ymax - 0.15, i + 1, fontweight = 'bold', horizontalalignment = 'center') # Name
+        ax.text(center, -0.13, '{}s'.format(round(length)), fontstyle = 'italic', horizontalalignment = 'center') # Length
         ax.add_patch(ptchs.Rectangle((smin, -0.20), smax - smin, 0.05, edgecolor = 'black', facecolor = color, fill = True, lw = 1)) # Stage
 
     stats = edge_statistics(features, edges)
@@ -46,5 +47,4 @@ def plot_stats(features: numpy.ndarray, epochs: mne.Epochs, result: dict, df_st_
         s = [ 1.5 * list(x_sc).count(x) for x in x_sc ]
         ax.scatter(x_sc, numpy.full_like(x_sc, 0.0), s = s, color = color)
 
-    ax.legend(loc = 'lower center', ncols = 5, bbox_to_anchor = (0.5, 0.933), framealpha = 1.0)
-    return fig
+    # ax.legend(loc = 'lower center', ncols = 5, bbox_to_anchor = (0.5, 0.933), framealpha = 1.0)
