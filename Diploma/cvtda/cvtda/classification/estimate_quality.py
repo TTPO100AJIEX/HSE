@@ -4,14 +4,9 @@ import numpy
 import sklearn.metrics
 import matplotlib.pyplot as plt
 
-def estimate_quality(
-    y_pred_proba: numpy.ndarray,
-    y_true: numpy.ndarray,
-    ax: typing.Optional[plt.Axes] = None,
-    label_names: typing.Optional[typing.List[str]] = None
-) -> dict:
+def estimate_quality(y_pred_proba: numpy.ndarray, y_true: numpy.ndarray, ax: typing.Optional[plt.Axes] = None) -> typing.Dict[str, float]:
     y_pred = numpy.argmax(y_pred_proba, axis = 1)
-    sklearn.metrics.ConfusionMatrixDisplay.from_predictions(y_true, y_pred, ax = ax, display_labels = label_names)
+    sklearn.metrics.ConfusionMatrixDisplay.from_predictions(y_true, y_pred, ax = ax)
     return {
         'Accuracy':       sklearn.metrics.accuracy_score      (y_true, y_pred),
         'TOP-2 Accuracy': sklearn.metrics.top_k_accuracy_score(y_true, y_pred_proba, k = 2),

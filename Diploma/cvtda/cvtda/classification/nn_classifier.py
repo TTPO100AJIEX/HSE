@@ -48,7 +48,7 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         for _ in pbar:
             sum_loss = 0
 
-            self.model_list_.train()
+            self.model_.train()
             for (X, y) in train_dl:
                 self.optimizer_.zero_grad()
                 pred = self.forward_(X)
@@ -75,17 +75,6 @@ class NNClassifier(sklearn.base.ClassifierMixin):
 
 
     def init_(self, example_features: torch.Tensor, num_labels: int):
-        self.cross_dim_model_ = torch.nn.Sequential(
-            torch.nn.Conv1d(in_channels = 1, out_channels = 128, kernel_size = 260, stride = 260),
-            torch.nn.LazyBatchNorm1d(), torch.nn.ReLU(), torch.nn.Flatten()
-        ).to(self.device_).train()
-        
-        self.per_dim_model_ = torch.nn.Sequential(
-            torch.nn.Conv1d(in_channels = 1, out_channels = 32, kernel_size = 130, stride = 130), torch.nn.LazyBatchNorm1d(), torch.nn.ReLU(),
-            torch.nn.Conv1d(in_channels = 32, out_channels = 64, kernel_size = 2), torch.nn.LazyBatchNorm1d(), torch.nn.ReLU(),
-            torch.nn.Flatten()
-        ).to(self.device_).train()
-
         self.model_ = torch.nn.Sequential(
             torch.nn.Dropout(0.4), torch.nn.LazyLinear(256), torch.nn.BatchNorm1d(256), torch.nn.ReLU(),
             torch.nn.Dropout(0.3), torch.nn.Linear(256, 128), torch.nn.BatchNorm1d(128), torch.nn.ReLU(),
@@ -94,42 +83,23 @@ class NNClassifier(sklearn.base.ClassifierMixin):
             torch.nn.Linear(32, num_labels), torch.nn.Softmax(dim = 1)
         ).to(self.device_).train()
 
-        self.model_list_ = torch.nn.ModuleList([ self.model_ ])
-        # if example_features.shape[2] > 130:
-        #     self.model_list_.append(self.per_dim_model_)
-        # if example_features.shape[2] > 260:
-        #     self.model_list_.append(self.cross_dim_model_)
-
         self.optimizer_ = torch.optim.AdamW(
-            params = self.model_list_.parameters(),
+            params = self.model_.parameters(),
             lr = self.learning_rate_
         )
 
         self.forward_(example_features)
         self.logger_.print(f'Input to LazyLinear: {self.model_[1].in_features}')
-        self.logger_.print(f'Parameters: {sum(p.numel() for p in self.model_list_.parameters())}')
+        self.logger_.print(f'Parameters: {sum(p.numel() for p in self.model_.parameters())}')
 
-    def forward_(self, X: numpy.ndarray):
+    def forward_(self, X: numpy.ndarray) -> numpy.ndarray:
         X = X.to(self.device_)
         X = torch.squeeze(X)
-        # if X.shape[2] <= 130:
-        #     X = torch.squeeze(X)
-        # elif X.shape[2] <= 260:
-        #     X = torch.hstack([
-        #         torch.squeeze(X),
-        #         self.per_dim_model_(X)
-        #     ])
-        # else:
-        #     X = torch.hstack([
-        #         torch.squeeze(X),
-        #         self.cross_dim_model_(X),
-        #         self.per_dim_model_(X)
-        #     ])
         return self.model_(X)
 
     def make_dataloader_(
         self, features: numpy.ndarray, labels: typing.Optional[numpy.ndarray] = None, shuffle: bool = False
-    ):
+    ) -> torch.utils.data.DataLoader:
         features = numpy.expand_dims(features, axis = 1)
         features = torch.tensor(features, dtype = torch.float)
         if labels is not None:

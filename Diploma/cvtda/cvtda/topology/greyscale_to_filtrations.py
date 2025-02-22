@@ -35,10 +35,10 @@ class GreyscaleToFiltrations(sklearn.base.TransformerMixin):
         self.binarizer_ = gtda.images.Binarizer(threshold = binarizer_threshold, n_jobs = n_jobs)
 
         self.filtrations_ = [
-            *[
-                gtda.images.HeightFiltration(direction = numpy.array(direction), n_jobs = n_jobs)
-                for direction in height_filtration_directions
-            ],
+            # *[
+            #     gtda.images.HeightFiltration(direction = numpy.array(direction), n_jobs = n_jobs)
+            #     for direction in height_filtration_directions
+            # ],
             *[
                 gtda.images.RadialFiltration(center = numpy.array(center), n_jobs = n_jobs)
                 for center in radial_filtration_centers
