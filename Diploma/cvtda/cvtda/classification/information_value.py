@@ -2,29 +2,46 @@ import numpy
 import pandas
 import joblib
 import sklearn.base
+import matplotlib.pyplot as plt
 
 from cvtda.logging import DevNullLogger, CLILogger
 
 
-def calculate_binary_information_value(feature: numpy.ndarray, target: numpy.ndarray, bins: int = 10) -> float:
-    if len(numpy.unique(feature)) > bins:
-        feature = pandas.qcut(feature, bins, duplicates = 'drop')
-    df = pandas.DataFrame({ 'x': feature, 'y': target })
-    df = df.groupby("x", as_index = False, observed = False).agg({ "y": [ "count", "sum" ] })
-    df.columns = [ 'Cutoff', 'N', 'Events' ]
+def calculate_binary_information_value(feature: numpy.ndarray, target: numpy.ndarray, bins: int) -> float:
+    quantiles = numpy.linspace(0, 1, bins + 1)
+    bins = numpy.unique(numpy.quantile(feature, quantiles))
+    bins[0] -= 0.0001
+    bins[-1] += 0.0001
+    
+    feature = numpy.digitize(feature, bins, right = True)
+    n, events = [ ], [ ]
+    for bin in range(1, len(bins)):
+        mask = (feature == bin)
+        n.append(mask.sum())
+        events.append((target * mask).sum())
+    n = numpy.array(n)
+    events = numpy.array(events)
 
-    # Calculate % of events in each group.
-    df['% of Events'] = numpy.maximum(df['Events'], 0.5) / df['Events'].sum()
+    non_events = n - events
+    events_prc = numpy.maximum(events, 0.5) / events.sum()
+    non_events_prc = numpy.maximum(non_events, 0.5) / non_events.sum()
 
-    # Calculate the non events in each group.
-    df['Non-Events'] = df['N'] - df['Events']
-    # Calculate % of non events in each group.
-    df['% of Non-Events'] = numpy.maximum(df['Non-Events'], 0.5) / df['Non-Events'].sum()
+    woe = numpy.log(events_prc / non_events_prc)
+    iv = woe * (events_prc - non_events_prc)
+    return iv.sum()
 
-    # Calculate WOE by taking natural log of division of % of non-events and % of events
-    df['WoE'] = numpy.log(df['% of Events'] / df['% of Non-Events'])
-    df['IV'] = df['WoE'] * (df['% of Events'] - df['% of Non-Events'])
-    return df['IV'].sum()
+
+def calculate_information_value_one_feature(
+    feature: numpy.ndarray,
+    y_true: numpy.ndarray,
+    bins: int
+) -> dict:
+    IVs = []
+    for class_idx in range(numpy.max(y_true)):
+        target = (y_true == class_idx).astype(int)
+        IVs.append(calculate_binary_information_value(feature, target, bins))
+    return numpy.mean(IVs)
+
 
 def calculate_information_value(
     features: numpy.ndarray,
@@ -33,18 +50,15 @@ def calculate_information_value(
     n_jobs: int = -1,
     logger = CLILogger()
 ) -> pandas.DataFrame:
-    def one_feature(feature_idx: int) -> dict:
-        IVs = [ ]
-        for class_idx in range(numpy.max(y_true)):
-            target = (y_true == class_idx).astype(int)
-            IVs.append(calculate_binary_information_value(features[:, feature_idx], target, bins))
-        return { 'Feature': feature_idx, 'IV': numpy.mean(IVs), 'IVs': IVs }
-
-
-    IV = joblib.Parallel(return_as = 'generator', n_jobs = n_jobs)(
-        joblib.delayed(one_feature)(idx) for idx in range(features.shape[1])
+    iv_generator = joblib.Parallel(return_as = 'generator', n_jobs = n_jobs)(
+        joblib.delayed(calculate_information_value_one_feature)(
+            features[:, idx],
+            y_true,
+            bins
+        ) for idx in range(features.shape[1])
     )
-    return pandas.DataFrame(list(logger.loop(IV, total = features.shape[1], desc = 'information values')))
+    pbar = logger.loop(iv_generator, total = features.shape[1], desc = 'information values')
+    return numpy.array(list(pbar))
 
 
 class InformationValueFeatureSelector(sklearn.base.TransformerMixin):
@@ -72,7 +86,7 @@ class InformationValueFeatureSelector(sklearn.base.TransformerMixin):
             n_jobs = self.n_jobs_,
             logger = self.logger_
         )
-        self.good_features_idx_ = self.IV_[self.IV_['IV'] >= self.threshold_]['Feature'].to_numpy()
+        self.good_features_idx_ = numpy.where(self.IV_ > self.threshold_)[0]
         
         self.logger_.print('Fitting complete')
         self.fitted_ = True
@@ -84,4 +98,4 @@ class InformationValueFeatureSelector(sklearn.base.TransformerMixin):
 
     def hist(self, bins: int = 50):
         assert self.fitted_ is True, 'fit() must be called before hist()'
-        return self.IV_['IV'].hist(bins = bins)
+        return plt.hist(self.IV_, bins = 50)
