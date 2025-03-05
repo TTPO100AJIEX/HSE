@@ -3,23 +3,22 @@ import typing
 
 import numpy
 
+import cvtda.logging
+
 from .base import BaseDumper
-from cvtda.logging import DevNullLogger
-from cvtda.logging.base import BaseLogger
 
 class NumpyDumper(BaseDumper[numpy.ndarray]):
-    def __init__(self, directory: str, logger: BaseLogger = DevNullLogger()):
+    def __init__(self, directory: str):
         self.directory_ = directory
-        self.logger_ = logger
     
     def execute(self, function: typing.Callable[[typing.Any], numpy.ndarray], name: str, *function_args) -> numpy.ndarray:
         file = os.path.join(self.directory_, f"{name}.npy")
         if os.path.exists(file):
-            self.logger_.print(f"Got the result from {file}")
+            cvtda.logging.logger().print(f"Got the result from {file}")
             return numpy.load(file)
         
         result = function(*function_args)
-        self.logger_.print(f"Saving the result to {file}")
-        os.makedirs(self.directory_, exist_ok = True)
+        cvtda.logging.logger().print(f"Saving the result to {file}")
+        os.makedirs(os.path.dirname(file), exist_ok = True)
         numpy.save(file, result)
         return result

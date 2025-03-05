@@ -14,7 +14,7 @@ class CLILogger(BaseLogger):
     def print(self, data: T) -> None:
         print(data)
 
-    def loop(
+    def pbar(
         self,
         data: typing.Iterable[T],
         total: int = None,

@@ -2,37 +2,31 @@ import typing
 
 import numpy
 import joblib
-import gtda.curves
 import sklearn.base
 import gtda.diagrams
-import numpy.ma.core
 
-from cvtda.utils import set_random_seed
-from cvtda.logging import DevNullLogger, CLILogger
+import cvtda.utils
+import cvtda.logging
 
-class DiagramsToFeatures(sklearn.base.TransformerMixin):
+
+class DiagramVectorizer(sklearn.base.TransformerMixin):
     def __init__(
         self,
         n_jobs: int = -1,
-        verbose: bool = True,
-        random_state: int = 42,
+        reduced: bool = True,
 
-        n_bins: int = 128,
+        n_bins: int = 64,
         batch_size: int = 4096,
         filtering_percentile: int = 10,
         
         persistence_landscape_layers: int = 3,
         silhouette_powers: typing.List[int] = [ 1, 2 ],
-        heat_kernel_sigmas: typing.List[float] = [ 1.0 ],
-        persistence_image_sigmas: typing.List[float] = [ 1.0 ]
+        heat_kernel_sigmas: typing.List[float] = [ 0.1, 1.0, numpy.pi ],
+        persistence_image_sigmas: typing.List[float] = [ 0.1, 1.0, numpy.pi ]
     ):
         self.fitted_ = False
         self.n_jobs_ = n_jobs
-        self.random_state_ = random_state
-        set_random_seed(self.random_state_)
-        self.logger_ = CLILogger() if verbose else DevNullLogger()
-
-        self.n_bins_ = n_bins
+        self.reduced_ = reduced
         self.batch_size_ = batch_size
         self.filtering_percentile_ = filtering_percentile
         
@@ -63,44 +57,36 @@ class DiagramsToFeatures(sklearn.base.TransformerMixin):
             for sigma in persistence_image_sigmas
         ]
 
+
     def fit(self, diagrams: numpy.ndarray):
-        set_random_seed(self.random_state_)
-        
-        self.logger_.print('Fitting the calculator')
         self.homology_dimensions_ = numpy.unique(diagrams[:, :, 2])
         
-        self.logger_.print('Fitting the filtering')
         self.filtering_epsilon_ = self.determine_filtering_epsilon_(diagrams)
         self.filtering_ = gtda.diagrams.Filtering(epsilon = self.filtering_epsilon_).fit(diagrams)
 
-        self.logger_.print('Fitting the betti curve')
         self.betti_curve_.fit(diagrams)
         
-        self.logger_.print('Fitting the persistence landscape')
         self.persistence_landscape_.fit(diagrams)
         
-        for silhouette in self.logger_.loop(self.silhouettes_, desc = 'Fitting the silhouettes'):
+        for silhouette in self.silhouettes_:
             silhouette.fit(diagrams)
         
-        self.logger_.print('Fitting the persistence entropy')
         self.persistence_entropy_.fit(diagrams)
         
-        self.logger_.print('Fitting the number of points')
         self.number_of_points_.fit(diagrams)
 
-        for heat_kernel in self.logger_.loop(self.heat_kernels_, desc = 'Fitting the heat kernels'):
+        for heat_kernel in self.heat_kernels_:
             heat_kernel.fit(diagrams)
             
-        for persistence_image in self.logger_.loop(self.persistence_images_, desc = 'Fitting the persistence images'):
+        for persistence_image in self.persistence_images_:
             persistence_image.fit(diagrams)
 
-        self.logger_.print('Fitting complete')
+        cvtda.logging.logger().print('DiagramVectorizer: fitting complete')
         self.fitted_ = True
         return self
     
     def transform(self, diagrams: numpy.ndarray) -> numpy.ndarray:
-        assert self.fitted_ is True
-        set_random_seed(self.random_state_)
+        assert self.fitted_ is True, 'fit() must be called before transform()'
         
         def transform_batch(batch: numpy.ndarray) -> numpy.ndarray:
             batch = self.filtering_.transform(batch)
@@ -114,14 +100,14 @@ class DiagramsToFeatures(sklearn.base.TransformerMixin):
                 self.calc_persistence_image_features_(batch),
                 self.calc_lifetime_features_         (batch)
             ])
-
+        
         loop = range(0, len(diagrams), self.batch_size_)
         features = joblib.Parallel(return_as = 'generator', n_jobs = self.n_jobs_)(
             joblib.delayed(transform_batch)(diagrams[batch_start:batch_start + self.batch_size_])
             for batch_start in loop
         )
 
-        collector = self.logger_.loop(features, total = len(loop), desc = 'Batch')
+        collector = cvtda.logging.logger().pbar(features, total = len(loop), desc = 'DiagramVectorizer: batch')
         return numpy.vstack(list(collector))
 
 
@@ -130,47 +116,17 @@ class DiagramsToFeatures(sklearn.base.TransformerMixin):
         life = (diagrams[:, :, 1] - diagrams[:, :, 0]).flatten()
         return numpy.percentile(life[life != 0], self.filtering_percentile_)
 
-
-    def calc_sequence_stats_(self, data: typing.Union[numpy.ndarray, numpy.ma.core.MaskedArray], axis: int = 1) -> numpy.ndarray:
-        # if axis = 1, data should be of shape (n_diagrams, sequence_length)
-        if type(data) == numpy.ma.core.MaskedArray:
-            return numpy.ma.concatenate([
-                # numpy.ma.max(data, axis = axis, keepdims = True),
-                # numpy.ma.sum(data, axis = axis, keepdims = True),
-                # numpy.ma.mean(data, axis = axis, keepdims = True),
-                # numpy.ma.std(data, axis = axis, keepdims = True),
-                # numpy.ma.median(data, axis = axis, keepdims = True),
-                numpy.ma.sum(numpy.ma.abs(data), axis = axis, keepdims = True), # manhattan norm
-                numpy.ma.sqrt(numpy.ma.sum(data ** 2, axis = axis, keepdims = True)), # euclidean norm
-                numpy.ma.max(numpy.ma.abs(data), axis = axis, keepdims = True), # infinity norm
-            ], axis = axis).filled(0)
-        else:
-            return numpy.concatenate([
-                # numpy.max(data, axis = axis, keepdims = True),
-                # numpy.sum(data, axis = axis, keepdims = True),
-                # numpy.mean(data, axis = axis, keepdims = True),
-                # numpy.std(data, axis = axis, keepdims = True),
-                # numpy.median(data, axis = axis, keepdims = True),
-                numpy.sum(numpy.abs(data), axis = axis, keepdims = True), # manhattan norm
-                numpy.sqrt(numpy.sum(data ** 2, axis = axis, keepdims = True)), # euclidean norm
-                numpy.max(numpy.abs(data), axis = axis, keepdims = True), # infinity norm
-            ], axis = axis)
-
     def calc_perdim_sequence_stats_(self, data: numpy.ndarray) -> numpy.ndarray:
-        # data should be of shape (n_diagrams, n_dimensions, sequence_length)
         return numpy.hstack([
-            self.calc_sequence_stats_(data[:, dim, :])
+            cvtda.utils.sequence2features(data[:, dim, :], reduced = self.reduced_)
             for dim in range(data.shape[1])
         ])
     
 
+
     def calc_betti_features_(self, diagrams: numpy.ndarray) -> numpy.ndarray:
         betti_curves = self.betti_curve_.transform(diagrams)
-        betti_curve_derivatives = gtda.curves.Derivative().fit_transform(betti_curves)
-        return numpy.hstack([
-            self.calc_perdim_sequence_stats_(betti_curves),
-            self.calc_perdim_sequence_stats_(betti_curve_derivatives)
-        ])
+        return self.calc_perdim_sequence_stats_(betti_curves)
         
     def calc_landscape_features_(self, diagrams: numpy.ndarray) -> numpy.ndarray:
         n_layers = self.persistence_landscape_.n_layers
