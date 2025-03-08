@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang='ru'>
+    <head>
+        <meta name="robots" content="noindex">
+
+        <title><%=error%> <%=title%> - DBViewer</title>
+        <meta name="description" content="">
+
+        <style nonce="<%=res.cspNonce.style%>">
+            body { display: flex; align-items: center; justify-content: center; text-align: center; }
+            main { max-width: min(80ch, 90vw); }
+        </style>
+        <%- include("./general/head.ejs", locals) %>
+    </head>
+    <body>
+        <main tabindex="-1">
+            <h1 class="text_size_enormous"><%=error%> <%=title%></h1>
+            <p>
+                <% if (Array.isArray(description))
+                {
+                    for (const line of description) { %> <%=line%><br> <% }
+                }
+                else
+                { %>
+                    <%=description%>
+                <% } %>
+            </p>
+            <a href="/" class="control_primary padding_regular_wide margin_vertical_regular">На главную</a>
+        </main>
+    </body>
+</html>

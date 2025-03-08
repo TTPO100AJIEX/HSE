@@ -1,0 +1,108 @@
+<% locals.has_nav = true; %>
+<!DOCTYPE html>
+<html lang='ru'>
+    <head>
+        <script src="https://www.gstatic.com/charts/loader.js" nonce="<%=res.cspNonce.script%>" defer></script>
+        <title><%=tables.find(table => table.id == req.query.id).name%></title>
+        <meta name="description" content="Таблица <%=tables.find(table => table.id == req.query.id).name%>">
+        <script src="/static/js/table.js" type="module" nonce="<%=res.cspNonce.script%>"></script>
+        <%- include("./general/head.ejs", locals) %>
+    </head>
+    <body>
+        <%- include("./general/nav.ejs", locals) %>
+        
+        <div class="main_body">
+            <%- include("./general/header.ejs", locals) %>
+            <main tabindex="-1">
+                <h1>Таблица <span id="table_name"><%=tables.find(table => table.id == req.query.id).name%></span></h1>
+                <dl class="margin_vertical_regular">
+                    <dt>Тип</dt>
+                    <dd id="table_type">&nbsp;</dd>
+
+                    <dt>Объём памяти</dt>
+                    <dd id="table_size">&nbsp;</dd>
+
+                    <dt>Количество записей в таблице</dt>
+                    <dd id="table_rows">&nbsp;</dd>
+                </dl>
+                <p class="margin_vertical_regular">Ниже представлена статистика нагрузки на сервер базы данных, которая может быть полезна при диагностике ошибок БД администратором:</p>
+                <div class="graphs">
+                    <div class="surface_rounded" id="reads_graph"></div>
+                    <div class="surface_rounded" id="scans_graph"></div>
+                    <div class="surface_rounded" id="updates_graph"></div>
+                    <div class="surface_rounded" id="live_graph"></div>
+                </div>
+                <table id="data_table" class="data_table" data-tableid="<%=req.query.id%>">
+                    <thead>
+                        <tr>
+                            <th class="text_align_center" data-identity>№</th>
+                            <% const flag_tips = {
+                                "IA": "Генерируемый всегда идентификатор",
+                                "ID": "Стандартно генерируемый идентификатор",
+                                "NN": "Не содержит пропущенных значений",
+                                "D": "Имеет стандартное значение",
+                                "G": "Генерируемое значение",
+                                "U": "Уникальное значение",
+                                "PK": "Ключ"
+                            };
+                            for (const column of columns)
+                            { %>
+                                <th>
+                                    <% const title = Object.entries(column.flags).filter(flag => flag[1]).map(flag => flag_tips[flag[0].toUpperCase()]).join('&#10;'); %>
+                                    <button class="control_block text_size_regular dropdown_opener dropdown_arrow" data-dropdown="data_table_head_<%=column.name%>" title="<%-title%>">
+                                        <span><%=column.name%></span>
+                                        <span class="text_minor text_size_small">
+                                            <%=Object.entries(column.flags).filter(flag => flag[1]).map(flag => `[${flag[0].toUpperCase()}]`).join(' ')%>
+                                            <%=column.type.name%>
+                                        </span>
+                                    </button>
+                                </th>
+                            <% } %>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <% for (const column of columns)
+                            { %>
+                                <td>
+                                    <div id="data_table_head_<%=column.name%>" class="dropdown_inplace flex_vertical" tabindex="-1" hidden>
+                                        <label> Фильтрация: <%- include("./general/input.ejs", { ...locals, column, identityType: 'head' }) %> </label>
+                                        <label>
+                                            Сортировка:
+                                            <select class="sortOrder" data-column="<%=column.name%>">
+                                                <option value="asc">По возрастанию</option>
+                                                <option value="desc">По убыванию</option>
+                                                <option value="default" selected>Без сортировки</option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                </td>
+                            <% } %>
+                        </tr>
+                    </thead>
+                    <% if (req.authorization.permissions.includes("I")) { %> <tbody data-type="insert"></tbody> <% } %>
+                    <tbody data-type="display"></tbody>
+                    <template data-type="row">
+                        <tr>
+                            <td>
+                                <template data-type="insert">
+                                    <div>
+                                        <button class="control_block striped_button" title="Удалить строку" hidden><span></span></button>
+                                        <span>Новый</span>
+                                    </div>
+                                </template>
+                                <template data-type="display">
+                                    <div>
+                                        <% if (!req.authorization.permissions.includes("D")) { %> <button class="control_block striped_button" title="Удалить строку" disabled><span></span></button> <% }
+                                        else { %> <button class="control_block striped_button" title="Удалить строку"><span></span></button> <% } %>
+                                        <span>1</span>
+                                    </div>
+                                </template>
+                            </td>
+                            <% for (const column of columns) { %> <td> <%- include("./general/input.ejs", { ...locals, column, identityType: 'body' }) %> </td> <% } %>
+                        </tr>
+                    </template>
+                </table>
+            </main>
+        </div>
+    </body>
+</html>

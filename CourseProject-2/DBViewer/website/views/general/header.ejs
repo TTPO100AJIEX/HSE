@@ -1,0 +1,39 @@
+<header class="surface">
+
+    <div class="siteinfo flex_horizontal">
+        <% if (locals.has_nav)
+        { %>
+            <button class="striped_button navigation_opener desktop_hidden" title="Развернуть меню навигации">
+                <span></span><span></span><span></span>
+            </button>
+        <% } %>
+        <div class="userinfo text_nowrap">
+            <div class="text_size_medium"><%=req.authorization.login%></div>
+            <%
+            const perms_title = ((req.authorization.permissions.includes("R") ? "Чтение&#10;" : "") +
+                                (req.authorization.permissions.includes("I") ? "Вставка&#10;" : "") +
+                                (req.authorization.permissions.includes("U") ? "Обновление&#10;" : "") +
+                                (req.authorization.permissions.includes("D") ? "Удаление&#10;" : "") +
+                                (req.authorization.permissions.includes("A") ? "Администрирование&#10;" : "")) || "Отсутствует";
+            %>
+            <div class="text_size_small" title="<%-perms_title%>"> <span class="text_minor">Доступ:</span> <span class="text_brand"><%=req.authorization.permissions%></span> </div>
+        </div>
+    </div>
+    
+    <div class="navigation"></div>
+
+    <div class="grid_1x2">
+        <% if (req.routerPath == "/admin/accounts") { %> <button class="padding_regular_wide" data-dialog="create_account">Создать</button> <% }
+        else { %> <button id="save_changes" class="padding_regular_wide" form="changes" hidden>Сохранить</button> <% } %>
+        <a href="/logout" class="control_primary padding_regular_wide">Выйти</a>
+    </div>
+</header>
+
+<% if (req.routerPath.startsWith("/table"))
+{ %>
+    <form id="changes" method="POST" action="/data" hidden>
+        <input type="hidden" name="actions" value="[]">
+        <input type="hidden" name="table" value="<%=req.query.id%>">
+        <input type="hidden" name="authentication" value="<%=req.authentication%>">
+    </form>
+<% } %>
