@@ -9,28 +9,22 @@ import gtda.homology
 import cvtda.utils
 import cvtda.logging
 
-from . import utils
-from .interface import TopologicalExtractor
+from .Pipeline import Pipeline
+from .DiagramVectorizer import DiagramVectorizer
 
 
-class FiltrationExtractor(TopologicalExtractor):
+class FiltrationExtractor(Pipeline):
     def __init__(
         self,
         filtration_class,
         filtation_kwargs: dict,
         binarizer_threshold: float,
-
         n_jobs: int = -1,
-        reduced: bool = True,
-        only_get_from_dump: bool = False,
-        return_diagrams: bool = False
+        reduced: bool = True
     ):
         super().__init__(
-            supports_rgb = False,
             n_jobs = n_jobs,
             reduced = reduced,
-            only_get_from_dump = only_get_from_dump,
-            return_diagrams = return_diagrams,
             filtration_class = filtration_class,
             filtation_kwargs = filtation_kwargs,
             binarizer_threshold = binarizer_threshold
@@ -38,30 +32,36 @@ class FiltrationExtractor(TopologicalExtractor):
 
         self.binarizer_ = gtda.images.Binarizer(threshold = binarizer_threshold, n_jobs = self.n_jobs_)
         self.filtration_ = filtration_class(**filtation_kwargs, n_jobs = self.n_jobs_)
+
         self.persistence_ = gtda.homology.CubicalPersistence(homology_dimensions = [ 0, 1 ], n_jobs = self.n_jobs_)
+        self.vectorizer_ = DiagramVectorizer(n_jobs = self.n_jobs_, reduced = self.reduced_)
 
 
-    def get_diagrams_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
+    def process_rgb_(self, rgb_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
+        return numpy.zeros((len(rgb_images), 0))
+    
+    def process_gray_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
         cvtda.logging.logger().print(f"FiltrationExtractor: processing {dump_name}, do_fit = {do_fit}, filtration = {self.filtration_}")
+
+        diagrams_dump_name = self.dump_name_concat_(dump_name, "diagrams")
+        features_dump_name = self.dump_name_concat_(dump_name, "features")
         
-        bin_images = utils.process_iter(self.binarizer_, images, do_fit)
-        assert bin_images.shape == images.shape
+        features_from_dump = self.maybe_get_dump_(do_fit, features_dump_name)
+        if features_from_dump is not None: return features_from_dump
+        
+        bin_images = self.process_iter_(self.binarizer_, gray_images, do_fit)
+        assert bin_images.shape == gray_images.shape
 
-        filtrations = utils.process_iter(self.filtration_, bin_images, do_fit)
-        assert filtrations.shape == images.shape
+        filtrations = self.process_iter_(self.filtration_, bin_images, do_fit)
+        assert filtrations.shape == gray_images.shape
 
-        return utils.process_iter_dump(self.persistence_, filtrations, do_fit, self.diagrams_dump_(dump_name))
+        diagrams = self.process_iter_dump_(self.persistence_, filtrations, do_fit, diagrams_dump_name)
+        return self.process_iter_dump_(self.vectorizer_, diagrams, do_fit, features_dump_name)
 
 
 class FiltrationsExtractor(sklearn.base.TransformerMixin):
     def __init__(
         self,
-
-        n_jobs: int = -1,
-        reduced: bool = True,
-        only_get_from_dump: bool = False,
-        return_diagrams: bool = False,
-
         binarizer_thresholds: typing.List[float] = [ 0.2, 0.4, 0.6, 0.8 ],
         height_filtration_directions: typing.Iterable[typing.Tuple[float, float]] = [
             [ -1, -1 ], [ 1, 1 ], [ 1, -1 ], [ -1, 1 ],
@@ -69,22 +69,17 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
         ],
         num_radial_filtrations: int = 4,
         density_filtration_radiuses: typing.Iterable[int] = [ 1, 3 ],
+        n_jobs: int = -1,
+        reduced: bool = True
     ):
         self.fitted_ = False
-        self.return_diagrams_ = return_diagrams
-        self.filtrations_kwargs_ = {
-            'n_jobs': n_jobs,
-            'reduced': reduced,
-            'only_get_from_dump': only_get_from_dump,
-            'return_diagrams': return_diagrams
-        }
+        self.n_jobs_ = n_jobs
+        self.reduced_ = reduced
 
         self.binarizer_thresholds_ = binarizer_thresholds
         self.height_filtration_directions_ = height_filtration_directions
         self.num_radial_filtrations_ = num_radial_filtrations
         self.density_filtration_radiuses_ = density_filtration_radiuses
-
-        self.filtration_extractors_: typing.List[typing.Tuple[FiltrationExtractor, str]] = []
 
 
     def fit(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
@@ -94,7 +89,7 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
         self._fill_filtrations(images.shape[1], images.shape[2])
         for i, (filtration_extractor, name) in enumerate(self.filtration_extractors_):
             cvtda.logging.logger().print(f"Fitting filtration {i}/{len(self.filtration_extractors_)}: {name}")
-            filtration_extractor.fit(images, utils.dump_name_concat(dump_name, name))
+            filtration_extractor.fit(images, self.dump_name_concat_(dump_name, name))
         self.fitted_ = True
         return self
     
@@ -102,11 +97,11 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
         assert self.fitted_ is True, 'fit() must be called before transform()'
         cvtda.logging.logger().print("Applying filtrations")
         
-        outputs = [ ]
+        features = [ ]
         for i, (filtration_extractor, name) in enumerate(self.filtration_extractors_):
             cvtda.logging.logger().print(f"Applying filtration {i}/{len(self.filtration_extractors_)}: {name}")
-            outputs.append(filtration_extractor.transform(images, utils.dump_name_concat(dump_name, name)))
-        return utils.hstack(outputs, not self.return_diagrams_)
+            features.append(filtration_extractor.transform(images, self.dump_name_concat_(dump_name, name)))
+        return numpy.hstack(features)
     
     def fit_transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
         return self.fit(images, dump_name = dump_name).transform(images, dump_name = dump_name)
@@ -130,7 +125,11 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
         for direction in self.height_filtration_directions_:
             name = f'{int(binarizer_threshold * 10)}/HeightFiltrartion_{direction[0]}_{direction[1]}'
             extractor = FiltrationExtractor(
-                gtda.images.HeightFiltration, { 'direction': numpy.array(direction) }, binarizer_threshold, **self.filtrations_kwargs_
+                gtda.images.HeightFiltration,
+                { 'direction': numpy.array(direction) },
+                binarizer_threshold,
+                n_jobs = self.n_jobs_,
+                reduced = self.reduced_
             )
             self.filtration_extractors_.append((extractor, name))
             
@@ -138,27 +137,61 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
         for center in list(itertools.product(radial_x, radial_y)):
             name = f'{int(binarizer_threshold * 10)}/RadialFiltration_{center[0]}_{center[1]}'
             extractor = FiltrationExtractor(
-                gtda.images.RadialFiltration, { 'center': numpy.array(center) }, binarizer_threshold, **self.filtrations_kwargs_
+                gtda.images.RadialFiltration,
+                { 'center': numpy.array(center) },
+                binarizer_threshold,
+                n_jobs = self.n_jobs_,
+                reduced = self.reduced_
             )
             self.filtration_extractors_.append((extractor, name))
 
     def _add_dilation_filtrations(self, binarizer_threshold: float):
         name = f'{int(binarizer_threshold * 10)}/DilationFiltration'
-        extractor = FiltrationExtractor(gtda.images.DilationFiltration, { }, binarizer_threshold, **self.filtrations_kwargs_)
+        extractor = FiltrationExtractor(
+            gtda.images.DilationFiltration,
+            { }, 
+            binarizer_threshold,
+            n_jobs = self.n_jobs_,
+            reduced = self.reduced_
+        )
         self.filtration_extractors_.append((extractor, name))
 
     def _add_erosion_filtrations(self, binarizer_threshold: float):
         name = f'{int(binarizer_threshold * 10)}/ErosionFiltration'
-        extractor = FiltrationExtractor(gtda.images.ErosionFiltration, { }, binarizer_threshold, **self.filtrations_kwargs_)
+        extractor = FiltrationExtractor(
+            gtda.images.ErosionFiltration,
+            { }, 
+            binarizer_threshold,
+            n_jobs = self.n_jobs_,
+            reduced = self.reduced_
+        )
         self.filtration_extractors_.append((extractor, name))
 
     def _add_signed_distance_filtrations(self, binarizer_threshold: float):
         name = f'{int(binarizer_threshold * 10)}/SignedDistanceFiltration'
-        extractor = FiltrationExtractor(gtda.images.SignedDistanceFiltration, { }, binarizer_threshold, **self.filtrations_kwargs_)
+        extractor = FiltrationExtractor(
+            gtda.images.SignedDistanceFiltration,
+            { }, 
+            binarizer_threshold,
+            n_jobs = self.n_jobs_,
+            reduced = self.reduced_
+        )
         self.filtration_extractors_.append((extractor, name))
         
     def _add_density_filtrations(self, binarizer_threshold: float):
         for radius in self.density_filtration_radiuses_:
             name = f'{int(binarizer_threshold * 10)}/DensityFiltration_{radius}'
-            extractor = FiltrationExtractor(gtda.images.DensityFiltration, { 'radius': radius }, binarizer_threshold, **self.filtrations_kwargs_)
+            extractor = FiltrationExtractor(
+                gtda.images.DensityFiltration,
+                { 'radius': radius },
+                binarizer_threshold,
+                n_jobs = self.n_jobs_,
+                reduced = self.reduced_
+            )
             self.filtration_extractors_.append((extractor, name))
+
+
+    def dump_name_concat_(self, dump_name: typing.Optional[str], extra_path: str):
+        if dump_name is None:
+            return None
+        return dump_name + "/" + extra_path

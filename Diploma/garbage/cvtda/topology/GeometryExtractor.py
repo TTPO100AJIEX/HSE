@@ -10,16 +10,13 @@ import cvtda.utils
 import cvtda.dumping
 import cvtda.logging
 
-from . import utils
-from .interface import Extractor
+from .Pipeline import Pipeline
 
 
-def calc_curvature(gray_image: numpy.ndarray) -> numpy.ndarray:
-    assert (gray_image.min() >= 0) and (gray_image.max() <= 1), 'Bad image format: should be [0, 1]'
-
+def calc_curvature(gray_image):
     euler_numbers, area, perimeter = [], [], []
-    for threshold in range(256):
-        bin = (gray_image > threshold / 255.)
+    for threshold in range(256): # FIXME: what if image is [0, 1)?
+        bin = (gray_image > threshold)
         euler_numbers.append(skimage.measure.euler_number(bin))
         area.append(bin.sum())
         perimeter.append(skimage.measure.perimeter(bin))
@@ -124,16 +121,16 @@ class RGBGeometryExtractor(sklearn.base.TransformerMixin):
         )
 
 
-class GeometryExtractor(Extractor):
-    def __init__(self, n_jobs: int = -1, reduced: bool = True, only_get_from_dump: bool = False):
-        super().__init__(n_jobs = n_jobs, reduced = reduced, only_get_from_dump = only_get_from_dump)
+class GeometryExtractor(Pipeline):
+    def __init__(self, n_jobs: int = -1, reduced: bool = True):
+        super().__init__(n_jobs = n_jobs, reduced = reduced)
 
         self.rgb_extractor_ = RGBGeometryExtractor(n_jobs = self.n_jobs_, reduced = self.reduced_)
         self.gray_extractor_ = GrayGeometryExtractor(n_jobs = self.n_jobs_, reduced = self.reduced_)
 
 
     def process_rgb_(self, rgb_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
-        return utils.process_iter_dump(self.rgb_extractor_, rgb_images, do_fit, self.features_dump_(dump_name))
+        return self.process_iter_dump_(self.rgb_extractor_, rgb_images, do_fit, dump_name)
     
     def process_gray_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
-        return utils.process_iter_dump(self.gray_extractor_, gray_images, do_fit, self.features_dump_(dump_name))
+        return self.process_iter_dump_(self.gray_extractor_, gray_images, do_fit, dump_name)

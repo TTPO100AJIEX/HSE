@@ -22,7 +22,7 @@ class BaseDumper(abc.ABC, typing.Generic[T]):
         pass
 
     def get_dump(self, name: str) -> T:
-        assert self.has_dump(name), f"There is no dump at {name}"
+        assert self.has_dump(name)
         return self.get_dump_impl_(name)
     
     @abc.abstractmethod

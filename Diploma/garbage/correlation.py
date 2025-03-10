@@ -40,3 +40,19 @@ class CorrelationSelector(sklearn.base.TransformerMixin):
     def hist(self, bins: int = 50):
         assert self.fitted_ is True, 'fit() must be called before hist()'
         return plt.hist(self.correlations_, bins = bins)
+
+import tqdm
+
+t = train_scaled[:, :10]
+
+to_remove = set()
+threshold = 0.9 * train_scaled.shape[0]
+for i in tqdm.trange(t.shape[1]):
+    for j in range(i):
+        if j in to_remove:
+            continue
+        if numpy.abs(t[:, i] @ t[:, j]) > threshold:
+            to_remove.add(i)
+            break
+
+to_remove, set(range(t.shape[1])) - to_remove
