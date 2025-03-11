@@ -6,4 +6,4 @@ from .estimate_quality import estimate_quality
 from .information_value import calculate_binary_information_value
 from .information_value import calculate_information_value
 from .information_value import InformationValueFeatureSelector
-from .nn_classifier import NNClassifier
+from .NNclassifier import NNClassifier

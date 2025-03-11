@@ -1,51 +1,56 @@
-import typing
-
+import tqdm
 import numpy
-import gtda.diagrams
+import torch
+import torch.utils.data
+import torchph.nn.slayer
 
-class Dataset:
+import cvtda.logging
+
+
+class Dataset(torch.utils.data.Dataset):
     def __init__(
         self,
         images: numpy.ndarray,
-        diagrams: numpy.ndarray,
+        diagrams: numpy.ndarray, # n_items x n_diagrams x n_points x 3
         features: numpy.ndarray,
         labels: numpy.ndarray
     ):
-        self.images = images
-        self.diagrams = diagrams
-        self.features = features
-        self.labels = labels
+        self.images = torch.tensor(images)
+        self.features = torch.tensor(features)
+        self.labels = torch.tensor(labels)
+        self.process_diagrams_(diagrams)
+        cvtda.logging.logger().print(f"Constructed a dataset of {len(self.images)} images with {len(self.diagrams)} diagrams")
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        output = [ self.labels[idx], self.images[idx], self.features[idx] ]
+        for i in range(len(self.diagrams)):
+            output.append(self.diagrams[i][idx])
+            output.append(self.non_dummy_points[i][idx])
+            output.append(self.batch_max_points[i][idx])
+            output.append(self.batch_size[i][idx])
+        return output
 
 
-    def process_diagrams():
+    def process_diagrams_(self, diagrams: numpy.ndarray):
         def transform(diagram, dim):
             dim_filter = (diagram[:, 2] == dim)
-            non_degenerate_filter = (diagram[:, 0] != diagram[:, 1])
+            non_degenerate_filter = (diagram[:, 0] > diagram[:, 1])
             rotation = torchph.nn.slayer.UpperDiagonalThresholdedLogTransform(0.05)
             return rotation(diagram[dim_filter & non_degenerate_filter][:, 0:2])
 
-        train_data = [ ]
-        test_data = [ ]
-        for filtration in tqdm.tqdm(os.listdir(f"1")):
-            for dim in [ 0, 1 ]:
-                    dir = f"1/{filtration}"
-                    train_diagrams = numpy.load(f"{dir}/train_diagrams.npy")
-                    test_diagrams = numpy.load(f"{dir}/test_diagrams.npy")
-
-                    scaler = gtda.diagrams.Scaler()
-                    train_diagrams = scaler.fit_transform(train_diagrams)
-                    test_diagrams = scaler.transform(test_diagrams)
-                    
-                    train_diagrams = torch.tensor(train_diagrams, dtype = torch.float32)
-                    test_diagrams = torch.tensor(test_diagrams, dtype = torch.float32)
-
-                    diagrams_train = joblib.Parallel(n_jobs = 1)(joblib.delayed(transform)(diagram, dim) for diagram in train_diagrams)
-                    diagrams, non_dummy_points, _, _ = torchph.nn.slayer.prepare_batch(diagrams_train)
-                    train_data.append(diagrams)
-                    train_data.append(non_dummy_points)
-                    
-                    diagrams_test = joblib.Parallel(n_jobs = 1)(joblib.delayed(transform)(diagram, dim) for diagram in test_diagrams)
-                    diagrams, non_dummy_points, _, _ = torchph.nn.slayer.prepare_batch(diagrams_test)
-                    test_data.append(diagrams)
-                    test_data.append(non_dummy_points)
-        return train_data, test_data
+        self.diagrams = []
+        self.non_dummy_points = []
+        self.batch_max_points = []
+        self.batch_size = []
+        for num_diagram in tqdm.trange(len(diagrams[0]), "Dataset: processing diagrams"):
+            diags = torch.tensor([ item[num_diagram] for item in diagrams ])
+            for dim in diags[:, :, 2].unique(sorted = False):
+                diags_dim = [ transform(diag, dim) for diag in diags ]
+                processed = torchph.nn.slayer.prepare_batch(diags_dim)
+                self.diagrams.append(processed[0])
+                self.non_dummy_points.append(processed[1])
+                self.batch_max_points.append(processed[2])
+                self.batch_size.append(processed[3])

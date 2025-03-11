@@ -53,19 +53,22 @@ class FeatureExtractor(sklearn.base.TransformerMixin):
     def process_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         inverted_images = utils.process_iter(self.inverter_, images, do_fit = do_fit)
 
+        point_clouds_dump = utils.dump_name_concat(dump_name, "point_clouds")
+        greyscale_dump = utils.dump_name_concat(dump_name, "greyscale")
+        inverted_greyscale_dump = utils.dump_name_concat(dump_name, "inverted_greyscale")
+        filtrations_dump = utils.dump_name_concat(dump_name, "filtrations")
+        geometry_dump = utils.dump_name_concat(dump_name, "geometry")
+
         results = []
         if not self.reduced_:
-            results.append(
-                utils.process_iter(self.point_clouds_extractor_, images, do_fit, utils.dump_name_concat(dump_name, "point_clouds"))
-            )
-            results.append(self.point_clouds_extractor_.transform(images, utils.dump_name_concat(dump_name, "point_clouds")))
+            results.append(utils.process_iter(self.point_clouds_extractor_, images, do_fit, point_clouds_dump))
 
-        results.append(self.greyscale_extractor_.transform(images, utils.dump_name_concat(dump_name, "greyscale")))
-        results.append(self.inverted_greyscale_extractor_.transform(inverted_images, utils.dump_name_concat(dump_name, "inverted_greyscale")))
-        results.append(self.filtrations_extractor_.transform(images, utils.dump_name_concat(dump_name, "filtrations")))
+        results.append(utils.process_iter(self.greyscale_extractor_, images, do_fit, greyscale_dump))
+        results.append(utils.process_iter(self.inverted_greyscale_extractor_, inverted_images, do_fit, inverted_greyscale_dump))
+        results.append(utils.process_iter(self.filtrations_extractor_, images, do_fit, filtrations_dump))
         
         if not self.return_diagrams_:
-            results.append(self.geometry_extractor_.transform(images, utils.dump_name_concat(dump_name, "geometry")))
+            results.append(utils.process_iter(self.geometry_extractor_, images, do_fit, geometry_dump))
         
         results = utils.hstack(results, not self.return_diagrams_)
         if self.return_diagrams_:

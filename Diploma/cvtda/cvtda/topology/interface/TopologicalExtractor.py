@@ -52,8 +52,8 @@ class TopologicalExtractor(Extractor):
     def process_gray_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         return self.process_(gray_images, do_fit, dump_name)
     
-    def process_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
-        diagrams = self.get_diagrams_(gray_images, do_fit, dump_name)
+    def process_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
+        diagrams = self.get_diagrams_(images, do_fit, dump_name)
         diagrams = utils.process_iter(self.scaler_, diagrams, do_fit)
         if self.return_diagrams_:
             return diagrams

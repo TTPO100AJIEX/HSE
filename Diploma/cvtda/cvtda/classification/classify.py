@@ -13,7 +13,7 @@ import sklearn.neighbors
 import sklearn.preprocessing
 import matplotlib.pyplot as plt
 
-from cvtda.classification.nn_classifier import NNClassifier
+from cvtda.classification.NNclassifier import NNClassifier
 from cvtda.classification.estimate_quality import estimate_quality
 
 def classify(

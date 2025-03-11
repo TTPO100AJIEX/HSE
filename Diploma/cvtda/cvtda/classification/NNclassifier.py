@@ -6,16 +6,16 @@ import sklearn.base
 import sklearn.metrics
 import torch.utils.data
 
-from cvtda.utils import set_random_seed, Dataset
-from cvtda.logging import DevNullLogger, CLILogger
+import cvtda.utils
+import cvtda.logging
+import cvtda.neural_network
+
 
 class NNClassifier(sklearn.base.ClassifierMixin):
-    fitted_ = False
-
     def __init__(
         self,
+
         n_jobs: int = -1,
-        verbose: bool = True,
         random_state: int = 42,
 
         device: torch.device = torch.device("cuda"),
