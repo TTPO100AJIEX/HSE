@@ -6,6 +6,7 @@ import sklearn.base
 import sklearn.preprocessing
 
 from . import utils
+import cvtda.logging
 from .FiltrationsExtractor import FiltrationsExtractor
 from .GreyscaleExtractor import GreyscaleExtractor
 from .PointCloudsExtractor import PointCloudsExtractor
@@ -51,6 +52,7 @@ class FeatureExtractor(sklearn.base.TransformerMixin):
 
 
     def process_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
+        cvtda.logging.logger().print("Calculating inverted images")
         inverted_images = utils.process_iter(self.inverter_, images, do_fit = do_fit)
 
         point_clouds_dump = utils.dump_name_concat(dump_name, "point_clouds")
@@ -72,24 +74,8 @@ class FeatureExtractor(sklearn.base.TransformerMixin):
         
         results = utils.hstack(results, not self.return_diagrams_)
         if self.return_diagrams_:
+            cvtda.logging.logger().print("Diagrams requested. Returning diagrams.")
             return results
-
-
-    def fit(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
-        inverted_images = utils.process_iter(self.inverter_, images, do_fit = True)
-
-        if not self.reduced_:
-            self.point_clouds_extractor_.fit(images, utils.dump_name_concat(dump_name, "point_clouds"))
-
-        self.greyscale_extractor_.fit(images, utils.dump_name_concat(dump_name, "greyscale"))
-        self.inverted_greyscale_extractor_.fit(inverted_images, utils.dump_name_concat(dump_name, "inverted_greyscale"))
-        self.filtrations_extractor_.fit(images, utils.dump_name_concat(dump_name, "filtrations"))
-
-        if not self.return_diagrams_:
-            self.geometry_extractor_.fit(images, utils.dump_name_concat(dump_name, "geometry"))
-
-        self.fitted_ = True
-        return self
-    
-    def transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
-        assert self.fitted_ is True, 'fit() must be called before transform()'
+        
+        cvtda.logging.logger().print("Applying StandardScaler.")
+        return utils.process_iter(self.scaler_, results, do_fit)

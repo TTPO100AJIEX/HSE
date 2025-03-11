@@ -5,6 +5,8 @@ import numpy
 import gtda.diagrams
 
 from .. import utils
+import cvtda.logging
+import cvtda.dumping
 from .Extractor import Extractor
 from ..DiagramVectorizer import DiagramVectorizer
 
@@ -21,12 +23,13 @@ class TopologicalExtractor(Extractor):
         super().__init__(
             n_jobs = n_jobs,
             reduced = reduced,
-            only_get_from_dump = only_get_from_dump,
+            only_get_from_dump = False,
             return_diagrams = return_diagrams,
             supports_rgb = supports_rgb,
             **kwargs
         )
 
+        self.topo_only_get_from_dump_ = only_get_from_dump
         self.return_diagrams_ = return_diagrams
         self.supports_rgb_ = supports_rgb
 
@@ -47,13 +50,22 @@ class TopologicalExtractor(Extractor):
     def process_rgb_(self, rgb_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         if not self.supports_rgb_:
             return []
-        return self.process_(rgb_images, do_fit, dump_name)
+        return self.do_work_(rgb_images, do_fit, dump_name)
 
     def process_gray_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
-        return self.process_(gray_images, do_fit, dump_name)
+        return self.do_work_(gray_images, do_fit, dump_name)
     
-    def process_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
+    def do_work_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
+        if self.topo_only_get_from_dump_:
+            if self.return_diagrams_:
+                diagrams = cvtda.dumping.dumper().get_dump(self.diagrams_dump_(dump_name))
+                cvtda.logging.logger().print("Applying Scaler to persistence diagrams.")
+                return utils.process_iter(self.scaler_, diagrams, do_fit)
+            else:
+                return cvtda.dumping.dumper().get_dump(self.features_dump_(dump_name))
+
         diagrams = self.get_diagrams_(images, do_fit, dump_name)
+        cvtda.logging.logger().print("Applying Scaler to persistence diagrams.")
         diagrams = utils.process_iter(self.scaler_, diagrams, do_fit)
         if self.return_diagrams_:
             return diagrams

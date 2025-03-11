@@ -21,94 +21,107 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         device: torch.device = torch.device("cuda"),
         batch_size: int = 128,
         learning_rate: float = 1e-4,
-        n_epochs: int = 25
+        n_epochs: int = 25,
+        
+        skip_diagrams: bool = False,
+        skip_images: bool = False,
+        skip_features: bool = False
     ):
         self.n_jobs_ = n_jobs
         self.random_state_ = random_state
-        self.logger_ = CLILogger() if verbose else DevNullLogger()
 
         self.device_ = device
         self.batch_size_ = batch_size
         self.learning_rate_ = learning_rate
         self.n_epochs_ = n_epochs
 
+        self.skip_diagrams_ = skip_diagrams
+        self.skip_images_ = skip_images
+        self.skip_features_ = skip_features
 
-    def fit(self, train: Dataset, val: Dataset):
-        set_random_seed(self.random_state_)
-        train_dl = self.make_dataloader_(train_features, train_labels, shuffle = True)
-        self.init_(next(iter(train_dl))[0], int(numpy.max(train_labels)) + 1)
-        
-        pbar = self.logger_.pbar(range(self.n_epochs_))
-        for _ in pbar:
+
+    def fit(self, train: cvtda.neural_network.Dataset, val: typing.Optional[cvtda.neural_network.Dataset]):
+        cvtda.utils.set_random_seed(self.random_state_)
+        train_dl = torch.utils.data.DataLoader(
+            torch.utils.data.TensorDataset(torch.arange(len(train))),
+            batch_size = self.batch_size_,
+            shuffle = True
+        )
+        self.init_(next(iter(train_dl)), train)
+
+        for epoch in range(self.n_epochs_):
             sum_loss = 0
 
-            self.model_.train()
-            for (X, y) in train_dl:
+            self.model_list_.train()
+            for idxs in cvtda.logging.logger().pbar(train_dl, desc = f"Epoch {epoch}"):
                 self.optimizer_.zero_grad()
-                pred = self.forward_(X)
-                loss = torch.nn.functional.cross_entropy(pred, y.to(self.device_), reduction = 'sum')
+                pred = self.forward_(idxs, train)
+                loss = torch.nn.functional.cross_entropy(pred, train.get_labels(idxs), reduction = 'sum')
                 loss.backward()
                 self.optimizer_.step()
                 sum_loss += loss.item()
             postfix = { 'loss': sum_loss }
 
-            if (val_features is not None) and (val_labels is not None):
-                val_proba = self.predict_proba_(val_features)
+            if val is not None:
+                val_proba = self.predict_proba_(val)
                 val_pred = numpy.argmax(val_proba, axis = 1)
-                postfix['val_acc'] = sklearn.metrics.accuracy_score(val_labels, val_pred)
+                postfix['val_acc'] = sklearn.metrics.accuracy_score(val.labels, val_pred)
 
-            self.logger_.set_pbar_postfix(pbar, postfix)
+            print(f"Epoch {epoch}:", postfix)
 
         self.fitted_ = True
         return self
     
-    def predict_proba(self, features: numpy.ndarray) -> numpy.ndarray:
+    def predict_proba(self, dataset: cvtda.neural_network.Dataset) -> numpy.ndarray:
         assert self.fitted_ is True, 'fit() must be called before predict_proba()'
-        set_random_seed(self.random_state_)
-        return self.predict_proba_(features)
+        cvtda.utils.set_random_seed(self.random_state_)
+        return self.predict_proba_(dataset)
 
 
-    def init_(self, example_features: torch.Tensor, num_labels: int):
+    def init_(self, idxs: torch.Tensor, dataset: cvtda.neural_network.Dataset):
+        images, _, *diagrams = dataset.get_features(idxs)
+        labels = dataset.get_labels(idxs)
+        
+        self.nn_base_ = cvtda.neural_network.NNBase(
+            num_diagrams = len(diagrams) // 2,
+            skip_diagrams = self.skip_diagrams_,
+            skip_images = self.skip_images_,
+            skip_features = self.skip_features_,
+            images_n_channels = images.shape[1]
+        ).to(self.device_).train()
+
         self.model_ = torch.nn.Sequential(
             torch.nn.Dropout(0.4), torch.nn.LazyLinear(256), torch.nn.BatchNorm1d(256), torch.nn.ReLU(),
             torch.nn.Dropout(0.3), torch.nn.Linear(256, 128), torch.nn.BatchNorm1d(128), torch.nn.ReLU(),
             torch.nn.Dropout(0.2), torch.nn.Linear(128, 64), torch.nn.BatchNorm1d(64), torch.nn.ReLU(),
             torch.nn.Dropout(0.1), torch.nn.Linear(64, 32), torch.nn.BatchNorm1d(32), torch.nn.ReLU(),
-            torch.nn.Linear(32, num_labels), torch.nn.Softmax(dim = 1)
+            torch.nn.Linear(32, len(torch.unique(labels))), torch.nn.Softmax(dim = 1)
         ).to(self.device_).train()
 
+        self.model_list_ = torch.nn.ModuleList([ self.nn_base_, self.model_ ])
+
         self.optimizer_ = torch.optim.AdamW(
-            params = self.model_.parameters(),
+            params = self.model_list_.parameters(),
             lr = self.learning_rate_
         )
 
-        self.forward_(example_features)
-        self.logger_.print(f'Input to LazyLinear: {self.model_[1].in_features}')
-        self.logger_.print(f'Parameters: {sum(p.numel() for p in self.model_.parameters())}')
+        self.forward_(idxs, dataset)
+        cvtda.logging.logger().print(f'Input to LazyLinear: {self.model_[1].in_features}')
+        cvtda.logging.logger().print(f'Parameters: {sum(p.numel() for p in self.model_list_.parameters())}')
 
-    def forward_(self, X: numpy.ndarray) -> numpy.ndarray:
-        X = X.to(self.device_)
-        X = torch.squeeze(X)
-        return self.model_(X)
+    def forward_(self, idxs: torch.Tensor, dataset: cvtda.neural_network.Dataset) -> torch.Tensor:
+        return self.model_(self.nn_base_(*dataset.get_features(idxs)))
 
-    def make_dataloader_(
-        self, features: numpy.ndarray, labels: typing.Optional[numpy.ndarray] = None, shuffle: bool = False
-    ) -> torch.utils.data.DataLoader:
-        features = numpy.expand_dims(features, axis = 1)
-        features = torch.tensor(features, dtype = torch.float)
-        if labels is not None:
-            labels = torch.tensor(labels, dtype = torch.long)
+    def predict_proba_(self, dataset: cvtda.neural_network.Dataset) -> numpy.ndarray:
+        dl = torch.utils.data.DataLoader(
+            torch.utils.data.TensorDataset(torch.arange(len(dataset))),
+            batch_size = self.batch_size_,
+            shuffle = False
+        )
 
-        if labels is None:
-            train_ds = features
-        else:
-            train_ds = torch.utils.data.TensorDataset(features, labels)
-        return torch.utils.data.DataLoader(train_ds, batch_size = self.batch_size_, shuffle = shuffle)
-    
-    def predict_proba_(self, features: numpy.ndarray) -> numpy.ndarray:
         y_pred_proba = [ ]
-        self.model_.eval()
+        self.model_list_.eval()
         with torch.no_grad():
-            for X in self.make_dataloader_(features, shuffle = False):
-                y_pred_proba.append(self.forward_(X))
+            for idxs in dl:
+                y_pred_proba.append(self.forward_(idxs, dataset))
         return torch.vstack(y_pred_proba).cpu().numpy()
