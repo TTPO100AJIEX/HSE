@@ -6,7 +6,7 @@ import sklearn.base
 import sklearn.metrics
 import torch.utils.data
 
-from cvtda.utils import set_random_seed
+from cvtda.utils import set_random_seed, Dataset
 from cvtda.logging import DevNullLogger, CLILogger
 
 class NNClassifier(sklearn.base.ClassifierMixin):
@@ -33,13 +33,7 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         self.n_epochs_ = n_epochs
 
 
-    def fit(
-        self,
-        train_features: numpy.ndarray,
-        train_labels: numpy.ndarray,
-        val_features: typing.Optional[numpy.ndarray] = None,
-        val_labels: typing.Optional[numpy.ndarray] = None
-    ):
+    def fit(self, train: Dataset, val: Dataset):
         set_random_seed(self.random_state_)
         train_dl = self.make_dataloader_(train_features, train_labels, shuffle = True)
         self.init_(next(iter(train_dl))[0], int(numpy.max(train_labels)) + 1)

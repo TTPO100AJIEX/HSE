@@ -3,6 +3,7 @@ import typing
 import numpy
 import gtda.images
 import sklearn.base
+import sklearn.preprocessing
 
 from . import utils
 from .FiltrationsExtractor import FiltrationsExtractor
@@ -34,6 +35,43 @@ class FeatureExtractor(sklearn.base.TransformerMixin):
         self.filtrations_extractor_ = FiltrationsExtractor(**topological_extractor_kwargs)
         self.geometry_extractor_ = GeometryExtractor(**extractor_kwargs)
 
+        self.scaler_ = sklearn.preprocessing.StandardScaler(copy = False)
+
+    def fit(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
+        self.process_(images, do_fit = True, dump_name = dump_name)
+        self.fitted_ = True
+        return self
+    
+    def transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
+        assert self.fitted_ is True, 'fit() must be called before transform()'
+        return self.process_(images, do_fit = False, dump_name = dump_name)
+    
+    def fit_transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
+        return self.fit(images, dump_name = dump_name).transform(images, dump_name = dump_name)
+
+
+    def process_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
+        inverted_images = utils.process_iter(self.inverter_, images, do_fit = do_fit)
+
+        results = []
+        if not self.reduced_:
+            results.append(
+                utils.process_iter(self.point_clouds_extractor_, images, do_fit, utils.dump_name_concat(dump_name, "point_clouds"))
+            )
+            results.append(self.point_clouds_extractor_.transform(images, utils.dump_name_concat(dump_name, "point_clouds")))
+
+        results.append(self.greyscale_extractor_.transform(images, utils.dump_name_concat(dump_name, "greyscale")))
+        results.append(self.inverted_greyscale_extractor_.transform(inverted_images, utils.dump_name_concat(dump_name, "inverted_greyscale")))
+        results.append(self.filtrations_extractor_.transform(images, utils.dump_name_concat(dump_name, "filtrations")))
+        
+        if not self.return_diagrams_:
+            results.append(self.geometry_extractor_.transform(images, utils.dump_name_concat(dump_name, "geometry")))
+        
+        results = utils.hstack(results, not self.return_diagrams_)
+        if self.return_diagrams_:
+            return results
+
+
     def fit(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
         inverted_images = utils.process_iter(self.inverter_, images, do_fit = True)
 
@@ -52,22 +90,3 @@ class FeatureExtractor(sklearn.base.TransformerMixin):
     
     def transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
         assert self.fitted_ is True, 'fit() must be called before transform()'
-        
-        inverted_images = utils.process_iter(self.inverter_, images, do_fit = False)
-
-        results = []
-        if not self.reduced_:
-            results.append(self.point_clouds_extractor_.transform(images, utils.dump_name_concat(dump_name, "point_clouds")))
-
-        results.append(self.greyscale_extractor_.transform(images, utils.dump_name_concat(dump_name, "greyscale")))
-        results.append(self.inverted_greyscale_extractor_.transform(inverted_images, utils.dump_name_concat(dump_name, "inverted_greyscale")))
-        results.append(self.filtrations_extractor_.transform(images, utils.dump_name_concat(dump_name, "filtrations")))
-        
-        if not self.return_diagrams_:
-            results.append(self.geometry_extractor_.transform(images, utils.dump_name_concat(dump_name, "geometry")))
-        
-        return utils.hstack(results, not self.return_diagrams_)
-    
-    def fit_transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
-        return self.fit(images, dump_name = dump_name).transform(images, dump_name = dump_name)
-

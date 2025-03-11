@@ -2,6 +2,7 @@ import abc
 import typing
 
 import numpy
+import gtda.diagrams
 
 from .. import utils
 from .Extractor import Extractor
@@ -30,6 +31,7 @@ class TopologicalExtractor(Extractor):
         self.supports_rgb_ = supports_rgb
 
         self.vectorizer_ = DiagramVectorizer(n_jobs = self.n_jobs_, reduced = self.reduced_)
+        self.scaler_ = gtda.diagrams.Scaler(n_jobs = self.n_jobs_)
         
 
     def final_dump_name_(self, dump_name: typing.Optional[str] = None):
@@ -45,14 +47,14 @@ class TopologicalExtractor(Extractor):
     def process_rgb_(self, rgb_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         if not self.supports_rgb_:
             return []
-
-        diagrams = self.get_diagrams_(rgb_images, do_fit, dump_name)
-        if self.return_diagrams_:
-            return diagrams
-        return utils.process_iter_dump(self.vectorizer_, diagrams, do_fit, self.features_dump_(dump_name))
+        return self.process_(rgb_images, do_fit, dump_name)
 
     def process_gray_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
+        return self.process_(gray_images, do_fit, dump_name)
+    
+    def process_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         diagrams = self.get_diagrams_(gray_images, do_fit, dump_name)
+        diagrams = utils.process_iter(self.scaler_, diagrams, do_fit)
         if self.return_diagrams_:
             return diagrams
         return utils.process_iter_dump(self.vectorizer_, diagrams, do_fit, self.features_dump_(dump_name))
