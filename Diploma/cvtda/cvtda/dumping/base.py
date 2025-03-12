@@ -18,6 +18,10 @@ class BaseDumper(abc.ABC, typing.Generic[T]):
         pass
 
     @abc.abstractmethod
+    def save_dump(self, data: T, name: str):
+        pass
+
+    @abc.abstractmethod
     def has_dump(self, name: str) -> bool:
         pass
 

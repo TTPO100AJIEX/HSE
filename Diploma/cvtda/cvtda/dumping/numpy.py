@@ -17,13 +17,15 @@ class NumpyDumper(BaseDumper[numpy.ndarray]):
     def execute(self, function: typing.Callable[[typing.Any], numpy.ndarray], name: str, *function_args) -> numpy.ndarray:
         if self.has_dump(name):
             return self.get_dump(name)
-        
-        file = self.get_file_name_(name)
         result = function(*function_args)
+        self.save_dump(result, name)
+        return result
+
+    def save_dump(self, data: numpy.ndarray, name: str):
+        file = self.get_file_name_(name)
         cvtda.logging.logger().print(f"Saving the result to {file}")
         os.makedirs(os.path.dirname(file), exist_ok = True)
-        numpy.save(file, result)
-        return result
+        numpy.save(file, data)
 
     def has_dump(self, name: str) -> bool:
         return os.path.exists(self.get_file_name_(name))

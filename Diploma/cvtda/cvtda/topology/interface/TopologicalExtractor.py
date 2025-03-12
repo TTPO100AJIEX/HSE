@@ -41,7 +41,7 @@ class TopologicalExtractor(Extractor):
         return self.diagrams_dump_(dump_name) if self.return_diagrams_ else self.features_dump_(dump_name)
     
     def diagrams_dump_(self, dump_name: typing.Optional[str]):
-        return utils.dump_name_concat(dump_name, "diagrams")
+        return cvtda.dumping.dump_name_concat(dump_name, "diagrams")
     
     def force_numpy_(self):
         return not self.return_diagrams_

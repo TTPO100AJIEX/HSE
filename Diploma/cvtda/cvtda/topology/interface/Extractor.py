@@ -9,6 +9,7 @@ import cvtda.dumping
 import cvtda.logging
 
 from .. import utils
+import cvtda.dumping
 
 class Extractor(sklearn.base.TransformerMixin):
     def __init__(
@@ -35,7 +36,7 @@ class Extractor(sklearn.base.TransformerMixin):
         return self.features_dump_(dump_name)
     
     def features_dump_(self, dump_name: typing.Optional[str]):
-        return utils.dump_name_concat(dump_name, "features")
+        return cvtda.dumping.dump_name_concat(dump_name, "features")
     
     def force_numpy_(self):
         return True
@@ -70,11 +71,11 @@ class Extractor(sklearn.base.TransformerMixin):
             assert images.shape[3] == 3, f'Images with {len(images.shape)} channels are not supported'
             cvtda.logging.logger().print("RGB images received. Transforming to grayscale.")
 
-            rgb_dump = utils.dump_name_concat(dump_name, "rgb")
-            gray_dump = utils.dump_name_concat(dump_name, "gray")
-            red_dump = utils.dump_name_concat(dump_name, "red")
-            green_dump = utils.dump_name_concat(dump_name, "green")
-            blue_dump = utils.dump_name_concat(dump_name, "blue")
+            rgb_dump = cvtda.dumping.dump_name_concat(dump_name, "rgb")
+            gray_dump = cvtda.dumping.dump_name_concat(dump_name, "gray")
+            red_dump = cvtda.dumping.dump_name_concat(dump_name, "red")
+            green_dump = cvtda.dumping.dump_name_concat(dump_name, "green")
+            blue_dump = cvtda.dumping.dump_name_concat(dump_name, "blue")
 
             if do_fit:
                 self.gray_extractor_ = self.__class__(**self.kwargs_)

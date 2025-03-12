@@ -1,8 +1,5 @@
-# from .information_value import calculate_information_value
-# from .classify import classify
-# from .correlation import correlate_with_target
-# from .correlation import CorrelationSelector
-# from .estimate_quality import estimate_quality
+from .classify import classify
+from .estimate_quality import estimate_quality
 from .information_value import calculate_binary_information_value
 from .information_value import calculate_information_value
 from .information_value import InformationValueFeatureSelector

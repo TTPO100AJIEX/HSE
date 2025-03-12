@@ -7,6 +7,7 @@ import sklearn.preprocessing
 
 from . import utils
 import cvtda.logging
+import cvtda.dumping
 from .FiltrationsExtractor import FiltrationsExtractor
 from .GreyscaleExtractor import GreyscaleExtractor
 from .PointCloudsExtractor import PointCloudsExtractor
@@ -55,11 +56,11 @@ class FeatureExtractor(sklearn.base.TransformerMixin):
         cvtda.logging.logger().print("Calculating inverted images")
         inverted_images = utils.process_iter(self.inverter_, images, do_fit = do_fit)
 
-        point_clouds_dump = utils.dump_name_concat(dump_name, "point_clouds")
-        greyscale_dump = utils.dump_name_concat(dump_name, "greyscale")
-        inverted_greyscale_dump = utils.dump_name_concat(dump_name, "inverted_greyscale")
-        filtrations_dump = utils.dump_name_concat(dump_name, "filtrations")
-        geometry_dump = utils.dump_name_concat(dump_name, "geometry")
+        point_clouds_dump = cvtda.dumping.dump_name_concat(dump_name, "point_clouds")
+        greyscale_dump = cvtda.dumping.dump_name_concat(dump_name, "greyscale")
+        inverted_greyscale_dump = cvtda.dumping.dump_name_concat(dump_name, "inverted_greyscale")
+        filtrations_dump = cvtda.dumping.dump_name_concat(dump_name, "filtrations")
+        geometry_dump = cvtda.dumping.dump_name_concat(dump_name, "geometry")
 
         results = []
         if not self.reduced_:

@@ -1,3 +1,5 @@
+import typing
+
 import numpy
 import torch
 import joblib
@@ -27,7 +29,7 @@ class Dataset(torch.utils.data.Dataset):
     def __init__(
         self,
         images: numpy.ndarray,
-        diagrams: numpy.ndarray, # n_items x n_diagrams x n_points x 3
+        diagrams: typing.List[numpy.ndarray], # n_items x n_diagrams x n_points x 3
         features: numpy.ndarray,
         labels: numpy.ndarray,
 
@@ -75,12 +77,19 @@ class Dataset(torch.utils.data.Dataset):
     def get_labels(self, idxs):
         return self.labels[idxs].to(self.device_)
     
-    def get_features(self, idxs):
+    def get_label(self, idx):
+        return self.get_labels([idx])[0]
+    
+    def get_features(self, idxs, skip_diagrams: bool = False):
         output = [
             self.images[idxs].to(self.device_),
             self.features[idxs].to(self.device_) 
         ]
-        for diag, ndp in zip(self.diagrams, self.non_dummy_points):
-            output.append(diag[idxs].to(self.device_))
-            output.append(ndp[idxs].to(self.device_))
+        if not skip_diagrams:
+            for diag, ndp in zip(self.diagrams, self.non_dummy_points):
+                output.append(diag[idxs].to(self.device_))
+                output.append(ndp[idxs].to(self.device_))
         return output
+    
+    def get_feature(self, idx, skip_diagrams: bool = False):
+        return self.get_features([idx], skip_diagrams)[0]

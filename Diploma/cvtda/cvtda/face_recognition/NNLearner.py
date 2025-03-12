@@ -5,13 +5,19 @@ import torch
 import sklearn.base
 import sklearn.metrics
 import torch.utils.data
+import pytorch_metric_learning.miners
+import pytorch_metric_learning.losses
+import pytorch_metric_learning.samplers
+import pytorch_metric_learning.utils.accuracy_calculator
 
 import cvtda.utils
 import cvtda.logging
 import cvtda.neural_network
 
+from .BaseLearner import BaseLearner
 
-class NNClassifier(sklearn.base.ClassifierMixin):
+
+class NNLearner(BaseLearner):
     def __init__(
         self,
 
@@ -22,6 +28,10 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         batch_size: int = 128,
         learning_rate: float = 1e-4,
         n_epochs: int = 20,
+
+        length_before_new_iter: int = 512,
+        margin: int = 0.25,
+        latent_dim: int = 128,
         
         skip_diagrams: bool = False,
         skip_images: bool = False,
@@ -35,6 +45,10 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         self.learning_rate_ = learning_rate
         self.n_epochs_ = n_epochs
 
+        self.length_before_new_iter_ = length_before_new_iter
+        self.margin_ = margin
+        self.latent_dim_ = latent_dim
+
         self.skip_diagrams_ = skip_diagrams
         self.skip_images_ = skip_images
         self.skip_features_ = skip_features
@@ -42,45 +56,68 @@ class NNClassifier(sklearn.base.ClassifierMixin):
 
     def fit(self, train: cvtda.neural_network.Dataset, val: typing.Optional[cvtda.neural_network.Dataset]):
         cvtda.utils.set_random_seed(self.random_state_)
+
+        train_mpc_sampler = pytorch_metric_learning.samplers.MPerClassSampler(
+            labels = train.labels,
+            m = 4,
+            length_before_new_iter = self.length_before_new_iter_
+        )
         train_dl = torch.utils.data.DataLoader(
             torch.utils.data.TensorDataset(torch.arange(len(train))),
             batch_size = self.batch_size_,
-            shuffle = True
+            sampler = train_mpc_sampler
         )
         self.init_(next(iter(train_dl)), train)
+
+        train_miner = pytorch_metric_learning.miners.TripletMarginMiner(
+            margin = self.margin_, 
+            type_of_triplets = "all"
+        )
+        train_loss = pytorch_metric_learning.losses.TripletMarginLoss(margin = self.margin_)
+        metrics = pytorch_metric_learning.utils.accuracy_calculator.AccuracyCalculator()
+        
+        if val is not None:
+            val_dl = torch.utils.data.DataLoader(
+                torch.utils.data.TensorDataset(torch.arange(len(val))),
+                batch_size = self.batch_size_
+            )
 
         for epoch in range(self.n_epochs_):
             sum_loss = 0
 
             self.model_list_.train()
-            for idxs in cvtda.logging.logger().pbar(train_dl, desc = f"Epoch {epoch}"):
+            for idxs in cvtda.logging.logger().pbar(train_dl, desc = f"Train epoch {epoch}"):
                 self.optimizer_.zero_grad()
-                pred = self.forward_(idxs, train)
-                loss = torch.nn.functional.cross_entropy(pred, train.get_labels(idxs), reduction = 'sum')
+                targets = train.get_labels(idxs)
+                embeddings = self.forward_(idxs, train)
+                indices = train_miner(embeddings, targets)
+                loss = train_loss(embeddings, targets, indices)
                 loss.backward()
                 self.optimizer_.step()
                 sum_loss += loss.item()
             postfix = { 'loss': sum_loss }
 
             if val is not None:
-                val_proba = self.predict_proba_(val)
-                val_pred = numpy.argmax(val_proba, axis = 1)
-                postfix['val_acc'] = sklearn.metrics.accuracy_score(val.labels, val_pred)
+                all_embeddings, all_targets = [], []
+                for idxs in cvtda.logging.logger().pbar(val_dl, desc = f"Validate epoch {epoch}"):
+                    with torch.no_grad():
+                        all_targets.append(val.get_labels(idxs))
+                        all_embeddings.append(self.forward_(idxs, val))
+                result = metrics.get_accuracy(torch.stack(embeddings), torch.stack(targets))
+                postfix = { **postfix, **result }
 
             print(f"Epoch {epoch}:", postfix)
 
         self.fitted_ = True
         return self
     
-    def predict_proba(self, dataset: cvtda.neural_network.Dataset) -> numpy.ndarray:
-        assert self.fitted_ is True, 'fit() must be called before predict_proba()'
-        cvtda.utils.set_random_seed(self.random_state_)
-        return self.predict_proba_(dataset)
+    def calculate_distance_(self, first: int, second: int, dataset: cvtda.neural_network.Dataset):
+        pass
+
 
 
     def init_(self, idxs: torch.Tensor, dataset: cvtda.neural_network.Dataset):
         images, _, *diagrams = dataset.get_features(idxs)
-        labels = dataset.get_labels(idxs)
         
         self.nn_base_ = cvtda.neural_network.NNBase(
             num_diagrams = len(diagrams) // 2,
@@ -91,11 +128,11 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         ).to(self.device_).train()
 
         self.model_ = torch.nn.Sequential(
-            torch.nn.Dropout(0.4), torch.nn.LazyLinear(256), torch.nn.BatchNorm1d(256), torch.nn.GELU(),
-            torch.nn.Dropout(0.3), torch.nn.Linear(256, 128), torch.nn.BatchNorm1d(128), torch.nn.GELU(),
-            torch.nn.Dropout(0.2), torch.nn.Linear(128, 64), torch.nn.BatchNorm1d(64), torch.nn.GELU(),
-            torch.nn.Dropout(0.1), torch.nn.Linear(64, 32), torch.nn.BatchNorm1d(32), torch.nn.GELU(),
-            torch.nn.Linear(32, len(torch.unique(labels))), torch.nn.Softmax(dim = 1)
+            torch.nn.Dropout(0.4), torch.nn.LazyLinear(1024), torch.nn.BatchNorm1d(1024), torch.nn.GELU(),
+            torch.nn.Dropout(0.3), torch.nn.Linear(1024, 768), torch.nn.BatchNorm1d(768), torch.nn.GELU(),
+            torch.nn.Dropout(0.2), torch.nn.Linear(1024, 512), torch.nn.BatchNorm1d(512), torch.nn.GELU(),
+            torch.nn.Dropout(0.1), torch.nn.Linear(512, 256), torch.nn.BatchNorm1d(256), torch.nn.GELU(),
+            torch.nn.Linear(256, self.latent_dim_)
         ).to(self.device_).train()
 
         self.model_list_ = torch.nn.ModuleList([ self.nn_base_, self.model_ ])
@@ -111,17 +148,3 @@ class NNClassifier(sklearn.base.ClassifierMixin):
 
     def forward_(self, idxs: torch.Tensor, dataset: cvtda.neural_network.Dataset) -> torch.Tensor:
         return self.model_(self.nn_base_(*dataset.get_features(idxs, skip_diagrams = self.skip_diagrams_)))
-
-    def predict_proba_(self, dataset: cvtda.neural_network.Dataset) -> numpy.ndarray:
-        dl = torch.utils.data.DataLoader(
-            torch.utils.data.TensorDataset(torch.arange(len(dataset))),
-            batch_size = self.batch_size_,
-            shuffle = False
-        )
-
-        y_pred_proba = [ ]
-        self.model_list_.eval()
-        with torch.no_grad():
-            for idxs in dl:
-                y_pred_proba.append(self.forward_(idxs, dataset))
-        return torch.vstack(y_pred_proba).cpu().numpy()

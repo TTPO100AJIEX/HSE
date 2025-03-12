@@ -10,6 +10,7 @@ import cvtda.utils
 import cvtda.logging
 
 from . import utils
+import cvtda.dumping
 from .interface import TopologicalExtractor
 
 
@@ -94,7 +95,7 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
         self._fill_filtrations(images.shape[1], images.shape[2])
         for i, (filtration_extractor, name) in enumerate(self.filtration_extractors_):
             cvtda.logging.logger().print(f"Fitting filtration {i}/{len(self.filtration_extractors_)}: {name}")
-            filtration_extractor.fit(images, utils.dump_name_concat(dump_name, name))
+            filtration_extractor.fit(images, cvtda.dumping.dump_name_concat(dump_name, name))
         self.fitted_ = True
         return self
     
@@ -105,7 +106,7 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
         outputs = [ ]
         for i, (filtration_extractor, name) in enumerate(self.filtration_extractors_):
             cvtda.logging.logger().print(f"Applying filtration {i}/{len(self.filtration_extractors_)}: {name}")
-            outputs.append(filtration_extractor.transform(images, utils.dump_name_concat(dump_name, name)))
+            outputs.append(filtration_extractor.transform(images, cvtda.dumping.dump_name_concat(dump_name, name)))
         return utils.hstack(outputs, not self.return_diagrams_)
     
     def fit_transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None) -> numpy.ndarray:

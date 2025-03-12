@@ -13,19 +13,27 @@ import sklearn.neighbors
 import sklearn.preprocessing
 import matplotlib.pyplot as plt
 
-from cvtda.classification.NNclassifier import NNClassifier
-from cvtda.classification.estimate_quality import estimate_quality
+import cvtda.dumping
+import cvtda.neural_network
+from .NNClassifier import NNClassifier
+from .estimate_quality import estimate_quality
 
 def classify(
+    train_images: numpy.ndarray,
     train_features: numpy.ndarray,
     train_labels: numpy.ndarray,
+    train_diagrams: typing.List[numpy.ndarray],
+
+    test_images: numpy.ndarray,
     test_features: numpy.ndarray,
     test_labels: numpy.ndarray,
+    test_diagrams: typing.List[numpy.ndarray],
 
     label_names: typing.Optional[typing.List[str]] = None,
 
     n_jobs: int = -1,
     random_state: int = 42,
+    dump_name: typing.Optional[str] = None,
 
     knn_neighbours: int = 50,
 
@@ -34,7 +42,7 @@ def classify(
     nn_device: torch.device = torch.device('cuda'),
     nn_batch_size: int = 128,
     nn_learning_rate: float = 1e-4,
-    nn_epochs: int = 25,
+    nn_epochs: int = 20,
 
     grad_boost_max_iter: int = 20,
     grad_boost_max_depth: int = 4,
@@ -48,18 +56,36 @@ def classify(
     catboost_depth: int = 4,
     catboost_device: str = 'GPU'
 ):
-    def classify_one(classifier: sklearn.base.ClassifierMixin, ax: plt.Axes):
+    nn_train = None
+    nn_test = None
+
+    def classify_one(classifier: sklearn.base.ClassifierMixin, name: str, ax: plt.Axes):
         print(f'Fitting {classifier}')
-        ax.set_title(type(classifier).__name__)
-        if type(classifier) == NNClassifier:
-            classifier.fit(train_features, train_labels, test_features, test_labels)
+
+        dumper = cvtda.dumping.dumper()
+        model_dump_name = cvtda.dumping.dump_name_concat(dump_name, name)
+        if dumper.has_dump(model_dump_name):
+            y_pred_proba = dumper.get_dump(model_dump_name)
         else:
-            classifier.fit(train_features, train_labels)
-        y_pred_proba = classifier.predict_proba(test_features)
-        result = {
-            'classifier': type(classifier).__name__,
-            **estimate_quality(y_pred_proba, test_labels, ax, label_names = label_names)
-        }
+            if type(classifier) == NNClassifier:
+                if nn_train is None:
+                    nn_train = cvtda.neural_network.Dataset(
+                        train_images, train_diagrams, train_features, train_labels, n_jobs = n_jobs, device = nn_device
+                    )
+                if nn_test is None:
+                    nn_test = cvtda.neural_network.Dataset(
+                        test_images, test_diagrams, test_features, test_labels, n_jobs = n_jobs, device = nn_device
+                    )
+                classifier.fit(nn_train, nn_test)
+                y_pred_proba = classifier.predict_proba(nn_test)
+            else:
+                classifier.fit(train_features, train_labels)
+                y_pred_proba = classifier.predict_proba(test_features)
+            dumper.save_dump(y_pred_proba, model_dump_name)
+                
+        ax.set_title(name)
+        result = { 'classifier': name, **estimate_quality(y_pred_proba, test_labels, ax, label_names = label_names) }
+        ax.set_xticks(ax.get_xticks(), labels = ax.get_xticklabels(), rotation = 45, ha = "right", rotation_mode = "anchor")
         print(result)
         return result
 
@@ -78,7 +104,40 @@ def classify(
             device = nn_device,
             batch_size = nn_batch_size,
             learning_rate = nn_learning_rate,
-            n_epochs = nn_epochs
+            n_epochs = nn_epochs,
+            skip_diagrams = True,
+            skip_images = False,
+            skip_features = True,
+        ),
+        NNClassifier(
+            random_state = random_state,
+            device = nn_device,
+            batch_size = nn_batch_size,
+            learning_rate = nn_learning_rate,
+            n_epochs = nn_epochs,
+            skip_diagrams = True,
+            skip_images = True,
+            skip_features = False,
+        ),
+        NNClassifier(
+            random_state = random_state,
+            device = nn_device,
+            batch_size = nn_batch_size,
+            learning_rate = nn_learning_rate,
+            n_epochs = nn_epochs,
+            skip_diagrams = False,
+            skip_images = True,
+            skip_features = True,
+        ),
+        NNClassifier(
+            random_state = random_state,
+            device = nn_device,
+            batch_size = nn_batch_size,
+            learning_rate = nn_learning_rate,
+            n_epochs = nn_epochs,
+            skip_diagrams = True,
+            skip_images = False,
+            skip_features = False,
         ),
         sklearn.ensemble.HistGradientBoostingClassifier(
             random_state = random_state,
@@ -103,6 +162,24 @@ def classify(
             device = xgboost_device
         )
     ]
+    names = [
+        'KNeighborsClassifier',
+        'RandomForestClassifier',
+        'NNClassifier_images',
+        'NNClassifier_features',
+        'NNClassifier_diagrams',
+        'NNClassifier_features_images',
+        'HistGradientBoostingClassifier',
+        'CatBoostClassifier',
+        'XGBClassifier'
+    ]
 
-    figure, axes = plt.subplots(2, 3, figsize = (15, 10))
-    return pandas.DataFrame([ classify_one(*args) for args in zip(classifiers, axes.flat) ])
+    figure, axes = plt.subplots(3, 3, figsize = (15, 15))
+    df = pandas.DataFrame([ classify_one(*args) for args in zip(classifiers, names, axes.flat) ])
+
+    dumper = cvtda.dumping.dumper()
+    if (dump_name is not None) and isinstance(dumper, cvtda.dumping.NumpyDumper):
+        figure.savefig(dumper.get_file_name_(cvtda.dumping.dump_name_concat(dump_name, "confusion_matrixes.svg"))[:-4])
+        figure.savefig(dumper.get_file_name_(cvtda.dumping.dump_name_concat(dump_name, "confusion_matrixes.png"))[:-4])
+        df.to_csv(dumper.get_file_name_(cvtda.dumping.dump_name_concat(dump_name, "quality_metrics.csv"))[:-4])
+    return df
