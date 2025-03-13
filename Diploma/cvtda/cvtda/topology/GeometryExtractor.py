@@ -15,7 +15,8 @@ from .interface import Extractor
 
 
 def calc_curvature(gray_image: numpy.ndarray) -> numpy.ndarray:
-    assert (gray_image.min() >= 0) and (gray_image.max() <= 1), 'Bad image format: should be [0, 1]'
+    min_, max_= gray_image.min(), gray_image.max()
+    assert (min_ >= 0) and (max_ <= 1), f'Bad image format: should be [0, 1]; received [{min_}, {max_}]'
 
     euler_numbers, area, perimeter = [], [], []
     for threshold in range(256):
@@ -65,8 +66,17 @@ class GrayGeometryExtractor(sklearn.base.TransformerMixin):
             moments_central = skimage.measure.moments_central(gray_image, order = 9)
             moments_normalized = skimage.measure.moments_normalized(moments_central)
 
+            image_shape = max(*gray_image.shape)
+            daisy_parameters = dict(
+                step = (6 * image_shape // 32),
+                radius = (12 * image_shape // 32),
+                rings = 5,
+                histograms = 5,
+                orientations = 8
+            )
+
             return numpy.concatenate([
-                skimage.feature.daisy(gray_image, step = 6, radius = 8, rings = 5, histograms = 5, orientations = 8).flatten(),
+                skimage.feature.daisy(gray_image, **daisy_parameters).flatten(),
                 cvtda.utils.sequence2features(numpy.ma.array(sift_descriptors), reduced = self.reduced_).flatten(),
                 cvtda.utils.sequence2features(numpy.ma.array(orb_descriptors), reduced = self.reduced_).flatten(),
                 skimage.feature.hog(gray_image),

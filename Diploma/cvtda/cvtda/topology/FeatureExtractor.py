@@ -20,7 +20,9 @@ class FeatureExtractor(sklearn.base.TransformerMixin):
         n_jobs: int = -1,
         reduced: bool = True,
         only_get_from_dump: bool = False,
-        return_diagrams: bool = False
+        return_diagrams: bool = False,
+
+        num_radial_filtrations: int = 4,
     ):
         self.fitted_ = False
         self.reduced_ = reduced
@@ -34,7 +36,10 @@ class FeatureExtractor(sklearn.base.TransformerMixin):
         self.point_clouds_extractor_ = PointCloudsExtractor(**topological_extractor_kwargs)
         self.greyscale_extractor_ = GreyscaleExtractor(**topological_extractor_kwargs)
         self.inverted_greyscale_extractor_ = GreyscaleExtractor(**topological_extractor_kwargs)
-        self.filtrations_extractor_ = FiltrationsExtractor(**topological_extractor_kwargs)
+        self.filtrations_extractor_ = FiltrationsExtractor(
+            **topological_extractor_kwargs,
+            num_radial_filtrations = num_radial_filtrations
+        )
         self.geometry_extractor_ = GeometryExtractor(**extractor_kwargs)
 
         self.scaler_ = sklearn.preprocessing.StandardScaler(copy = False)

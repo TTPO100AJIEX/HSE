@@ -28,8 +28,8 @@ class BaseLearner:
         def calculate_distance_(i: int, j: int):
             return (i, j, self.calculate_distance_(i, j, dataset))
 
-        idxs = list(itertools.product(range(5), range(5)))
-        distances_flat = joblib.Parallel(n_jobs = self.n_jobs_)(
+        idxs = list(itertools.product(range(len(dataset)), range(len(dataset))))
+        distances_flat = joblib.Parallel(n_jobs = 1)(
             joblib.delayed(calculate_distance_)(i, j)
             for i, j in cvtda.logging.logger().pbar(idxs, desc = "Calculating pairwise distances")
         )

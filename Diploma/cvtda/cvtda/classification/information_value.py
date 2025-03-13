@@ -98,4 +98,4 @@ class InformationValueFeatureSelector(sklearn.base.TransformerMixin):
 
     def hist(self, bins: int = 50):
         assert self.fitted_ is True, 'fit() must be called before hist()'
-        return plt.hist(self.IV_, bins = 50)
+        return plt.hist(self.IV_, bins = bins)

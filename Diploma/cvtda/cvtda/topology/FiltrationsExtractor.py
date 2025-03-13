@@ -94,7 +94,7 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
 
         self._fill_filtrations(images.shape[1], images.shape[2])
         for i, (filtration_extractor, name) in enumerate(self.filtration_extractors_):
-            cvtda.logging.logger().print(f"Fitting filtration {i}/{len(self.filtration_extractors_)}: {name}")
+            cvtda.logging.logger().print(f"Fitting filtration {i + 1}/{len(self.filtration_extractors_)}: {name}")
             filtration_extractor.fit(images, cvtda.dumping.dump_name_concat(dump_name, name))
         self.fitted_ = True
         return self
@@ -105,7 +105,7 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
         
         outputs = [ ]
         for i, (filtration_extractor, name) in enumerate(self.filtration_extractors_):
-            cvtda.logging.logger().print(f"Applying filtration {i}/{len(self.filtration_extractors_)}: {name}")
+            cvtda.logging.logger().print(f"Applying filtration {i + 1}/{len(self.filtration_extractors_)}: {name}")
             outputs.append(filtration_extractor.transform(images, cvtda.dumping.dump_name_concat(dump_name, name)))
         return utils.hstack(outputs, not self.return_diagrams_)
     

@@ -62,34 +62,37 @@ class Dataset(torch.utils.data.Dataset):
         for diag, ndp in diagrams:
             self.diagrams.extend(diag)
             self.non_dummy_points.extend(ndp)
-        for i in range(len(self.diagrams)):
-            self.diagrams[i] = self.diagrams[i]
-            self.non_dummy_points[i] = self.non_dummy_points[i]
 
         cvtda.logging.logger().print(
             f"Constructed a dataset of {len(self.images)} images of shape {self.images[0].shape} " +
-            f"with {len(self.diagrams[0])} diagrams and {self.features.shape[1]} features"
+            f"with {len(self.diagrams)} diagrams and {self.features.shape[1]} features"
         )
 
     def __len__(self):
         return len(self.images)
 
-    def get_labels(self, idxs):
-        return self.labels[idxs].to(self.device_)
+    def get_labels(self, idxs, device: typing.Optional[torch.device] = None):
+        device = device if device is not None else self.device_
+        return self.labels[idxs].to(device)
     
-    def get_label(self, idx):
-        return self.get_labels([idx])[0]
+    def get_label(self, idx, device: typing.Optional[torch.device] = None):
+        device = device if device is not None else self.device_
+        return self.labels[idx].to(device)
     
-    def get_features(self, idxs, skip_diagrams: bool = False):
-        output = [
-            self.images[idxs].to(self.device_),
-            self.features[idxs].to(self.device_) 
-        ]
+    def get_features(self, idxs, skip_diagrams: bool = False, device: typing.Optional[torch.device] = None):
+        device = device if device is not None else self.device_
+        output = [ self.images[idxs].to(device), self.features[idxs].to(device) ]
         if not skip_diagrams:
             for diag, ndp in zip(self.diagrams, self.non_dummy_points):
-                output.append(diag[idxs].to(self.device_))
-                output.append(ndp[idxs].to(self.device_))
+                output.append(diag[idxs].to(device))
+                output.append(ndp[idxs].to(device))
         return output
     
-    def get_feature(self, idx, skip_diagrams: bool = False):
-        return self.get_features([idx], skip_diagrams)[0]
+    def get_feature(self, idx, skip_diagrams: bool = False, device: typing.Optional[torch.device] = None):
+        device = device if device is not None else self.device_
+        output = [ self.images[idx].to(device), self.features[idx].to(device) ]
+        if not skip_diagrams:
+            for diag, ndp in zip(self.diagrams, self.non_dummy_points):
+                output.append(diag[idx].to(device))
+                output.append(ndp[idx].to(device))
+        return output

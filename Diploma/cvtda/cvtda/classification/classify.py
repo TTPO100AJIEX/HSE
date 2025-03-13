@@ -1,4 +1,4 @@
-
+import os
 import typing
 
 import numpy
@@ -7,10 +7,8 @@ import pandas
 import xgboost
 import catboost
 import sklearn.base
-import sklearn.tree
 import sklearn.ensemble
 import sklearn.neighbors
-import sklearn.preprocessing
 import matplotlib.pyplot as plt
 
 import cvtda.dumping
@@ -34,6 +32,7 @@ def classify(
     n_jobs: int = -1,
     random_state: int = 42,
     dump_name: typing.Optional[str] = None,
+    only_get_from_dump: bool = False,
 
     knn_neighbours: int = 50,
 
@@ -56,26 +55,23 @@ def classify(
     catboost_depth: int = 4,
     catboost_device: str = 'GPU'
 ):
-    nn_train = None
-    nn_test = None
+    if not only_get_from_dump:
+        nn_train = cvtda.neural_network.Dataset(
+            train_images, train_diagrams, train_features, train_labels, n_jobs = n_jobs, device = nn_device
+        )
+        nn_test = cvtda.neural_network.Dataset(
+            test_images, test_diagrams, test_features, test_labels, n_jobs = n_jobs, device = nn_device
+        )
 
     def classify_one(classifier: sklearn.base.ClassifierMixin, name: str, ax: plt.Axes):
-        print(f'Fitting {classifier}')
+        print(f'Trying {name} - {classifier}')
 
         dumper = cvtda.dumping.dumper()
         model_dump_name = cvtda.dumping.dump_name_concat(dump_name, name)
-        if dumper.has_dump(model_dump_name):
+        if only_get_from_dump or dumper.has_dump(model_dump_name):
             y_pred_proba = dumper.get_dump(model_dump_name)
         else:
             if type(classifier) == NNClassifier:
-                if nn_train is None:
-                    nn_train = cvtda.neural_network.Dataset(
-                        train_images, train_diagrams, train_features, train_labels, n_jobs = n_jobs, device = nn_device
-                    )
-                if nn_test is None:
-                    nn_test = cvtda.neural_network.Dataset(
-                        test_images, test_diagrams, test_features, test_labels, n_jobs = n_jobs, device = nn_device
-                    )
                 classifier.fit(nn_train, nn_test)
                 y_pred_proba = classifier.predict_proba(nn_test)
             else:
@@ -179,7 +175,9 @@ def classify(
 
     dumper = cvtda.dumping.dumper()
     if (dump_name is not None) and isinstance(dumper, cvtda.dumping.NumpyDumper):
-        figure.savefig(dumper.get_file_name_(cvtda.dumping.dump_name_concat(dump_name, "confusion_matrixes.svg"))[:-4])
-        figure.savefig(dumper.get_file_name_(cvtda.dumping.dump_name_concat(dump_name, "confusion_matrixes.png"))[:-4])
+        file = dumper.get_file_name_(cvtda.dumping.dump_name_concat(dump_name, "confusion_matrixes"))
+        os.makedirs(os.path.dirname(file), exist_ok = True)
+        figure.savefig(file[:-4] + ".svg")
+        figure.savefig(file[:-4] + ".png")
         df.to_csv(dumper.get_file_name_(cvtda.dumping.dump_name_concat(dump_name, "quality_metrics.csv"))[:-4])
     return df
