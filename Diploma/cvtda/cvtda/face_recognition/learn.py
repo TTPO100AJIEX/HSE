@@ -23,7 +23,7 @@ def learn(
     test_labels: numpy.ndarray,
     test_diagrams: typing.List[numpy.ndarray],
 
-    n_jobs: int = -1,
+    n_jobs: int = 1,
     random_state: int = 42,
     dump_name: typing.Optional[str] = None,
 
@@ -31,7 +31,7 @@ def learn(
     nn_batch_size: int = 64,
     nn_learning_rate: float = 1e-4,
     nn_epochs: int = 25,
-    nn_margin: int = 1,
+    nn_margin: int = 0.1,
     nn_latent_dim: int = 256,
 ):
     nn_train = cvtda.neural_network.Dataset(
@@ -41,10 +41,10 @@ def learn(
         test_images, test_diagrams, test_features, test_labels, n_jobs = n_jobs, device = nn_device
     )
 
-    def classify_one(learner: BaseLearner, name: str, ax: plt.Axes):
+    def classify_one(learner: BaseLearner, name: str, display_name: str, ax: plt.Axes):
         print(f'Trying {name} - {learner}')
         learner.fit(nn_train, nn_test)
-        ax.set_title(name)
+        ax.set_title(display_name)
         learner.estimate_quality(nn_test, ax)
 
     nn_kwargs = dict(
@@ -63,21 +63,34 @@ def learn(
         NNLearner(**nn_kwargs, skip_diagrams = True, skip_images = False, skip_features = True),
         NNLearner(**nn_kwargs, skip_diagrams = True, skip_images = True, skip_features = False),
         NNLearner(**nn_kwargs, skip_diagrams = True, skip_images = False, skip_features = False),
-        # NNLearner(**nn_kwargs, skip_diagrams = False, skip_images = True, skip_features = True)
+        NNLearner(**nn_kwargs, skip_diagrams = False, skip_images = True, skip_features = True)
     ]
 
     names = [
         'SimpleTopologicalLearner',
         'DiagramsLearner',
-        'NNClassifier_images',
-        'NNClassifier_features',
-        'NNClassifier_features_images',
-        'NNClassifier_diagrams'
+        'NNLearner_images',
+        'NNLearner_features',
+        'NNLearner_features_images',
+        'NNLearner_diagrams'
+    ]
+    display_names = [
+        'Топологические признаки',
+        'Диаграммы устойчивости',
+        'ResNet18 – базовая модель',
+        'Нейронная сеть для тополог. признаков',
+        'Комбинированная нейронная сеть',
+        'Обучаемая векторизация диаграмм'
     ]
 
-    figure, axes = plt.subplots(2, 3, figsize = (20, 7))
-    for args in zip(classifiers, names, axes.flat):
+    figure, axes = plt.subplots(2, 3, figsize = (14, 5))
+    for args in zip(classifiers, names, display_names, axes.flat):
         classify_one(*args)
+
+    handles, labels = axes.flat[0].get_legend_handles_labels()
+    figure.legend(handles, labels, loc = (0.367, 0.83))
+
+    figure.tight_layout()
 
     dumper = cvtda.dumping.dumper()
     if (dump_name is not None) and isinstance(dumper, cvtda.dumping.NumpyDumper):

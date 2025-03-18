@@ -24,7 +24,8 @@ class FiltrationExtractor(TopologicalExtractor):
         n_jobs: int = -1,
         reduced: bool = True,
         only_get_from_dump: bool = False,
-        return_diagrams: bool = False
+        return_diagrams: bool = False,
+        **kwargs
     ):
         super().__init__(
             supports_rgb = False,
@@ -34,7 +35,8 @@ class FiltrationExtractor(TopologicalExtractor):
             return_diagrams = return_diagrams,
             filtration_class = filtration_class,
             filtation_kwargs = filtation_kwargs,
-            binarizer_threshold = binarizer_threshold
+            binarizer_threshold = binarizer_threshold,
+            **kwargs
         )
 
         self.binarizer_ = gtda.images.Binarizer(threshold = binarizer_threshold, n_jobs = self.n_jobs_)
@@ -63,7 +65,7 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
         only_get_from_dump: bool = False,
         return_diagrams: bool = False,
 
-        binarizer_thresholds: typing.List[float] = [ 0.2, 0.4, 0.6, 0.8 ],
+        binarizer_thresholds: typing.Optional[typing.List[float]] = None,
         height_filtration_directions: typing.Iterable[typing.Tuple[float, float]] = [
             [ -1, -1 ], [ 1, 1 ], [ 1, -1 ], [ -1, 1 ],
             [ 0, -1 ], [ 0, 1 ], [ -1, 0 ], [ 1, 0 ]
@@ -71,7 +73,14 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
         num_radial_filtrations: int = 4,
         density_filtration_radiuses: typing.Iterable[int] = [ 1, 3 ],
     ):
+        if not binarizer_thresholds:
+            if reduced:
+                binarizer_thresholds = [ 0.2, 0.4, 0.6 ]
+            else:
+                binarizer_thresholds = [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ]
+
         self.fitted_ = False
+        self.reduced_ = reduced
         self.return_diagrams_ = return_diagrams
         self.filtrations_kwargs_ = {
             'n_jobs': n_jobs,
@@ -144,21 +153,29 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
             self.filtration_extractors_.append((extractor, name))
 
     def _add_dilation_filtrations(self, binarizer_threshold: float):
+        if self.reduced_:
+            return
         name = f'{int(binarizer_threshold * 10)}/DilationFiltration'
         extractor = FiltrationExtractor(gtda.images.DilationFiltration, { }, binarizer_threshold, **self.filtrations_kwargs_)
         self.filtration_extractors_.append((extractor, name))
 
     def _add_erosion_filtrations(self, binarizer_threshold: float):
+        if self.reduced_:
+            return
         name = f'{int(binarizer_threshold * 10)}/ErosionFiltration'
         extractor = FiltrationExtractor(gtda.images.ErosionFiltration, { }, binarizer_threshold, **self.filtrations_kwargs_)
         self.filtration_extractors_.append((extractor, name))
 
     def _add_signed_distance_filtrations(self, binarizer_threshold: float):
+        if self.reduced_:
+            return
         name = f'{int(binarizer_threshold * 10)}/SignedDistanceFiltration'
         extractor = FiltrationExtractor(gtda.images.SignedDistanceFiltration, { }, binarizer_threshold, **self.filtrations_kwargs_)
         self.filtration_extractors_.append((extractor, name))
         
     def _add_density_filtrations(self, binarizer_threshold: float):
+        if self.reduced_:
+            return
         for radius in self.density_filtration_radiuses_:
             name = f'{int(binarizer_threshold * 10)}/DensityFiltration_{radius}'
             extractor = FiltrationExtractor(gtda.images.DensityFiltration, { 'radius': radius }, binarizer_threshold, **self.filtrations_kwargs_)

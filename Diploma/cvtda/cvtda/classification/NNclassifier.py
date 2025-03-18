@@ -79,7 +79,7 @@ class NNClassifier(sklearn.base.ClassifierMixin):
 
 
     def init_(self, idxs: torch.Tensor, dataset: cvtda.neural_network.Dataset):
-        images, _, *diagrams = dataset.get_features(idxs)
+        images, _, *diagrams = dataset.get_features(idxs, skip_diagrams = self.skip_diagrams_)
         labels = dataset.get_labels(idxs)
         
         self.nn_base_ = cvtda.neural_network.NNBase(

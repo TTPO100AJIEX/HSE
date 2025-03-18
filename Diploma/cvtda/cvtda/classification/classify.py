@@ -63,7 +63,7 @@ def classify(
             test_images, test_diagrams, test_features, test_labels, n_jobs = n_jobs, device = nn_device
         )
 
-    def classify_one(classifier: sklearn.base.ClassifierMixin, name: str, ax: plt.Axes):
+    def classify_one(classifier: sklearn.base.ClassifierMixin, name: str, display_name: str, ax: plt.Axes):
         print(f'Trying {name} - {classifier}')
 
         dumper = cvtda.dumping.dumper()
@@ -79,9 +79,11 @@ def classify(
                 y_pred_proba = classifier.predict_proba(test_features)
             dumper.save_dump(y_pred_proba, model_dump_name)
                 
-        ax.set_title(name)
-        result = { 'classifier': name, **estimate_quality(y_pred_proba, test_labels, ax, label_names = label_names) }
+        ax.set_title(display_name)
+        result = { 'classifier': display_name, **estimate_quality(y_pred_proba, test_labels, ax, label_names = label_names) }
         ax.set_xticks(ax.get_xticks(), labels = ax.get_xticklabels(), rotation = 45, ha = "right", rotation_mode = "anchor")
+        ax.set_xlabel(None)
+        ax.set_ylabel(None)
         print(result)
         return result
 
@@ -95,15 +97,27 @@ def classify(
             random_state = random_state,
             n_jobs = n_jobs
         ),
-        NNClassifier(
+        sklearn.ensemble.HistGradientBoostingClassifier(
             random_state = random_state,
-            device = nn_device,
-            batch_size = nn_batch_size,
-            learning_rate = nn_learning_rate,
-            n_epochs = nn_epochs,
-            skip_diagrams = True,
-            skip_images = False,
-            skip_features = True,
+            max_iter = grad_boost_max_iter,
+            max_depth = grad_boost_max_depth,
+            max_features = grad_boost_max_features,
+            verbose = 2
+        ),
+        catboost.CatBoostClassifier(
+            iterations = catboost_iterations,
+            depth = catboost_depth,
+            random_seed = random_state,
+            loss_function = 'MultiClass',
+            devices = '0-3',
+            task_type = catboost_device,
+            verbose = True
+        ),
+        xgboost.XGBClassifier(
+            n_jobs = n_jobs,
+            n_estimators = xgboost_n_classifiers,
+            max_depth = xgboost_max_depth,
+            device = xgboost_device
         ),
         NNClassifier(
             random_state = random_state,
@@ -133,45 +147,45 @@ def classify(
             n_epochs = nn_epochs,
             skip_diagrams = True,
             skip_images = False,
-            skip_features = False,
+            skip_features = True,
         ),
-        sklearn.ensemble.HistGradientBoostingClassifier(
+        NNClassifier(
             random_state = random_state,
-            max_iter = grad_boost_max_iter,
-            max_depth = grad_boost_max_depth,
-            max_features = grad_boost_max_features,
-            verbose = 2
-        ),
-        catboost.CatBoostClassifier(
-            iterations = catboost_iterations,
-            depth = catboost_depth,
-            random_seed = random_state,
-            loss_function = 'MultiClass',
-            devices = '0-3',
-            task_type = catboost_device,
-            verbose = True
-        ),
-        xgboost.XGBClassifier(
-            n_jobs = n_jobs,
-            n_estimators = xgboost_n_classifiers,
-            max_depth = xgboost_max_depth,
-            device = xgboost_device
+            device = nn_device,
+            batch_size = nn_batch_size,
+            learning_rate = nn_learning_rate,
+            n_epochs = nn_epochs,
+            skip_diagrams = True,
+            skip_images = False,
+            skip_features = False,
         )
     ]
     names = [
         'KNeighborsClassifier',
         'RandomForestClassifier',
-        'NNClassifier_images',
-        'NNClassifier_features',
-        'NNClassifier_diagrams',
-        'NNClassifier_features_images',
         'HistGradientBoostingClassifier',
         'CatBoostClassifier',
-        'XGBClassifier'
+        'XGBClassifier',
+        'NNClassifier_features',
+        'NNClassifier_diagrams',
+        'NNClassifier_images',
+        'NNClassifier_features_images'
+    ]
+    display_names = [
+        'Метод k ближайших соседей',
+        'Случайный лес',
+        'Град. бустинг на основе гистограм',
+        'CatBoost',
+        'XGBoost',
+        'Нейронная сеть для тополог. признаков',
+        'Обучаемая векторизация диаграмм',
+        'ResNet18 – базовая модель',
+        'Комбинированная нейронная сеть'
     ]
 
     figure, axes = plt.subplots(3, 3, figsize = (15, 15))
-    df = pandas.DataFrame([ classify_one(*args) for args in zip(classifiers, names, axes.flat) ])
+    df = pandas.DataFrame([ classify_one(*args) for args in zip(classifiers, names, display_names, axes.flat) ])
+    figure.tight_layout()
 
     dumper = cvtda.dumping.dumper()
     if (dump_name is not None) and isinstance(dumper, cvtda.dumping.NumpyDumper):

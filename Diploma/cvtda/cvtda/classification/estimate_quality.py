@@ -11,7 +11,13 @@ def estimate_quality(
     label_names: typing.Optional[typing.List[str]] = None
 ) -> dict:
     y_pred = numpy.argmax(y_pred_proba, axis = 1)
-    sklearn.metrics.ConfusionMatrixDisplay.from_predictions(y_true, y_pred, ax = ax, display_labels = label_names)
+    sklearn.metrics.ConfusionMatrixDisplay.from_predictions(
+        y_true,
+        y_pred,
+        ax = ax,
+        colorbar = False,
+        display_labels = label_names
+    )
     return {
         'Accuracy':       sklearn.metrics.accuracy_score      (y_true, y_pred),
         'TOP-2 Accuracy': sklearn.metrics.top_k_accuracy_score(y_true, y_pred_proba, k = 2),

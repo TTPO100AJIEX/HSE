@@ -16,14 +16,16 @@ class PointCloudsExtractor(TopologicalExtractor):
         n_jobs: int = -1,
         reduced: bool = True,
         only_get_from_dump: bool = False,
-        return_diagrams: bool = False
+        return_diagrams: bool = False,
+        **kwargs
     ):
         super().__init__(
             supports_rgb = True,
             n_jobs = n_jobs,
             reduced = reduced,
             only_get_from_dump = only_get_from_dump,
-            return_diagrams = return_diagrams
+            return_diagrams = return_diagrams,
+            **kwargs
         )
 
         self.persistence_ = gtda.homology.VietorisRipsPersistence(homology_dimensions = [0, 1, 2], n_jobs = self.n_jobs_)

@@ -29,20 +29,37 @@ class BaseLearner:
             return (i, j, self.calculate_distance_(i, j, dataset))
 
         idxs = list(itertools.product(range(len(dataset)), range(len(dataset))))
-        distances_flat = joblib.Parallel(n_jobs = 1)(
+        distances_flat = joblib.Parallel(n_jobs = self.n_jobs_)(
             joblib.delayed(calculate_distance_)(i, j)
             for i, j in cvtda.logging.logger().pbar(idxs, desc = "Calculating pairwise distances")
         )
 
-        correct_dists, incorrect_dists = [ ], [ ]
+        correct_dists, incorrect_dists = {}, {}
         for i, j, distance in cvtda.logging.logger().pbar(distances_flat, desc = "Analyzing distances"):
             label1, label2 = dataset.get_labels([ i, j ])
-            if label1 == label2: correct_dists.append(distance)
-            else: incorrect_dists.append(distance)
+            if label1 == label2:
+                correct_dists[(i, j)] = distance
+            else:
+                incorrect_dists[(i, j)] = distance
+        correct_dists_values = list(correct_dists.values())
+        incorrect_dists_values = list(incorrect_dists.values())
         
-        ax.set_ylim(-1, 2)
-        ax.plot(correct_dists, numpy.zeros_like(correct_dists), 'x')
-        ax.plot(incorrect_dists, numpy.ones_like(incorrect_dists), 'x')
+        if ax is not None:
+            ax.set_ylim(0, 1)
+            ax.get_yaxis().set_ticks([])
+            ax.plot(
+                correct_dists_values,
+                numpy.ones_like(correct_dists_values) * 0.35,
+                'x',
+                label = "Одного человека"
+            )
+            ax.plot(
+                incorrect_dists_values,
+                numpy.ones_like(incorrect_dists_values) * 0.65,
+                'x',
+                label = "Разных людей"
+            )
+        return correct_dists, incorrect_dists
 
 
     @abc.abstractmethod

@@ -116,7 +116,7 @@ class NNLearner(BaseLearner):
 
 
     def init_(self, idxs: torch.Tensor, dataset: cvtda.neural_network.Dataset):
-        images, _, *diagrams = dataset.get_features(idxs)
+        images, _, *diagrams = dataset.get_features(idxs, skip_diagrams = self.skip_diagrams_)
         
         self.nn_base_ = cvtda.neural_network.NNBase(
             num_diagrams = len(diagrams) // 2,

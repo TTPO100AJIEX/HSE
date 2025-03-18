@@ -16,7 +16,7 @@ class NNBase(torch.nn.Module):
         images_output: int = 1024,
 
         skip_features: bool = False,
-        features_output: int = 512
+        features_output: int = 1024
     ):
         super().__init__()
         

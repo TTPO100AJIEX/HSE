@@ -17,6 +17,7 @@ class TopologicalExtractor(Extractor):
         n_jobs: int = -1,
         reduced: bool = True,
         only_get_from_dump: bool = False,
+        topo_only_get_from_dump: bool = False,
         return_diagrams: bool = False,
         **kwargs
     ):
@@ -25,11 +26,11 @@ class TopologicalExtractor(Extractor):
             reduced = reduced,
             only_get_from_dump = False,
             return_diagrams = return_diagrams,
-            supports_rgb = supports_rgb,
+            topo_only_get_from_dump = (topo_only_get_from_dump or only_get_from_dump),
             **kwargs
         )
 
-        self.topo_only_get_from_dump_ = only_get_from_dump
+        self.topo_only_get_from_dump_ = (topo_only_get_from_dump or only_get_from_dump)
         self.return_diagrams_ = return_diagrams
         self.supports_rgb_ = supports_rgb
 
@@ -49,7 +50,10 @@ class TopologicalExtractor(Extractor):
 
     def process_rgb_(self, rgb_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         if not self.supports_rgb_:
-            return []
+            if self.return_diagrams_:
+                return []
+            else:
+                return numpy.empty((len(rgb_images), 0))
         return self.do_work_(rgb_images, do_fit, dump_name)
 
     def process_gray_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):

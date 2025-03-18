@@ -84,7 +84,7 @@ class Extractor(sklearn.base.TransformerMixin):
                 self.blue_extractor_ = self.__class__(**self.kwargs_)
 
             if self.only_get_from_dump_:
-                rgb_data = cvtda.dumping.dumper().get_dump(rgb_dump)
+                rgb_data = cvtda.dumping.dumper().get_dump(self.final_dump_name_(rgb_dump))
             else:
                 rgb_data = self.process_rgb_(images, do_fit, rgb_dump)
             

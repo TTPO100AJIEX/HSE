@@ -51,6 +51,8 @@ class GrayGeometryExtractor(sklearn.base.TransformerMixin):
             try:
                 sift.detect_and_extract(gray_image)
                 sift_descriptors = sift.descriptors.transpose()
+                if sift_descriptors.shape[1] == 0:
+                    raise 'How is this possible?'
             except:
                 sift_descriptors = numpy.zeros((128,1))
                 
@@ -58,8 +60,10 @@ class GrayGeometryExtractor(sklearn.base.TransformerMixin):
             try:
                 orb.detect_and_extract(gray_image)
                 orb_descriptors = orb.descriptors.transpose()
+                if orb_descriptors.shape[1] == 0:
+                    raise 'How is this possible?'
             except:
-                orb_descriptors = numpy.zeros((128,1))
+                orb_descriptors = numpy.zeros((256,1))
 
             basic_features = skimage.feature.multiscale_basic_features(gray_image).reshape((-1, 24))
 
@@ -79,7 +83,7 @@ class GrayGeometryExtractor(sklearn.base.TransformerMixin):
                 skimage.feature.daisy(gray_image, **daisy_parameters).flatten(),
                 cvtda.utils.sequence2features(numpy.ma.array(sift_descriptors), reduced = self.reduced_).flatten(),
                 cvtda.utils.sequence2features(numpy.ma.array(orb_descriptors), reduced = self.reduced_).flatten(),
-                skimage.feature.hog(gray_image),
+                skimage.feature.hog(gray_image, pixels_per_cell = (gray_image.shape[0] // 4, gray_image.shape[1] // 4)),
                 cvtda.utils.sequence2features(numpy.ma.array(basic_features.transpose()), reduced = self.reduced_).flatten(),
                 [ skimage.measure.blur_effect(gray_image) ],
                 skimage.measure.centroid(gray_image),

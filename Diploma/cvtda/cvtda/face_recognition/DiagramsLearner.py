@@ -1,6 +1,5 @@
 import typing
 
-import torch
 import numpy
 import gudhi.hera
 
@@ -12,19 +11,23 @@ class DiagramsLearner(BaseLearner):
     def fit(self, train: cvtda.neural_network.Dataset, val: typing.Optional[cvtda.neural_network.Dataset]):
         pass
 
+    def prepare_diagram_(self, diagram: numpy.ndarray, dimension: int) -> numpy.ndarray:
+        dim_filter = (diagram[:, 2] == dimension)
+        non_degenerate_filter = (diagram[:, 0] < diagram[:, 1])
+        return diagram[dim_filter & non_degenerate_filter][:, 0:2]
+
     def calculate_distance_(self, first: int, second: int, dataset: cvtda.neural_network.Dataset):
-        _, _, *diagrams1 = dataset.get_feature(first, skip_diagrams = False, device = torch.device('cpu'))
-        _, _, *diagrams2 = dataset.get_feature(second, skip_diagrams = False, device = torch.device('cpu'))
+        diagrams1 = dataset.raw_diagrams[first]
+        diagrams2 = dataset.raw_diagrams[second]
         assert len(diagrams1) == len(diagrams2)
 
         distance_vector = []
         for i in range(0, len(diagrams1), 2):
-            diag1 = diagrams1[i].numpy()
-            diag2 = diagrams2[i].numpy()
-
-            diag1 = diag1[diag1[:, 0] < diag1[:, 1]]
-            diag2 = diag2[diag2[:, 0] < diag2[:, 1]]
-
-            distance_vector.append(gudhi.hera.bottleneck_distance(diag1, diag2))
+            diag1 = diagrams1[i]
+            diag2 = diagrams2[i]
+            for dim in numpy.unique(diag1[:, 2]):
+                d1 = self.prepare_diagram_(diag1, dim)
+                d2 = self.prepare_diagram_(diag2, dim)
+                distance_vector.append(gudhi.hera.bottleneck_distance(d1, d2))
 
         return numpy.sqrt(numpy.sum(numpy.array(distance_vector) ** 2))

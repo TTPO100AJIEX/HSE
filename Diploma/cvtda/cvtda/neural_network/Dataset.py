@@ -12,7 +12,7 @@ import cvtda.logging
 def transform(diagram: torch.Tensor, dim: int):
     dim_filter = (diagram[:, 2] == dim)
     non_degenerate_filter = (diagram[:, 0] < diagram[:, 1])
-    rotation = torchph.nn.slayer.UpperDiagonalThresholdedLogTransform(0.05)
+    rotation = torchph.nn.slayer.UpperDiagonalThresholdedLogTransform(0.01)
     return rotation(diagram[dim_filter & non_degenerate_filter][:, 0:2])
 
 def process_diagram(diags: torch.Tensor):
@@ -46,8 +46,9 @@ class Dataset(torch.utils.data.Dataset):
             assert len(self.images.shape) == 3
             self.images = self.images.unsqueeze(1)
         
-        self.features = torch.tensor(features, dtype = torch.float32)
         self.labels = torch.tensor(labels, dtype = torch.long)
+        self.features = torch.tensor(features, dtype = torch.float32)
+        self.raw_diagrams = diagrams
 
         diagrams = [
             torch.tensor(numpy.array([ item[num_diagram] for item in diagrams ]), dtype = torch.float32)
