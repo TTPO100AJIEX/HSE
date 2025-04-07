@@ -29,26 +29,30 @@ class Dataset(torch.utils.data.Dataset):
     def __init__(
         self,
         images: numpy.ndarray,
-        diagrams: typing.List[numpy.ndarray], # n_items x n_diagrams x n_points x 3
+        diagrams: typing.Optional[typing.List[numpy.ndarray]], # n_items x n_diagrams x n_points x 3
         features: numpy.ndarray,
         labels: numpy.ndarray,
 
         n_jobs: int = -1,
-        device: torch.device = torch.device('cuda')
+        device: torch.device = torch.device('cuda'),
     ):
         self.n_jobs_ = n_jobs
         self.device_ = device
 
-        self.images = torch.tensor(images, dtype = torch.float32)
-        if len(self.images.shape) == 4:
-            self.images = self.images.permute((0, 3, 1, 2))
-        else:
-            assert len(self.images.shape) == 3
-            self.images = self.images.unsqueeze(1)
-        
+        if images is not None:
+            self.images = torch.tensor(images, dtype = torch.float32)
+            if len(self.images.shape) == 4:
+                self.images = self.images.permute((0, 3, 1, 2))
+            else:
+                assert len(self.images.shape) == 3
+                self.images = self.images.unsqueeze(1)
+            
         self.labels = torch.tensor(labels, dtype = torch.long)
         self.features = torch.tensor(features, dtype = torch.float32)
         self.raw_diagrams = diagrams
+        
+        if diagrams is None:
+            return
 
         diagrams = [
             torch.tensor(numpy.array([ item[num_diagram] for item in diagrams ]), dtype = torch.float32)
@@ -79,21 +83,19 @@ class Dataset(torch.utils.data.Dataset):
     def get_label(self, idx, device: typing.Optional[torch.device] = None):
         device = device if device is not None else self.device_
         return self.labels[idx].to(device)
-    
-    def get_features(self, idxs, skip_diagrams: bool = False, device: typing.Optional[torch.device] = None):
+
+    def get_diagrams(self, idxs, device: typing.Optional[torch.device] = None):
         device = device if device is not None else self.device_
-        output = [ self.images[idxs].to(device), self.features[idxs].to(device) ]
-        if not skip_diagrams:
-            for diag, ndp in zip(self.diagrams, self.non_dummy_points):
-                output.append(diag[idxs].to(device))
-                output.append(ndp[idxs].to(device))
+        output = [ ]
+        for diag, ndp in zip(self.diagrams, self.non_dummy_points):
+            output.append(diag[idxs].to(device))
+            output.append(ndp[idxs].to(device))
         return output
-    
-    def get_feature(self, idx, skip_diagrams: bool = False, device: typing.Optional[torch.device] = None):
+
+    def get_diagram(self, idx, device: typing.Optional[torch.device] = None):
         device = device if device is not None else self.device_
-        output = [ self.images[idx].to(device), self.features[idx].to(device) ]
-        if not skip_diagrams:
-            for diag, ndp in zip(self.diagrams, self.non_dummy_points):
-                output.append(diag[idx].to(device))
-                output.append(ndp[idx].to(device))
+        output = [ ]
+        for diag, ndp in zip(self.diagrams, self.non_dummy_points):
+            output.append(diag[idx].to(device))
+            output.append(ndp[idx].to(device))
         return output

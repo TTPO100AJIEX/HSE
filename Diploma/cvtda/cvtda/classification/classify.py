@@ -20,14 +20,15 @@ def classify(
     train_images: numpy.ndarray,
     train_features: numpy.ndarray,
     train_labels: numpy.ndarray,
-    train_diagrams: typing.List[numpy.ndarray],
+    train_diagrams: typing.Optional[typing.List[numpy.ndarray]],
 
     test_images: numpy.ndarray,
     test_features: numpy.ndarray,
     test_labels: numpy.ndarray,
-    test_diagrams: typing.List[numpy.ndarray],
+    test_diagrams: typing.Optional[typing.List[numpy.ndarray]],
 
     label_names: typing.Optional[typing.List[str]] = None,
+    confusion_matrix_include_values: bool = True,
 
     n_jobs: int = -1,
     random_state: int = 42,
@@ -39,9 +40,9 @@ def classify(
     random_forest_estimators: int = 100,
 
     nn_device: torch.device = torch.device('cuda'),
-    nn_batch_size: int = 128,
-    nn_learning_rate: float = 1e-4,
-    nn_epochs: int = 20,
+    nn_batch_size: int = 256,
+    nn_learning_rate: float = 1e-3,
+    nn_epochs: int = 100,
 
     grad_boost_max_iter: int = 20,
     grad_boost_max_depth: int = 4,
@@ -51,11 +52,13 @@ def classify(
     xgboost_max_depth: int = 4,
     xgboost_device: str = 'gpu',
 
-    catboost_iterations: int = 400,
+    catboost_iterations: int = 600,
     catboost_depth: int = 4,
-    catboost_device: str = 'GPU'
+    catboost_device: str = 'GPU',
+
+    without_diagrams: bool = False
 ):
-    if not only_get_from_dump:
+    if (train_images is not None) and (not only_get_from_dump):
         nn_train = cvtda.neural_network.Dataset(
             train_images, train_diagrams, train_features, train_labels, n_jobs = n_jobs, device = nn_device
         )
@@ -64,6 +67,10 @@ def classify(
         )
 
     def classify_one(classifier: sklearn.base.ClassifierMixin, name: str, display_name: str, ax: plt.Axes):
+        if without_diagrams and name == 'NNClassifier_diagrams':
+            print(f'Skipping {name} - {classifier}')
+            return {}
+
         print(f'Trying {name} - {classifier}')
 
         dumper = cvtda.dumping.dumper()
@@ -77,13 +84,18 @@ def classify(
             else:
                 classifier.fit(train_features, train_labels)
                 y_pred_proba = classifier.predict_proba(test_features)
-            dumper.save_dump(y_pred_proba, model_dump_name)
+
+            if model_dump_name is not None:
+                dumper.save_dump(y_pred_proba, model_dump_name)
                 
         ax.set_title(display_name)
-        result = { 'classifier': display_name, **estimate_quality(y_pred_proba, test_labels, ax, label_names = label_names) }
-        ax.set_xticks(ax.get_xticks(), labels = ax.get_xticklabels(), rotation = 45, ha = "right", rotation_mode = "anchor")
-        ax.set_xlabel(None)
-        ax.set_ylabel(None)
+        result = {
+            'classifier': display_name,
+            **estimate_quality(
+                y_pred_proba, test_labels, ax,
+                label_names = label_names, confusion_matrix_include_values = confusion_matrix_include_values
+            )
+        }
         print(result)
         return result
 
@@ -124,7 +136,7 @@ def classify(
             device = nn_device,
             batch_size = nn_batch_size,
             learning_rate = nn_learning_rate,
-            n_epochs = nn_epochs,
+            n_epochs = nn_epochs * 2,
             skip_diagrams = True,
             skip_images = True,
             skip_features = False,
@@ -134,7 +146,7 @@ def classify(
             device = nn_device,
             batch_size = nn_batch_size,
             learning_rate = nn_learning_rate,
-            n_epochs = nn_epochs,
+            n_epochs = nn_epochs // 5,
             skip_diagrams = False,
             skip_images = True,
             skip_features = True,
@@ -179,7 +191,7 @@ def classify(
         'XGBoost',
         'Нейронная сеть для тополог. признаков',
         'Обучаемая векторизация диаграмм',
-        'ResNet18 – базовая модель',
+        'ResNet50 – базовая модель',
         'Комбинированная нейронная сеть'
     ]
 

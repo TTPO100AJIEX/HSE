@@ -25,26 +25,31 @@ def test_gray_reduced():
     input = numpy.array([ make_gray() ])
     output = make_filtration_extractor(reduced = True).fit_transform(input)
     assert output.shape == (1, 56 * 2)
+    assert numpy.isnan(output).sum() == 0
     
 def test_gray_full():
     input = numpy.array([ make_gray() ])
     output = make_filtration_extractor(reduced = False).fit_transform(input)
     assert output.shape == (1, 126 * 2)
+    assert numpy.isnan(output).sum() == 0
     
 def test_rgb_reduced():
     input = numpy.array([ make_rgb() ])
     output = make_filtration_extractor(reduced = True).fit_transform(input)
     assert output.shape == (1, 56 * 2 * 4)
+    assert numpy.isnan(output).sum() == 0
     
 def test_rgb_full():
     input = numpy.array([ make_rgb() ])
     output = make_filtration_extractor(reduced = False).fit_transform(input)
     assert output.shape == (1, 126 * 2 * 4)
+    assert numpy.isnan(output).sum() == 0
 
 def test_batch():
     input = numpy.array([ make_gray(), make_gray() ])
     output = make_filtration_extractor(reduced = True).fit_transform(input)
     assert output.shape == (2, 56 * 2)
+    assert numpy.isnan(output).sum() == 0
 
 
 

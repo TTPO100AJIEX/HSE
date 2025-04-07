@@ -10,37 +10,41 @@ def make_rgb():
 def make_gray():
     return make_rgb()[:, :, 0]
 
-NUM_FILTRATIONS = (8 + 16 + 1 + 1 + 1 + 2) * 4
+NUM_FILTRATIONS_REDUCED = (8 + 16) * 3
+NUM_FILTRATIONS_FULL = (8 + 16 + 1 + 1 + 1 + 2) * 9
 
 
-def test_number_of_filtrations():
+def test_number_of_filtrations_reduced():
     extractor = cvtda.topology.FiltrationsExtractor(n_jobs = 1).fit(numpy.array([ make_gray() ]))
-    assert len(extractor.filtration_extractors_) == NUM_FILTRATIONS
+    assert len(extractor.filtration_extractors_) == NUM_FILTRATIONS_REDUCED
+    
+def test_number_of_filtrations_full():
+    extractor = cvtda.topology.FiltrationsExtractor(n_jobs = 1, reduced = False).fit(numpy.array([ make_gray() ]))
+    assert len(extractor.filtration_extractors_) == NUM_FILTRATIONS_FULL
 
 def test_gray_reduced():
     input = numpy.array([ make_gray() ])
     output = cvtda.topology.FiltrationsExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (1, NUM_FILTRATIONS * 56 * 2)
-    
+    assert output.shape == (1, NUM_FILTRATIONS_REDUCED * 56 * 2)
+    assert numpy.isnan(output).sum() == 0
+
 def test_gray_full():
     input = numpy.array([ make_gray() ])
     output = cvtda.topology.FiltrationsExtractor(n_jobs = 1, reduced = False).fit_transform(input)
-    assert output.shape == (1, NUM_FILTRATIONS * 126 * 2)
+    assert output.shape == (1, NUM_FILTRATIONS_FULL * 126 * 2)
+    assert numpy.isnan(output).sum() == 0
     
 def test_rgb_reduced():
     input = numpy.array([ make_rgb() ])
     output = cvtda.topology.FiltrationsExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (1, NUM_FILTRATIONS * 56 * 2 * 4)
-    
-def test_rgb_full():
-    input = numpy.array([ make_rgb() ])
-    output = cvtda.topology.FiltrationsExtractor(n_jobs = 1, reduced = False).fit_transform(input)
-    assert output.shape == (1, NUM_FILTRATIONS * 126 * 2 * 4)
+    assert output.shape == (1, NUM_FILTRATIONS_REDUCED * 56 * 2 * 4)
+    assert numpy.isnan(output).sum() == 0
 
 def test_batch():
     input = numpy.array([ make_gray(), make_gray() ])
     output = cvtda.topology.FiltrationsExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (2, NUM_FILTRATIONS * 56 * 2)
+    assert output.shape == (2, NUM_FILTRATIONS_REDUCED * 56 * 2)
+    assert numpy.isnan(output).sum() == 0
 
 
 

@@ -79,7 +79,12 @@ class GrayGeometryExtractor(sklearn.base.TransformerMixin):
                 orientations = 8
             )
 
-            return numpy.concatenate([
+            try:
+                inertia_tensor_eigvals = skimage.measure.inertia_tensor_eigvals(gray_image)
+            except:
+                inertia_tensor_eigvals = numpy.zeros((2))
+
+            return numpy.nan_to_num(numpy.concatenate([
                 skimage.feature.daisy(gray_image, **daisy_parameters).flatten(),
                 cvtda.utils.sequence2features(numpy.ma.array(sift_descriptors), reduced = self.reduced_).flatten(),
                 cvtda.utils.sequence2features(numpy.ma.array(orb_descriptors), reduced = self.reduced_).flatten(),
@@ -87,13 +92,13 @@ class GrayGeometryExtractor(sklearn.base.TransformerMixin):
                 cvtda.utils.sequence2features(numpy.ma.array(basic_features.transpose()), reduced = self.reduced_).flatten(),
                 [ skimage.measure.blur_effect(gray_image) ],
                 skimage.measure.centroid(gray_image),
-                skimage.measure.inertia_tensor_eigvals(gray_image),
+                inertia_tensor_eigvals,
                 skimage.measure.moments(gray_image, order = 9).flatten(),
                 moments_central.flatten(),
                 skimage.measure.moments_hu(moments_normalized).flatten(),
                 [ skimage.measure.shannon_entropy(gray_image) ],
                 calc_curvature(gray_image)
-            ])
+            ]), 0)
 
         return numpy.stack(
             joblib.Parallel(n_jobs = self.n_jobs_)(
@@ -117,10 +122,15 @@ class RGBGeometryExtractor(sklearn.base.TransformerMixin):
         assert self.fitted_ is True, 'fit() must be called before transform()'
 
         def process_one_(rgb_image: numpy.ndarray) -> numpy.ndarray:
-            return numpy.concatenate([
+            try:
+                inertia_tensor_eigvals = skimage.measure.inertia_tensor_eigvals(rgb_image)
+            except:
+                inertia_tensor_eigvals = numpy.zeros((3))
+            
+            return numpy.nan_to_num(numpy.concatenate([
                 skimage.feature.hog(rgb_image, channel_axis = 2),
                 skimage.measure.centroid(rgb_image),
-                skimage.measure.inertia_tensor_eigvals(rgb_image),
+                inertia_tensor_eigvals,
                 skimage.measure.moments(rgb_image, order = 6).flatten(),
                 skimage.measure.moments_central(rgb_image, order = 6).flatten(),
                 [
@@ -128,7 +138,7 @@ class RGBGeometryExtractor(sklearn.base.TransformerMixin):
                     skimage.measure.pearson_corr_coeff(rgb_image[:, :, 0], rgb_image[:, :, 2])[0],
                     skimage.measure.pearson_corr_coeff(rgb_image[:, :, 1], rgb_image[:, :, 2])[0],
                 ]
-            ])
+            ]), 0)
 
         return numpy.stack(
             joblib.Parallel(n_jobs = self.n_jobs_)(

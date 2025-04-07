@@ -11,6 +11,4 @@ class SimpleTopologicalLearner(BaseLearner):
         pass
 
     def calculate_distance_(self, first: int, second: int, dataset: cvtda.neural_network.Dataset):
-        _, embedding1 = dataset.get_feature(first, skip_diagrams = True, device = torch.device('cpu'))
-        _, embedding2 = dataset.get_feature(second, skip_diagrams = True, device = torch.device('cpu'))
-        return torch.sqrt(torch.sum((embedding1 - embedding2) ** 2))
+        return torch.sqrt(torch.sum((dataset.features[first] - dataset.features[second]) ** 2))

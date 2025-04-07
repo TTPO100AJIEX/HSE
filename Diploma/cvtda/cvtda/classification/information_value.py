@@ -4,7 +4,7 @@ import joblib
 import sklearn.base
 import matplotlib.pyplot as plt
 
-from cvtda.logging import DevNullLogger, CLILogger
+import cvtda.logging
 
 
 def calculate_binary_information_value(feature: numpy.ndarray, target: numpy.ndarray, bins: int) -> float:
@@ -47,8 +47,7 @@ def calculate_information_value(
     features: numpy.ndarray,
     y_true: numpy.ndarray,
     bins: int = 10,
-    n_jobs: int = -1,
-    logger = CLILogger()
+    n_jobs: int = -1
 ) -> pandas.DataFrame:
     iv_generator = joblib.Parallel(return_as = 'generator', n_jobs = n_jobs)(
         joblib.delayed(calculate_information_value_one_feature)(
@@ -57,7 +56,7 @@ def calculate_information_value(
             bins
         ) for idx in range(features.shape[1])
     )
-    pbar = logger.loop(iv_generator, total = features.shape[1], desc = 'information values')
+    pbar = cvtda.logging.logger().pbar(iv_generator, total = features.shape[1], desc = 'information values')
     return numpy.array(list(pbar))
 
 
@@ -72,23 +71,21 @@ class InformationValueFeatureSelector(sklearn.base.TransformerMixin):
     ):
         self.fitted_ = False
         self.n_jobs_ = n_jobs
-        self.logger_ = CLILogger() if verbose else DevNullLogger()
 
         self.bins_ = bins
         self.threshold_ = threshold
 
     def fit(self, features: numpy.ndarray, target: numpy.ndarray):
-        self.logger_.print('Fitting the information value feature selector')
+        cvtda.logging.logger().print('Fitting the information value feature selector')
         self.IV_ = calculate_information_value(
             features,
             target,
             bins = self.bins_,
-            n_jobs = self.n_jobs_,
-            logger = self.logger_
+            n_jobs = self.n_jobs_
         )
         self.good_features_idx_ = numpy.where(self.IV_ > self.threshold_)[0]
         
-        self.logger_.print('Fitting complete')
+        cvtda.logging.logger().print('Fitting complete')
         self.fitted_ = True
         return self
     

@@ -58,11 +58,11 @@ class NNLearner(BaseLearner):
             length_before_new_iter = self.batch_size_ * 20
         )
         train_dl = torch.utils.data.DataLoader(
-            torch.utils.data.TensorDataset(torch.arange(len(train))),
+            torch.utils.data.TensorDataset(train.images, train.features, train.labels, torch.arange(len(train))),
             batch_size = self.batch_size_,
             sampler = train_mpc_sampler
         )
-        self.init_(next(iter(train_dl)), train)
+        self.init_(*next(iter(train_dl)), train)
 
         train_miner = pytorch_metric_learning.miners.TripletMarginMiner(
             margin = self.margin_, 
@@ -73,7 +73,7 @@ class NNLearner(BaseLearner):
         
         if val is not None:
             val_dl = torch.utils.data.DataLoader(
-                torch.utils.data.TensorDataset(torch.arange(len(val))),
+            torch.utils.data.TensorDataset(val.images, val.features, val.labels, torch.arange(len(val))),
                 batch_size = self.batch_size_
             )
 
@@ -82,24 +82,24 @@ class NNLearner(BaseLearner):
             sum_loss = 0
 
             self.model_list_.train()
-            for idxs in train_dl:
+            for images, features, labels, diagram_idxs in train_dl:
                 self.optimizer_.zero_grad()
-                targets = train.get_labels(idxs)
-                embeddings = self.forward_(idxs, train)
-                indices = train_miner(embeddings, targets)
-                loss = train_loss(embeddings, targets, indices)
+                embeddings = self.forward_(images, features, diagram_idxs, train)
+                indices = train_miner(embeddings, labels)
+                loss = train_loss(embeddings, labels, indices)
                 loss.backward()
                 self.optimizer_.step()
                 sum_loss += loss.item()
             postfix = { 'loss': sum_loss }
+            self.scheduler_.step()
 
             if val is not None:
                 self.model_list_.eval()
                 all_embeddings, all_targets = [], []
-                for idxs in val_dl:
+                for images, features, labels, diagram_idxs in val_dl:
                     with torch.no_grad():
-                        all_targets.append(val.get_labels(idxs))
-                        all_embeddings.append(self.forward_(idxs, val))
+                        all_targets.append(labels)
+                        all_embeddings.append(self.forward_(images, features, diagram_idxs, val))
                 result = metrics.get_accuracy(torch.cat(all_embeddings, dim = 0), torch.cat(all_targets, dim = 0))
                 postfix = { **postfix, **result }
 
@@ -111,19 +111,38 @@ class NNLearner(BaseLearner):
     
     def calculate_distance_(self, first: int, second: int, dataset: cvtda.neural_network.Dataset):
         self.model_list_.eval()
-        embeddings = self.forward_([ first, second ], dataset)
+        idx = [ first, second ]
+        embeddings = self.forward_(dataset.images[idx], dataset.features[idx], idx, dataset)
         return torch.sqrt(torch.sum((embeddings[0] - embeddings[1]) ** 2)).item()
 
 
-    def init_(self, idxs: torch.Tensor, dataset: cvtda.neural_network.Dataset):
-        images, _, *diagrams = dataset.get_features(idxs, skip_diagrams = self.skip_diagrams_)
-        
+    def init_(
+        self, 
+        images: torch.Tensor,
+        features: torch.Tensor,
+        labels: torch.Tensor,
+        diagram_idxs: torch.Tensor,
+        dataset: cvtda.neural_network.Dataset
+    ):
+        diagrams = [] if self.skip_diagrams_ else dataset.get_diagrams(diagram_idxs)
+
+        is_no_topology = (self.skip_diagrams_ and self.skip_features_ and not self.skip_images_)
+        print('Topology: ', not is_no_topology)
+        print('Images: ', images.shape)
+        print('Features: ', features.shape)
+
+        if is_no_topology:
+            images_output = len(torch.unique(labels))
+        else:
+            images_output = self.latent_dim_
+
         self.nn_base_ = cvtda.neural_network.NNBase(
             num_diagrams = len(diagrams) // 2,
             skip_diagrams = self.skip_diagrams_,
             skip_images = self.skip_images_,
             skip_features = self.skip_features_,
-            images_n_channels = images.shape[1]
+            images_n_channels = images.shape[1],
+            images_output = images_output
         ).to(self.device_).train()
 
         self.model_ = torch.nn.Sequential(
@@ -133,16 +152,42 @@ class NNLearner(BaseLearner):
             torch.nn.Linear(512, self.latent_dim_)
         ).to(self.device_).train()
 
+        if is_no_topology:
+            self.model_ = torch.nn.Identity()
+
         self.model_list_ = torch.nn.ModuleList([ self.nn_base_, self.model_ ])
 
         self.optimizer_ = torch.optim.AdamW(
             params = self.model_list_.parameters(),
-            lr = self.learning_rate_
+            lr = self.learning_rate_ * 100
         )
+        
+        def lr_scheduler_lambda(epoch):
+            if epoch < self.n_epochs_ // 10:
+                return 1
+            if epoch < self.n_epochs_ // 4:
+                return 0.1
+            if epoch < self.n_epochs_ // 2:
+                return 0.01
+            if epoch < 3 * self.n_epochs_ // 4:
+                return 0.001
+            return 0.0001
+        self.scheduler_ = torch.optim.lr_scheduler.LambdaLR(self.optimizer_, lr_scheduler_lambda)
 
-        self.forward_(idxs, dataset)
-        cvtda.logging.logger().print(f'Input to LazyLinear: {self.model_[1].in_features}')
+        self.forward_(images, features, diagram_idxs, dataset)
+        if not is_no_topology:
+            cvtda.logging.logger().print(f'Input to LazyLinear: {self.model_[1].in_features}')
         cvtda.logging.logger().print(f'Parameters: {sum(p.numel() for p in self.model_list_.parameters())}')
 
-    def forward_(self, idxs: torch.Tensor, dataset: cvtda.neural_network.Dataset) -> torch.Tensor:
-        return self.model_(self.nn_base_(*dataset.get_features(idxs, skip_diagrams = self.skip_diagrams_)))
+    def forward_(
+        self,
+        images: torch.Tensor,
+        features: torch.Tensor,
+        diagram_idxs: torch.Tensor,
+        dataset: cvtda.neural_network.Dataset
+    ) -> torch.Tensor:
+        images = images.to(self.device_)
+        features = features.to(self.device_)
+        if self.skip_diagrams_:
+            return self.model_(self.nn_base_(images, features))
+        return self.model_(self.nn_base_(images, features, *dataset.get_diagrams(diagram_idxs)))

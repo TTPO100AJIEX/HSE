@@ -27,7 +27,7 @@ class NNBase(torch.nn.Module):
 
         self.images_ = None
         if not skip_images:
-            self.images_ = torchvision.models.resnet18(num_classes = images_output)
+            self.images_ = torchvision.models.resnet50(num_classes = images_output)
             self.images_.conv1 = torch.nn.Conv2d(images_n_channels, 64, kernel_size = 7, stride = 2, padding = 3, bias = False)
 
         self.features_ = None if skip_features else torch.nn.LazyLinear(features_output)

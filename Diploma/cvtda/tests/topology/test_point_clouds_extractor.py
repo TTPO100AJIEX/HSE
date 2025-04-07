@@ -15,26 +15,31 @@ def test_gray_reduced():
     input = numpy.array([ make_gray() ])
     output = cvtda.topology.PointCloudsExtractor(n_jobs = 1).fit_transform(input)
     assert output.shape == (1, 56 * 3)
+    assert numpy.isnan(output).sum() == 0
     
 def test_gray_full():
     input = numpy.array([ make_gray() ])
     output = cvtda.topology.PointCloudsExtractor(n_jobs = 1, reduced = False).fit_transform(input)
     assert output.shape == (1, 126 * 3)
+    assert numpy.isnan(output).sum() == 0
     
 def test_rgb_reduced():
     input = numpy.array([ make_rgb() ])
     output = cvtda.topology.PointCloudsExtractor(n_jobs = 1).fit_transform(input)
     assert output.shape == (1, 56 * 3 * 5)
+    assert numpy.isnan(output).sum() == 0
     
 def test_rgb_full():
     input = numpy.array([ make_rgb() ])
     output = cvtda.topology.PointCloudsExtractor(n_jobs = 1, reduced = False).fit_transform(input)
     assert output.shape == (1, 126 * 3 * 5)
+    assert numpy.isnan(output).sum() == 0
 
 def test_batch():
     input = numpy.array([ make_gray(), make_gray() ])
     output = cvtda.topology.PointCloudsExtractor(n_jobs = 1).fit_transform(input)
     assert output.shape == (2, 56 * 3)
+    assert numpy.isnan(output).sum() == 0
   
 def test_fit_transform():
     input1 = numpy.array([ make_gray() ])

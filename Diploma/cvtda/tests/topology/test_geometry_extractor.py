@@ -14,28 +14,38 @@ def make_gray():
 def test_gray_reduced():
     input = numpy.array([ make_gray() ])
     output = cvtda.topology.GeometryExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (1, 3273)
+    assert output.shape == (1, 2617)
+    assert numpy.isnan(output).sum() == 0
     
 def test_gray_full():
     input = numpy.array([ make_gray() ])
     output = cvtda.topology.GeometryExtractor(n_jobs = 1, reduced = False).fit_transform(input)
-    assert output.shape == (1, 4673)
+    assert output.shape == (1, 4657)
+    assert numpy.isnan(output).sum() == 0
     
 def test_rgb_reduced():
     input = numpy.array([ make_rgb() ])
     output = cvtda.topology.GeometryExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (1, 3273 * 4 + 1019)
+    assert output.shape == (1, 2617 * 4 + 1019)
+    assert numpy.isnan(output).sum() == 0
     
 def test_rgb_full():
     input = numpy.array([ make_rgb() ])
     output = cvtda.topology.GeometryExtractor(n_jobs = 1, reduced = False).fit_transform(input)
-    assert output.shape == (1, 4673 * 4 + 1019)
+    assert output.shape == (1, 4657 * 4 + 1019)
+    assert numpy.isnan(output).sum() == 0
 
 def test_batch():
     input = numpy.array([ make_gray(), make_gray() ])
     output = cvtda.topology.GeometryExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (2, 3273)
+    assert output.shape == (2, 2617)
+    assert numpy.isnan(output).sum() == 0
 
+def test_constant_pixels():
+    input = numpy.zeros((1, 32, 32, 3))
+    output = cvtda.topology.GeometryExtractor(n_jobs = 1, reduced = False).fit_transform(input)
+    assert output.shape == (1, 4657 * 4 + 1019)
+    assert numpy.isnan(output).sum() == 0
 
 
 def test_transform_before_fit():

@@ -29,8 +29,8 @@ def learn(
 
     nn_device: torch.device = torch.device('cuda'),
     nn_batch_size: int = 64,
-    nn_learning_rate: float = 1e-4,
-    nn_epochs: int = 25,
+    nn_learning_rate: float = 1e-3,
+    nn_epochs: int = 100,
     nn_margin: int = 0.1,
     nn_latent_dim: int = 256,
 ):
@@ -53,17 +53,16 @@ def learn(
         device = nn_device,
         batch_size = nn_batch_size,
         learning_rate = nn_learning_rate,
-        n_epochs = nn_epochs,
         margin = nn_margin,
         latent_dim = nn_latent_dim
     )
     classifiers = [
         SimpleTopologicalLearner(n_jobs = n_jobs),
         DiagramsLearner(n_jobs = n_jobs),
-        NNLearner(**nn_kwargs, skip_diagrams = True, skip_images = False, skip_features = True),
-        NNLearner(**nn_kwargs, skip_diagrams = True, skip_images = True, skip_features = False),
-        NNLearner(**nn_kwargs, skip_diagrams = True, skip_images = False, skip_features = False),
-        NNLearner(**nn_kwargs, skip_diagrams = False, skip_images = True, skip_features = True)
+        NNLearner(**nn_kwargs, n_epochs = nn_epochs,      skip_diagrams = True,  skip_images = False, skip_features = True),
+        NNLearner(**nn_kwargs, n_epochs = nn_epochs * 2,  skip_diagrams = True,  skip_images = True,  skip_features = False),
+        NNLearner(**nn_kwargs, n_epochs = nn_epochs,      skip_diagrams = True,  skip_images = False, skip_features = False),
+        NNLearner(**nn_kwargs, n_epochs = nn_epochs // 4, skip_diagrams = False, skip_images = True,  skip_features = True)
     ]
 
     names = [
@@ -77,7 +76,7 @@ def learn(
     display_names = [
         'Топологические признаки',
         'Диаграммы устойчивости',
-        'ResNet18 – базовая модель',
+        'ResNet50 – базовая модель',
         'Нейронная сеть для тополог. признаков',
         'Комбинированная нейронная сеть',
         'Обучаемая векторизация диаграмм'

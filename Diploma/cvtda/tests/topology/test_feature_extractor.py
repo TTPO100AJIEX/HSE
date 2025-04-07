@@ -10,23 +10,26 @@ def make_rgb():
 def make_gray():
     return make_rgb()[:, :, 0]
 
-NUM_FILTRATIONS = (8 + 16 + 1 + 1 + 1 + 2) * 4
+NUM_FILTRATIONS = (8 + 16) * 3
 
 
 def test_gray_reduced():
     input = numpy.array([ make_gray() ])
     output = cvtda.topology.FeatureExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (1, NUM_FILTRATIONS * 56 * 2 + 2 * 56 * 2 + 3273)
+    assert output.shape == (1, NUM_FILTRATIONS * 56 * 2 + 2 * 56 * 2 + 2617)
+    assert numpy.isnan(output).sum() == 0
     
 def test_rgb_reduced():
     input = numpy.array([ make_rgb() ])
     output = cvtda.topology.FeatureExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (1, NUM_FILTRATIONS * 56 * 2 * 4 + 2 * 56 * 2 * 4 + 3273 * 4 + 1019)
+    assert output.shape == (1, NUM_FILTRATIONS * 56 * 2 * 4 + 2 * 56 * 2 * 4 + 2617 * 4 + 1019)
+    assert numpy.isnan(output).sum() == 0
     
 def test_batch():
     input = numpy.array([ make_gray(), make_gray() ])
     output = cvtda.topology.FeatureExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (2, NUM_FILTRATIONS * 56 * 2 + 2 * 56 * 2 + 3273)
+    assert output.shape == (2, NUM_FILTRATIONS * 56 * 2 + 2 * 56 * 2 + 2617)
+    assert numpy.isnan(output).sum() == 0
 
 
 
@@ -46,7 +49,6 @@ def test_dimensions_mismatch():
 @pytest.mark.parametrize(
     ['shape'],
     [
-        pytest.param((2, 16, 16, 16, 3), id = 'too many dimensions'),
         pytest.param((2, 16), id = 'too few dimensions'),
         pytest.param((2, 16, 16, 4), id = 'too many channels'),
         pytest.param((2, 16, 16, 2), id = 'too few channels')

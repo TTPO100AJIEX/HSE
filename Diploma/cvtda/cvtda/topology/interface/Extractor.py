@@ -110,7 +110,3 @@ class Extractor(sklearn.base.TransformerMixin):
     @abc.abstractmethod
     def process_gray_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         pass
-
-
-            
-
