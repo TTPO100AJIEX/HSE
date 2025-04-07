@@ -42,7 +42,7 @@ def test_rgb_reduced():
 def test_rgb_full():
     input = numpy.array([ make_rgb() ])
     output = make_filtration_extractor(reduced = False).fit_transform(input)
-    assert output.shape == (1, 126 * 2 * 4)
+    assert output.shape == (1, 126 * 2 * 6)
     assert numpy.isnan(output).sum() == 0
 
 def test_batch():

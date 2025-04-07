@@ -32,7 +32,7 @@ def test_rgb_reduced():
 def test_rgb_full():
     input = numpy.array([ make_rgb() ])
     output = cvtda.topology.GreyscaleExtractor(n_jobs = 1, reduced = False).fit_transform(input)
-    assert output.shape == (1, 126 * 2 * 4)
+    assert output.shape == (1, 126 * 2 * 6)
     assert numpy.isnan(output).sum() == 0
 
 def test_batch():

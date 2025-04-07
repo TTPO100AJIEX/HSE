@@ -76,26 +76,37 @@ class Extractor(sklearn.base.TransformerMixin):
             red_dump = cvtda.dumping.dump_name_concat(dump_name, "red")
             green_dump = cvtda.dumping.dump_name_concat(dump_name, "green")
             blue_dump = cvtda.dumping.dump_name_concat(dump_name, "blue")
+            saturation_dump = cvtda.dumping.dump_name_concat(dump_name, "saturation")
+            value_dump = cvtda.dumping.dump_name_concat(dump_name, "value")
 
             if do_fit:
                 self.gray_extractor_ = self.__class__(**self.kwargs_)
                 self.red_extractor_ = self.__class__(**self.kwargs_)
                 self.green_extractor_ = self.__class__(**self.kwargs_)
                 self.blue_extractor_ = self.__class__(**self.kwargs_)
+                if not self.reduced_:
+                    self.saturation_extractor_ = self.__class__(**self.kwargs_)
+                    self.value_extractor_ = self.__class__(**self.kwargs_)
 
             if self.only_get_from_dump_:
                 rgb_data = cvtda.dumping.dumper().get_dump(self.final_dump_name_(rgb_dump))
             else:
                 rgb_data = self.process_rgb_(images, do_fit, rgb_dump)
-            
+
             gray_images = cvtda.utils.rgb2gray(images, self.n_jobs_)
-            result = utils.hstack([
+            result = [
                 rgb_data,
                 utils.process_iter(self.gray_extractor_, gray_images, do_fit, gray_dump),
                 utils.process_iter(self.red_extractor_, images[:, :, :, 0], do_fit, red_dump),
                 utils.process_iter(self.green_extractor_, images[:, :, :, 1], do_fit, green_dump),
                 utils.process_iter(self.blue_extractor_, images[:, :, :, 2], do_fit, blue_dump),
-            ], self.force_numpy_())
+            ]
+            if not self.reduced_:
+                hsv = cvtda.utils.rgb2hsv(images, self.n_jobs_)
+                result.append(utils.process_iter(self.saturation_extractor_, hsv[:, :, :, 1], do_fit, saturation_dump))
+                result.append(utils.process_iter(self.value_extractor_, hsv[:, :, :, 2], do_fit, value_dump))
+            
+            result = utils.hstack(result, self.force_numpy_())
         else:
             assert len(images.shape) == 3, f'{len(images.shape) - 1}d images are not supported'
             result = self.process_gray_(images, do_fit, dump_name)
