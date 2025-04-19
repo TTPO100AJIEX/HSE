@@ -82,7 +82,7 @@ def learn(
         'Обучаемая векторизация диаграмм'
     ]
 
-    figure, axes = plt.subplots(2, 3, figsize = (14, 5))
+    figure, axes = plt.subplots(2, 3, figsize = (12, 5))
     for args in zip(classifiers, names, display_names, axes.flat):
         classify_one(*args)
 
