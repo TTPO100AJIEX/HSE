@@ -1,7 +1,7 @@
 import os
 import sys
 import itertools
-sys.path.append(os.path.abspath(os.path.join('../../cvtda')))
+sys.path.append(os.path.abspath(os.path.join('../../src')))
 
 import typing
 
