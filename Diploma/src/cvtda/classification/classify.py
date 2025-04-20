@@ -54,10 +54,10 @@ def classify(
 
     catboost_iterations: int = 600,
     catboost_depth: int = 4,
-    catboost_device: str = 'GPU',
-
-    without_diagrams: bool = False
+    catboost_device: str = 'GPU'
 ):
+    without_diagrams = (train_diagrams is None) and (test_diagrams is None)
+
     if (train_images is not None) and (not only_get_from_dump):
         nn_train = cvtda.neural_network.Dataset(
             train_images, train_diagrams, train_features, train_labels, n_jobs = n_jobs, device = nn_device
