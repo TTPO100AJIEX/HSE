@@ -33,6 +33,7 @@ def learn(
     nn_epochs: int = 100,
     nn_margin: int = 0.1,
     nn_latent_dim: int = 256,
+    nn_length_before_new_iter: typing.Optional[int] = None
 ):
     nn_train = cvtda.neural_network.Dataset(
         train_images, train_diagrams, train_features, train_labels, n_jobs = n_jobs, device = nn_device
@@ -54,7 +55,8 @@ def learn(
         batch_size = nn_batch_size,
         learning_rate = nn_learning_rate,
         margin = nn_margin,
-        latent_dim = nn_latent_dim
+        latent_dim = nn_latent_dim,
+        length_before_new_iter = nn_length_before_new_iter
     )
     classifiers = [
         SimpleTopologicalLearner(n_jobs = n_jobs),
@@ -87,7 +89,7 @@ def learn(
         classify_one(*args)
 
     handles, labels = axes.flat[0].get_legend_handles_labels()
-    figure.legend(handles, labels, loc = (0.367, 0.83))
+    figure.legend(handles, labels, loc = (0.35, 0.83))
 
     figure.tight_layout()
 

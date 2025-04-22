@@ -25,6 +25,7 @@ class NNLearner(BaseLearner):
         batch_size: int = 64,
         learning_rate: float = 1e-4,
         n_epochs: int = 25,
+        length_before_new_iter: typing.Optional[int] = None,
 
         margin: int = 1,
         latent_dim: int = 256,
@@ -40,6 +41,7 @@ class NNLearner(BaseLearner):
         self.batch_size_ = batch_size
         self.learning_rate_ = learning_rate
         self.n_epochs_ = n_epochs
+        self.length_before_new_iter_ = length_before_new_iter or (self.batch_size_ * 20)
 
         self.margin_ = margin
         self.latent_dim_ = latent_dim
@@ -55,7 +57,7 @@ class NNLearner(BaseLearner):
         train_mpc_sampler = pytorch_metric_learning.samplers.MPerClassSampler(
             m = 4,
             labels = train.labels,
-            length_before_new_iter = self.batch_size_ * 20
+            length_before_new_iter = self.length_before_new_iter_
         )
         train_dl = torch.utils.data.DataLoader(
             torch.utils.data.TensorDataset(train.images, train.features, train.labels, torch.arange(len(train))),

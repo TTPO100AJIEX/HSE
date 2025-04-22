@@ -7,17 +7,23 @@ import torchvision
 import torchvision.transforms.v2
 
 transform = torchvision.transforms.v2.Compose([
-    torchvision.transforms.v2.CenterCrop((128, 128)),
-    torchvision.transforms.v2.Resize((64, 64))
+    torchvision.transforms.v2.Grayscale(),
+    torchvision.transforms.v2.Resize((32, 32))
 ])
 
-train = torchvision.datasets.ImageFolder('../experiments/labeled_faces_in_the_wild/lfw/training')
-train_images = numpy.array([ item[0] for item in train ])[:20] / 255
-train_labels = numpy.array([ item[1] for item in train ])[:20]
+train = torchvision.datasets.ImageFolder(
+    '../experiments/labeled_faces_in_the_wild/lfw/training',
+    transform = transform
+)
+train_images = numpy.array([ train[i][0] for i in range(40) ]) / 255
+train_labels = numpy.array([ train[i][1] for i in range(40) ])
 
-test = torchvision.datasets.ImageFolder('../experiments/labeled_faces_in_the_wild/lfw/testing')
-test_images = numpy.array([ item[0] for item in test ])[:10] / 255
-test_labels = numpy.array([ item[1] for item in test ])[:10]
+test = torchvision.datasets.ImageFolder(
+    '../experiments/labeled_faces_in_the_wild/lfw/testing',
+    transform = transform
+)
+test_images = numpy.array([ test[i][0] for i in range(4, 14) ]) / 255
+test_labels = numpy.array([ test[i][1] for i in range(4, 14) ])
 
 
 
