@@ -15,7 +15,6 @@ class NNClassifier(sklearn.base.ClassifierMixin):
     def __init__(
         self,
 
-        n_jobs: int = -1,
         random_state: int = 42,
 
         device: torch.device = torch.device("cuda"),
@@ -27,7 +26,6 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         skip_images: bool = False,
         skip_features: bool = False
     ):
-        self.n_jobs_ = n_jobs
         self.random_state_ = random_state
 
         self.device_ = device

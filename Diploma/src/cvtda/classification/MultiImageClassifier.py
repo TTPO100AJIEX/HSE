@@ -8,10 +8,9 @@ import sklearn.metrics
 import cvtda.utils
 import cvtda.logging
 import cvtda.neural_network
-import cvtda.classification
 
 
-class Dataset:
+class MultiImageDataset:
     def __init__(self, features, labels, images):
         self.labels = torch.tensor(labels, dtype = torch.long)
         self.features = torch.tensor(features, dtype = torch.float32)
@@ -45,7 +44,7 @@ class MultiImageClassifier(sklearn.base.ClassifierMixin):
         self.skip_features_ = skip_features
 
 
-    def fit(self, train: Dataset, val: typing.Optional[Dataset]):
+    def fit(self, train: MultiImageDataset, val: typing.Optional[MultiImageDataset]):
         cvtda.utils.set_random_seed(self.random_state_)
         train_dl = torch.utils.data.DataLoader(
             torch.utils.data.TensorDataset(train.labels, train.features, *train.images),

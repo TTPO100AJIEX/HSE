@@ -12,11 +12,7 @@ import sklearn.neighbors
 import matplotlib.pyplot as plt
 
 import cvtda.dumping
-import cvtda.neural_network
 import cvtda.classification
-
-from utils.multi_image_classifier import Dataset
-from utils.multi_image_classifier import MultiImageClassifier
 
 def classify(
     train_images: typing.List[numpy.ndarray],
@@ -54,12 +50,11 @@ def classify(
 
     catboost_iterations: int = 600,
     catboost_depth: int = 4,
-    catboost_rsm: typing.Optional[int] = None,
     catboost_device: str = 'GPU'
 ):
     if (train_images is not None) and (not only_get_from_dump):
-        nn_train = Dataset(train_features, train_labels, train_images)
-        nn_test = Dataset(test_features, test_labels, test_images)
+        nn_train = cvtda.classification.MultiImageDataset(train_features, train_labels, train_images)
+        nn_test = cvtda.classification.MultiImageDataset(test_features, test_labels, test_images)
 
     def classify_one(classifier: sklearn.base.ClassifierMixin, name: str, display_name: str, ax: plt.Axes):
         print(f'Trying {name} - {classifier}')
@@ -69,7 +64,7 @@ def classify(
         if only_get_from_dump or dumper.has_dump(model_dump_name):
             y_pred_proba = dumper.get_dump(model_dump_name)
         else:
-            if type(classifier) == MultiImageClassifier:
+            if type(classifier) == cvtda.classification.MultiImageClassifier:
                 classifier.fit(nn_train, nn_test)
                 y_pred_proba = classifier.predict_proba(nn_test)
             else:
@@ -122,7 +117,7 @@ def classify(
             max_depth = xgboost_max_depth,
             device = xgboost_device
         ),
-        MultiImageClassifier(
+        cvtda.classification.MultiImageClassifier(
             random_state = random_state,
             device = nn_device,
             batch_size = nn_batch_size,
@@ -131,7 +126,7 @@ def classify(
             skip_images = True,
             skip_features = False,
         ),
-        MultiImageClassifier(
+        cvtda.classification.MultiImageClassifier(
             random_state = random_state,
             device = nn_device,
             batch_size = nn_batch_size,
@@ -140,7 +135,7 @@ def classify(
             skip_images = False,
             skip_features = True,
         ),
-        MultiImageClassifier(
+        cvtda.classification.MultiImageClassifier(
             random_state = random_state,
             device = nn_device,
             batch_size = nn_batch_size,
