@@ -11,8 +11,8 @@ class CLILogger(BaseLogger):
     def __init__(self):
         pass
 
-    def print(self, data: T) -> None:
-        print(data)
+    def print(self, data: T, *args) -> None:
+        print(data, *args)
 
     def pbar(
         self,

@@ -14,7 +14,7 @@ class BaseLogger(abc.ABC):
         BaseLogger.current_logger = self.__previous
 
     @abc.abstractmethod
-    def print(self, data: T) -> None:
+    def print(self, data: T, *args) -> None:
         pass
 
     @abc.abstractmethod

@@ -72,7 +72,7 @@ class MultiImageClassifier(sklearn.base.ClassifierMixin):
                 val_pred = numpy.argmax(val_proba, axis = 1)
                 postfix['val_acc'] = sklearn.metrics.accuracy_score(val.labels, val_pred)
 
-            print(f"Epoch {epoch}:", postfix)
+            cvtda.logging.logger().print(f"Epoch {epoch}:", postfix)
 
         self.fitted_ = True
         return self

@@ -11,8 +11,10 @@ import sklearn.ensemble
 import sklearn.neighbors
 import matplotlib.pyplot as plt
 
+import cvtda.logging
 import cvtda.dumping
 import cvtda.neural_network
+
 from .NNClassifier import NNClassifier
 from .estimate_quality import estimate_quality
 
@@ -68,10 +70,10 @@ def classify(
 
     def classify_one(classifier: sklearn.base.ClassifierMixin, name: str, display_name: str, ax: plt.Axes):
         if without_diagrams and name == 'NNClassifier_diagrams':
-            print(f'Skipping {name} - {classifier}')
+            cvtda.logging.logger().print(f'Skipping {name} - {classifier}')
             return {}
 
-        print(f'Trying {name} - {classifier}')
+        cvtda.logging.logger().print(f'Trying {name} - {classifier}')
 
         dumper = cvtda.dumping.dumper()
         model_dump_name = cvtda.dumping.dump_name_concat(dump_name, name)
@@ -96,7 +98,7 @@ def classify(
                 label_names = label_names, confusion_matrix_include_values = confusion_matrix_include_values
             )
         }
-        print(result)
+        cvtda.logging.logger().print(result)
         return result
 
     classifiers = [

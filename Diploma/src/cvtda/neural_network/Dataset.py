@@ -31,7 +31,7 @@ class Dataset(torch.utils.data.Dataset):
         images: numpy.ndarray,
         diagrams: typing.Optional[typing.List[numpy.ndarray]], # n_items x n_diagrams x n_points x 3
         features: numpy.ndarray,
-        labels: numpy.ndarray,
+        labels: typing.Optional[numpy.ndarray],
 
         n_jobs: int = -1,
         device: torch.device = torch.device('cuda'),
@@ -46,8 +46,9 @@ class Dataset(torch.utils.data.Dataset):
             else:
                 assert len(self.images.shape) == 3
                 self.images = self.images.unsqueeze(1)
-            
-        self.labels = torch.tensor(labels, dtype = torch.long)
+        
+        if labels is not None:
+            self.labels = torch.tensor(labels, dtype = torch.long)
         self.features = torch.tensor(features, dtype = torch.float32)
         self.raw_diagrams = diagrams
         

@@ -5,7 +5,7 @@ from .base import BaseLogger
 T = typing.TypeVar("T")
 
 class DevNullLogger(BaseLogger):
-    def print(self, data: T) -> None:
+    def print(self, data: T, *args) -> None:
         pass
 
     def pbar(

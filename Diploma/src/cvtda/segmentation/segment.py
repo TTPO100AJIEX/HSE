@@ -4,7 +4,9 @@ import numpy
 import torch
 import pandas
 
+import cvtda.logging
 import cvtda.dumping
+
 from .Dataset import Dataset
 from .MiniUnet import MiniUnet
 from .estimate_quality import estimate_quality
@@ -24,7 +26,7 @@ def segment(
 
     device: torch.device = torch.device('cuda'),
     batch_size: int = 64,
-    learning_rate: float = 1e-4,
+    learning_rate: float = 1e-3,
     n_epochs: int = 100,
     remove_cross_maps: bool = False
 ):
@@ -32,7 +34,7 @@ def segment(
     nn_test = Dataset(test_images, test_features, test_masks)
 
     def try_one(model: MiniUnet, name: str, display_name: str):
-        print(f'Trying {name} - {model}')
+        cvtda.logging.logger().print(f'Trying {name} - {model}')
         
         dumper = cvtda.dumping.dumper()
         model_dump_name = cvtda.dumping.dump_name_concat(dump_name, name)
@@ -45,8 +47,8 @@ def segment(
             if model_dump_name is not None:
                 dumper.save_dump(y_pred_proba, model_dump_name)
 
-        result = { 'classifier': display_name, **estimate_quality(y_pred_proba, test_masks) }
-        print(result)
+        result = { 'model': display_name, **estimate_quality(y_pred_proba, test_masks) }
+        cvtda.logging.logger().print(result)
         return result
 
     unet_kwargs = dict(

@@ -5,8 +5,10 @@ import numpy
 import torch
 import matplotlib.pyplot as plt
 
+import cvtda.logging
 import cvtda.dumping
 import cvtda.neural_network
+
 from .BaseLearner import BaseLearner
 from .DiagramsLearner import DiagramsLearner
 from .NNLearner import NNLearner
@@ -43,7 +45,7 @@ def learn(
     )
 
     def classify_one(learner: BaseLearner, name: str, display_name: str, ax: plt.Axes):
-        print(f'Trying {name} - {learner}')
+        cvtda.logging.logger().print(f'Trying {name} - {learner}')
         learner.fit(nn_train, nn_test)
         ax.set_title(display_name)
         learner.estimate_quality(nn_test, ax)

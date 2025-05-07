@@ -1,5 +1,6 @@
 import typing
 
+import numpy
 import torch
 import torch.utils.data
 import segmentation_models_pytorch
@@ -72,7 +73,7 @@ class MiniUnet:
         self.fitted_ = True
         return self
     
-    def predict_proba(self, dataset: Dataset):
+    def predict_proba(self, dataset: Dataset) -> numpy.ndarray:
         dl = torch.utils.data.DataLoader(
             torch.utils.data.TensorDataset(dataset.images, dataset.features),
             batch_size = self.batch_size_,
@@ -117,6 +118,6 @@ class MiniUnet:
         return self.model_(images.to(self.device_), features.to(self.device_))
 
     def loss_(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        bce = torch.nn.functional.binary_cross_entropy(input, target, reduction = 'sum')
+        bce = torch.nn.functional.binary_cross_entropy(input, target, reduction = 'mean')
         iou = segmentation_models_pytorch.losses.JaccardLoss('binary', from_logits = False)(input, target)
-        return (bce + iou * input.numel()) / 2
+        return bce + iou
