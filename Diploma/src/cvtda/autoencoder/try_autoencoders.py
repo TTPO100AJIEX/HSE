@@ -21,6 +21,7 @@ def try_autoencoders(
     test_diagrams: typing.Optional[typing.List[numpy.ndarray]],
 
     n_jobs: int = -1,
+    lang: str = 'ru', # 'en'
     random_state: int = 42,
     dump_name: typing.Optional[str] = None,
     only_get_from_dump: bool = False,
@@ -113,17 +114,28 @@ def try_autoencoders(
             skip_features = True,
         )
     ]
+
     names = [
         'features',
         'images',
         'features_images',
         'diagrams'
     ]
-    display_names = [
-        'Топологические признаки',
-        'ResNet50 – базовая модель',
-        'Комбинированная нейронная сеть',
-        'Обучаемая векторизация диаграмм'
-    ]
+    
+    match lang:
+        case 'ru':
+            display_names = [
+                'Топологические признаки',
+                'ResNet50 – базовая модель',
+                'Комбинированная нейронная сеть',
+                'Обучаемая векторизация диаграмм'
+            ]
+        case _:
+            display_names = [
+                'FC over topological features',
+                'ResNet50 – baseline model',
+                'Combined neural network',
+                'Trainable vectorization'
+            ]
 
     return pandas.DataFrame([ try_one(*args) for args in zip(models, names, display_names) ])

@@ -33,6 +33,7 @@ def classify(
     confusion_matrix_include_values: bool = True,
 
     n_jobs: int = -1,
+    lang: str = 'ru', # 'en'
     random_state: int = 42,
     dump_name: typing.Optional[str] = None,
     only_get_from_dump: bool = False,
@@ -185,17 +186,32 @@ def classify(
         'NNClassifier_images',
         'NNClassifier_features_images'
     ]
-    display_names = [
-        'Метод k ближайших соседей',
-        'Случайный лес',
-        'Град. бустинг на основе гистограмм',
-        'CatBoost',
-        'XGBoost',
-        'Нейронная сеть для тополог. признаков',
-        'Обучаемая векторизация диаграмм',
-        'ResNet50 – базовая модель',
-        'Комбинированная нейронная сеть'
-    ]
+
+    match lang:
+        case 'ru':
+            display_names = [
+                'Метод k ближайших соседей',
+                'Случайный лес',
+                'Град. бустинг на основе гистограмм',
+                'CatBoost',
+                'XGBoost',
+                'Нейронная сеть для тополог. признаков',
+                'Обучаемая векторизация диаграмм',
+                'ResNet50 – базовая модель',
+                'Комбинированная нейронная сеть'
+            ]
+        case _:
+            display_names = [
+                'KNN',
+                'Random forest',
+                'Histogram-based boosting',
+                'CatBoost',
+                'XGBoost',
+                'FC over topological features',
+                'Trainable vectorization',
+                'ResNet50 – baseline model',
+                'Combined neural network'
+            ]
 
     figure, axes = plt.subplots(3, 3, figsize = (15, 15))
     df = pandas.DataFrame([ classify_one(*args) for args in zip(classifiers, names, display_names, axes.flat) ])

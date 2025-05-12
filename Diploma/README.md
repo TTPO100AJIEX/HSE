@@ -1,282 +1,161 @@
-# Библиотека для решения задач компьютерного зрения методами топологического анализа данных
+# A feature engineering framework for computer vision based on topological data analysis
 
-## Назначение
+The library provides tools to simplify the application of topological data analysis to arbitrary computer vision problems and is equipped with related tools to solve classification, face recognition, compression, and segmentation problems.
 
-Библиотека предоставляет инструменты, позволяющие без труда применять методы топологического
-анализа данных к произвольному набору фотографий, а также снабжена смежными инструментами
-для решения задач классификации и распознавания лиц.
+The package is maintained by Aleksandr Abramov at HSE University, Faculty of Computer Science, Moscow, Russia. The work was supervised by Vsevolod Chernyshev at Ulm University, Ulm, Germany, suggesting the design and methodologies for the methods implemented.
 
-## Установка и условия применения
+## Installation
 
-Установка библиотеки возможна напрямую из индекса пакетов языка Python командой `pip install cv-tda`.
-Основной пакет содержит все необходимые инструменты топологического анализа данных для извлечения
-признаков из изображений.
+The library can be installed directly from the Python package index using `pip install cv-tda`. The core package contains the algebraic topology toolkit necessary to extract topological features from images.
 
-Библиотека поставляется с четырьмя опциональными пакетами, предоставляющими методы для решения
-задач классификации, распознавания лиц, сжатия и сегментации. Для их использования требуется
-установить дополнительные зависимости соответственно командами `pip install cv-tda[classification]`,
-`pip install cv-tda[facerecognition]`, `pip install cv-tda[autoencoder]` и `pip install cv-tda[segmentation]`.
-Более того, для использования описанного в основной работе обучаемого метода векторизации диаграмм
-устойчивости необходимо установить утилиту torchph версии 0.0.0 командой
-`pip install git+https://github.com/c-hofer/torchph.git@master`.
+The library comes with four optional packages providing methods to solve classification, face recognition, compression, and segmentation problems. To use them, you need to install additional dependencies with the respective commands: `pip install cv-tda[classification]`, `pip install cv-tda[facerecognition]`, `pip install cv-tda[autoencoder]`, and `pip install cv-tda[segmentation]`. Moreover, to use the trainable persistence diagram vectorization technique described in the study, you should install version 0.0.0 of the torchph utility with `pip install git+https://github.com/c-hofer/torchph.git@master`.
 
-Следует обратить внимание, что работа библиотеки гарантируется только при использовании
-Python версии 3.10. Корректное функционирование всех методов при установке других версий
-интерпретатора не гарантируется.
+Please note that the library requires Python 3.10. Correct functioning with other versions of the interpreter is not guaranteed.
 
-Ограничений в работоспособности  библиотеки на различных операционных системах не выявлено.
+We identified no limitations in using the tools on various operating systems.
 
-Требования к количеству ядер и частоте процессора не предъявляются, но уменьшение доступности
-ресурса приведёт к увеличению времени работы большинства методов. Требования к объёму оперативной
-памяти при использовании библиотеки зависят от количества и размера анализируемых изображений:
-для обработки 60,000 цветных фотографий размера 48 x 48 требуется не менее 32 ГБ оперативной памяти.
-Графический процессор для работы библиотеки не требуется, хотя и может быть использован
-для ускорения работы отдельных функций.
+There are no CPU requirements, but limiting the resource availability will increase the running time of most methods. The amount of RAM required depends on the quantity and size of analyzed images: at least 32 GB is required to process 60,000 color photographs of size 48 x 48. A GPU is not required to use the library, although it can speed up the operation of individual functions.
 
-## Программный интерфейс
+## API
 
-### Алгоритм извлечения топологических признаков
+### Topological feature extraction algorithm
 
-Основным элементом библиотеки является класс `FeatureExtractor` пакета `topology`, реализующий
-обобщённый алгоритм топологического анализа набора изображений.
+The main element of the library is the `FeatureExtractor` class of `cvtda.topology`, which implements a comprehensive algorithm for topological analysis of a set of images.
 
-Класс реализует интерфейс `TransformerMixin` библиотеки scikit-learn, таким образом предоставляя
-три стандартных метода: `fit` для настройки (“обучения”) алгоритма на тренировочной выборке, 
-`transform` для преобразования тестовой выборки и `fit_transform`, комбинирующий предыдущие два.
+The class implements the scikit-learn's `TransformerMixin` interface, thus providing three standard methods: `fit` for tuning the algorithm to the training set, `transform` for transforming the test set, and `fit_transform`, which combines the previous two.
 
-Входными данными этих методов является один numpy-массив, содержащий все изображения набора
-со значениями пикселей в интервале [0; 1]. При работе с монохромными изображениями, массив
-должен иметь три измерения: номер изображения, его высота и ширина соответственно. В случае
-цветных изображений, RGB-каналы записываются последним (четвёртым) измерением. Работа с
-изображениями в других форматах не поддержана.
+The input for these methods is a single numpy array containing the images with pixel values between 0 and 1. For monochrome images, the array must have three dimensions: the image index, its height, and width, respectively. In the case of color images, the RGB channels should be placed as the last (fourth) dimension. Working with other image formats is not supported.
 
-Основными параметрами класса являются несколько значений:
-1) `n_jobs` – максимальное количество одновременно выполняемых задач, степень параллелизации
-вычислений. Стандартное значение (`-1`) соответствует использованию всех доступных ресурсов процессора.
+The main parameters of the class are the following values
+1) `n_jobs` is the maximum number of simultaneously executed tasks, the degree of parallelization. The default value (`-1`) corresponds to the use of all available CPU resources.
+2) `reduced` is a flag indicating which version of the algorithm to use: reduced (`True`) or full (`False`). A detailed description of both methods is presented in the main study.
+3) `return_diagrams` indicates the algorithm to return the persistence diagrams instead of the final features.
 
-2) `reduced` – флаг, указывающий, какую версию алгоритма использовать: сокращённую (`True`)
-или полную (`False`). Подробное описание обоих методов представлено в основной работе.
+The output without the `return_diagrams` parameter is a two-dimensional numpy array containing a feature description for each image of the original dataset. When `return_diagrams` is specified, the algorithm returns a list with each element containing a set of persistence diagrams for the corresponding image.
 
-3) `return_diagrams` – флаг, при указании которого алгоритм вернёт не итоговые признаки,
-а диаграммы устойчивости.
+### Classification quality evaluation
 
-Выходными данными алгоритма при отсутствии параметра `return_diagrams` является двумерный
-numpy-массив, содержащий признаковое описание для каждого изображения из исходного набора.
-При указании параметра `return_diagrams`, алгоритм возвращает список, каждый элемент
-которого содержит набор диаграмм устойчивости для соответствующего изображения исходного набора.
+To evaluate the topological approach applied to image classification, the `classification` package provides the `classify` method, which generates predictions and quality estimates with nine machine-learning models described in the paper.
 
-### Метод оценки качества классификации
+The inputs are the training and test sets of images with target classes, extracted features, and, optionally, persistence diagrams. If the latter is not specified, the corresponding method (a neural network based on a trainable persistence diagram vectorization technique) is excluded from the analysis.
 
-Для оценки качества топологического подхода при решении задачи классификации,
-пакет `classification` предоставляет метод `classify`, формирующий предсказания
-и оценки их качества для девяти описанных в основной работе моделей.
+The output is a pandas table with quality metrics for all models and a matplotlib image of their confusion matrices.
 
-Входными данными метода являются по два набора (тренировочная и тестовая выборки)
-соответствующих изображений, целевых классов, извлечённых признаков и, опционально,
-диаграмм устойчивости. При отсутствии диаграмм устойчивости во входных данных,
-соответствующий метод (нейронная сеть с обучаемым слоем векторизации диаграмм устойчивости)
-исключается из анализа.
+The parameters include:
+1) `label_names` – class names to include in confusion matrices.
+2) `confusion_matrix_include_values` – when disabled, will remove the quantities of each type of errors from the confusion matrices.
+3) `nn_device`, `xgboost_device`, and `catboost_device` let you use the GPU to train the corresponding models.
+4) A set of specific values to fine-tune the classifiers.
 
-Результат работы – pandas-таблица с метриками качества всех моделей, а также
-matplotlib-изображение их матриц ошибок.
+### Face recognition quality evaluation
 
-Параметры метода включают:
+Similar to classification, to evaluate the quality of the extracted features in a face recognition task, the `face_recognition` package provides the `learn` method, which trains multiple models and evaluates their quality.
 
-1) `label_names` – наименования классов для указания на изображениях матриц ошибок.
+The inputs are also two sets of photographs with the identifiers of the respective people, feature matrices, and persistence diagrams. Unlike classification, persistence diagrams are required for face recognition.
 
-2) `confusion_matrix_include_values` – флаг, при отключении которого на изображениях
-матриц ошибок не будут указываться количества каждого типа ошибок.
+The outputs are the scatter plots showing the distributions of distances between latent representations of photographs of the same person and different people, formed by corresponding models.
 
-3) `nn_device`, `xgboost_device` и `catboost_device` обеспечивают возможность использования
-графического процессора при обучении соответствующих моделей. 
+### Compression quality evaluation
 
-4) Набор специализированных значений, позволяющих детально настраивать используемые классификаторы.
+To analyze the behavior of topological features in image compression, the `autoencoder` package provides `try_autoencoders` - a method similar to the previously described, which fits four autoencoders to a set of training data and evaluates the models with a test dataset. The output is a pandas table with quality metrics of all models.
 
-### Метод оценки качества распознавания лиц
+### Segmentation quality evaluation
 
-Аналогично классификации, для оценки качества извлечённых признаков при решении задачи
-распознавания лиц, пакет `face_recognition` предоставляет метод `learn`, производящий
-обучение нескольких моделей и оценку их качества.
+Similarly, the `segmentation` package provides the `segment` function to evaluate the topological features in finding individual objects in images. The inputs are also training and test samples, but, unlike the methods described earlier, the segmentation maps of all images must be provided as the target variable. The output is a pandas table with quality metrics of estimated models and the control neural network with the first part of U-Net removed, allowing one to assess the quality of virtually random predictions made without any information about the original image. 
 
-Входные данные метода – по два набора (тренировочная и тестовая выборки) соответствующих
-фотографий, идентификаторов изображённых на них людей, извлечённых признаков и диаграмм устойчивости.
-Следует заметить, что, в отличие от классификации, указание диаграмм устойчивости не является
-опциональным при решении задачи распознавания лиц.
+It is important to note that the segmentation methods, including the segment function, do not use persistence diagrams and do not accept them as input.
 
-Результатом работы метода являются изображения диаграмм рассеяния, показывающих распределения
-расстояний между латентными представлениями пар изображений одного человека и разных людей,
-сформированными соответствующими моделями.
+### Logging utilities
 
-### Метод оценки качества сжатия изображений
+To monitor the library's runtime, the `logging` package implements a respective mechanism, allowing for flexible customization of the output and the progress indicators for some methods. For this, we provide the `BaseLogger` interface and two implementations: the `CLILogger`, which outputs messages to the command line, and `DevNullLogger`, which hides all messages.
 
-Для анализа применимости топологических признаков при сжатии изображений, пакет `autoencoder` предоставляет
-похожий на описанные ранее метод `try_autoencoders`, который производит обучение четырёх автокодировщиков
-на переданном на вход наборе тренировочных данных и оценивает обученные модели на тестовом датасете.
-Результатом работы метода является pandas-таблица с метриками качества предсказаний всех моделей.
-
-### Метод оценки качества сегментации
-
-Аналогично, пакет `segmentation` предоставляет функцию `segment`, позволяющую оценить топологические
-признаки при решении задачи сегментации – поиска объектов на изображении. Входными данными метода
-также являются тренировочная и тестовая выборки, но, в отличие от описанных ранее методов, в качестве
-целевой переменной должны быть переданы сегментационные карты соответствующих изображений. Выходными
-данными является pandas-таблица с метриками качества обученных моделей, а также контрольной модели,
-в которой полностью удалена первая часть U-Net, что позволяет оценить качество фактически случайных
-предсказаний в отсутствие какой-либо информации об исходном изображении.
-
-Важно заметить, что разработанные методы сегментации, включая функцию segment,
-не используют диаграммы устойчивости и не принимают их в качестве входных данных.
-
-### Средства логирования этапов работы методов
-
-Для наблюдения за работой библиотеки, пакет `logging` реализует механизм логирования,
-позволяющий гибко настраивать количество выводимых событий, а также индикаторы прогресса
-циклических методов. Для этого вместе с библиотекой поставляется интерфейс `BaseLogger`
-и две его реализации: `CLILogger`, выводящий сообщения в командную строку, и `DevNullLogger`,
-скрывающий все сообщения.
-
-Для указания, какую реализацию логирования использовать при работе, пользователю необходимо
-создать контекст с инициализацией соответствующего класса следующим образом:
+To select one of the implementations, the user should create a context, initializing the corresponding class as follows:
 
 ```python
 with CLILogger():
-    # Код, который будет выводить сообщения в командную строку
+    # Code that will print to the command line
 with DevNullLogger():
-    # Код, который не будет выводить сообщения
+    # Code that will not print anything
 ```
 
-Такой механизм позволяет при необходимости разработать дополнительную, специализированную
-реализацию логирования, соответствующую желаниям пользователя, без изменения исходного
-кода библиотеки. Для этого необходимо создать новый класс, реализующий интерфейс `BaseLogger`,
-и использовать его при создании контекста следующим образом:
+The architecture allows, if necessary, to provide custom logging implementations without changing the library's source code. To do this, you need to create a new class implementing the `BaseLogger` interface and use it when initializing the context as follows:
 
 ```python
 class CustomLogger(BaseLogger):
     def print(self, data):
-        # Пользовательская реализация
+        # User code
     def pbar(self, data], total,  desc):
-        # Пользовательская реализация
+        # User code
     def zip(self,  *iterables, desc):
-        # Пользовательская реализация
+        # User code
     def set_pbar_postfix(self, pbar, data):
-        # Пользовательская реализация
+        # User code
 
 with CustomLogger():
-    # Код, использующий CustomLogger для вывода сообщений
+    # Code that uses CustomLogger to print runtime information
 ```
 
-### Средства резервного копирования результатов
+### Backup utilities
 
-Для резервного копирования промежуточных результатов с возможностью дальнейшего их
-восстановления поставляется пакет `dumping`, реализующий основанный на управлении
-контекстом механизм, аналогичный средствам логирования.  Класс `BaseDumper` описывает
-общий интерфейс соответствующих методов, а вместе с библиотекой поставляется две
-его реализации: `NumpyDumper`, позволяющий сохранять numpy-массивы на диск, и `DevNullDumper`,
-отключающий резервное копирование. Выбор реализации производится путём создания контекста с
-инициализацией соответствующего класса:
+The `dumping` package implements a similar context-based mechanism to backup intermediate results and restore them from persistent storage. The `BaseDumper` class describes the interface of the corresponding methods, and two implementations are supplied with the library, `NumpyDumper` and `DevNullDumper`, which allow you to save numpy arrays to disk and disable backup processes, respectively. To choose the implementation, you should create a context, initializing the corresponding class:
 
 ```python
 with NumpyDumper():
-    # Код, который будет сохранять результаты на диск
+    # Code that will save the results to disk
 with DevNullDumper():
-    # Код, который не будет выполнять резервное копирование
+    # Code that will not backup intermediate results
 ```
 
-Для указания имени резервной копии (для `NumpyDumper` совпадает с директорией,
-куда будут сохраняться результаты) необходимо передать поддерживающему резервное копирование
-методу параметр `dump_name`. Так, большинство классов библиотеки, включая `FeatureExtractor`,
-принимают это значения в качестве опционального параметра в методах `fit`, `transform` и `fit_transform`.
+To specify the names of backups (for `NumpyDumper`, it coincides with the directory to save the files), you should pass the `dump_name` parameter to the method that supports this feature. Thus, most implementations in the library, including the `FeatureExtractor`, accept this value as an optional parameter in `fit`, `transform`, and `fit_transform` methods.
 
-Более того, все методы, поддерживающие резервное копирование, предоставляют возможность передачи
-параметра `only_get_from_dump`, который указывает библиотеке, что все результаты были вычислены
-ранее и необходимо безусловно считать их из копии, что позволяет ускорить процесс восстановления.
+Moreover, all methods supporting this feature provide an `only_get_from_dump` parameter telling the library to unconditionally read previously computed results from the backup, which speeds up the recovery.
 
-Наконец, использование основанного на управлении контекстом механизма позволяет при необходимости
-разработать дополнительную, специализированную реализацию резервного копирования без изменения
-исходного кода библиотеки. Для этого необходимо создать новый класс, реализующий интерфейс
-`BaseDumper`, и использовать его при создании контекста следующим образом:
+Finally, the context-based mechanism lets you provide custom implementations without changing the library's source code, if necessary. To do this, you need to create a new class implementing the `BaseDumper` interface and use it when creating a context as follows:
 
 ```python
 class CustomDumper(BaseDumper):
     def execute(self, function, name, *function_args):
-        # Пользовательская реализация
+        # User code
     def save_dump(self, data, name):
-        # Пользовательская реализация
+        # User code
     def has_dump(self, name):
-        # Пользовательская реализация
+        # User code
     def get_dump_impl_(self, name):
-        # Пользовательская реализация
+        # User code
 
 with CustomDumper():
-    # Код, использующий CustomDumper для резервного копирования
+    # Code that uses CustomDumper to backup intermediate results
 ```
 
-### Другие элементы, предоставляемые библиотекой
+### Other elements provided by the library
 
-Помимо описанных ранее основных методов, библиотека предоставляет и ряд вспомогательных реализаций,
-краткая документация которых представлена далее. Для получения более подробных описаний методов,
-включая параметры алгоритмов и типы обрабатываемых данных, следует обратиться к исходному коду библиотеки.
+In addition to the main tools described earlier, the library provides several auxiliary implementations, a brief documentation of which is presented further. Please refer to the source code for more detailed descriptions of those methods, including the parameters and data requirements.
 
-1) Пакет `utils`:
+1) `utils` package:
+    1) `DuplicateFeaturesRemover` implements an efficient algorithm to remove the features with the same values for all images.
+    2) `image2pointcloud` transforms a set of images of any dimension into a set of metric spaces as described in the paper.
+    3) `rgb2gray` and `rgb2hsv` convert a set of color images into the corresponding representation: monochrome or HSV.
+    4) `sequence2features` calculates the statistical characteristics of a numerical sequence as described in the study.
+    5) `spread_points` provides a given number of uniformly distributed points on a segment of a certain length.
+2) `topology` package:
+    1) `DiagramVectorizer` implements the statistical method of persistence diagram vectorization.
+    2) `FiltrationExtractor` and `FiltrationsExtractor` implement techniques to extract topological features from monochrome images by binarizing them with subsequent application of various filtrations.
+    3) `GrayGeometryExtractor` and `GeometryExtractor` compute geometric features for a set of images.
+    4) `GreyscaleExtractor` implements the simplest method to extract topological features from monochrome images by directly constructing cubical complexes for them.
+    5) `PointCloudsExtractor` analyzes images as metric spaces using Vietoris–Rips complexes.
+3) The `neural_network` package provides utilities to develop neural networks to evaluate the quality when solving classification and face recognition problems.
+4) `classification` package:
+    1) `estimate_quality` calculates quality metrics when solving a classification problem.
+    2) `NNClassifier` is a general implementation of all neural network classification models described in the paper.
+5) `BaseLearner`, `DiagramsLearner`, `NNLearner`, and `SimpleTopologicalLearner` of the `face_recognition` package implement corresponding face recognition models.
+6) The `autoencoder` package implements corresponding machine-learning models (class `Autoencoder`) and tools (`estimate_quality` method) to evaluate image compression with various techniques.
+7) The `segmentation` package provides a basic implementation for neural networks with U-Net architecture (`MiniUnet` class) and a function to evaluate the segmentation quality (`estimate_quality`).
 
-    1) Класс `DuplicateFeaturesRemover` реализует эффективный алгоритм удаления признаков,
-    значение которых совпадает для всех изображений.
+## Typical use cases
 
-    2) Метод `image2pointcloud` преобразует набор изображений любой размерности в набор
-    метрических пространств описанным в основной работе способом.
+### Topological feature extraction
 
-    3) Методы `rgb2gray` и `rgb2hsv` преобразуют набор цветных изображений в соответствующее
-    представление: монохромное или HSV.
-
-    4) Метод `sequence2features` реализует вычисление статистических характеристик
-    числовой последовательности как описано в основной работе.
-    
-    5) Метод `set_random_seed` позволяет фиксировать семя случайности в недетерминированных алгоритмах.
-    
-    6) Метод `spread_points` формирует равномерное распределение заданного количества точек
-    на отрезке некоторой длины.
-
-2) Пакет `topology`:
-
-    1) Класс `DiagramVectorizer` реализует предложенный в основной работе статистический
-    метод векторизации диаграмм устойчивости.
-
-    2) Классы `FiltrationExtractor` и `FiltrationsExtractor` реализуют алгоритмы извлечения
-    топологических признаков из монохромных изображений путём их бинаризации с дальнейшим
-    применением разнообразных фильтраций.
-
-    3) Классы `GrayGeometryExtractor` и `GeometryExtractor` предоставляют механизм вычисления
-    геометрических признаков изображений.
-
-    4) Класс `GreyscaleExtractor` реализует простейший способ извлечения топологических признаков
-    из монохромных изображений путём непосредственного построения кубических комплексов для них.
-
-    5) Класс `PointCloudsExtractor` предоставляет возможность анализа изображений как
-    метрических пространств с помощью комплексов Вьеториса – Рипса.
-
-3) Пакет `neural_network` предоставляет утилиты для разработки нейросетевых моделей,
-использованных при оценки качества решения задач классификации и распознавания лиц.
-
-4) Пакет `classification`:
-
-    1) Метод `estimate_quality` производит вычисление метрик качества предсказаний
-    при решении задачи классификации.
-
-    2) Класс `InformationValueFeatureSelector` реализует механизм отбора признаков
-    на основе их информационной ценности для решения задачи классификации.
-    
-    3) Класс `NNClassifier` является общей реализацией всех нейросетевых моделей
-    классификации, описанных в основной работе.
-
-    4) Классы `BaseLearner`, `DiagramsLearner`, `NNLearner` и `SimpleTopologicalLearner`
-    пакета `face_recognition` реализуют соответствующие модели распознавания лиц.
-
-## Реализации типичных сценариев использования
-
-### Извлечение топологических признаков
-
-Ключевым сценарием использования библиотеки является извлечение топологических
-признаков набора изображений, что может быть выполнено следующей программой:
+The key use case of the library is to extract topological features from a set of images, performed by the following program:
 
 ```python
 import cvtda.topology
@@ -284,17 +163,15 @@ extractor = cvtda.topology.FeatureExtractor()
 train_features = extractor.fit_transform(train_images)
 test_features = extractor.transform(test_images)
 ```
-Более того, для разработки улучшенных моделей могут быть применены специализированные
-методы пакета `topology`, имеющие программный интерфейс, аналогичный классу `FeatureExtractor`.
+Moreover, specialized methods of the `topology` package, which have a similar API to the `FeatureExtractor` class, can be employed to develop more complex models.
 
-### Оценка качества классификации набора изображений
+### Classification quality evaluation
 
-Для первичной оценки применимости топологического анализа данных к классификации набора
-изображений, может быть использована следующая программа:
+For a preliminary assessment of the applicability of topological data analysis to classify a set of images, the following program can be used:
 
 ```python
-# Считать тренировочную выборку в train_images и train_labels
-# Считать тестовую выборку в переменные test_images и test_labels
+# Read the training set into train_images and train_labels
+# Read the test set into test_images and test_labels
 
 import cvtda.topology
 extractor = cvtda.topology.FeatureExtractor()
@@ -308,14 +185,13 @@ cvtda.classification.classify(
 )
 ```
 
-### Оценка качества распознавания лиц
+### Face recognition quality evaluation
 
-Для оценки качества распознавания лиц, перед вызовом функции `learn` необходимо дополнительно
-восстановить из резервной копии диаграммы устойчивости следующим образом:
+To evaluate the quality of face recognition, one should additionally restore the persistence diagrams from a backup before calling `learn` as follows:
 
 ```python
-# Считать тренировочную выборку в train_images и train_labels
-# Считать тестовую выборку в переменные test_images и test_labels
+# Read the training set into train_images and train_labels
+# Read the test set into test_images and test_labels
 
 import cvtda.topology
 extractor = cvtda.topology.FeatureExtractor()
@@ -336,53 +212,50 @@ cvtda.face_recognition.learn(
 )
 ```
 
-## Основные сообщения об ошибках
+## Typical error messages
 
-Основные сообщения, возникающие в ходе выполнения реализованных в библиотеке алгоритмов и
-действия, необходимые для их исправления, представлены в таблице А.1.
+Typical messages arising from the library and the actions required to fix them are presented in the Table below.
 
-Таблица A.1 – Сообщения, возникающие при работе библиотеки
 <table>
     <thead>
         <tr>
-            <th>Текст сообщения</th>
-            <th>Описание содержания</th>
-            <th>Действия, которые необходимо предпринять</th>
+            <th>Error message</th>
+            <th>Description</th>
+            <th>Actions to fix</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td>There is no dump at …</td>
-            <td>Попытка загрузить не существующую резервную копию результатов</td>
+            <td>An attempt to load a non-existent backup</td>
             <td>
-            
-1) Убедиться, что указан верный путь до существующей резервной копии
 
-2) Вызвать метод без флага only_get_from_dump для формирования резервной копии
+1) Ensure the correct path to an existing backup is specified
+2) Call the method without the only_get_from_dump flag to create a backup
             </td>
         </tr>
         <tr>
             <td>…d images are not supported</td>
-            <td rowspan=2>Алгоритму переданы изображения в неподдерживаемом формате</td>
-            <td rowspan=2>Убедиться, что переданные данные представляют набор монохромных или RGB изображений</td>
+            <td rowspan=2>The format of input images in not supported</td>
+            <td rowspan=2>Ensure the input data represents a set of monochrome or RGB images</td>
         </tr>
         <tr>
             <td>Images with … channels are not supported</td>
         </tr>
         <tr>
             <td>Bad image format: should be [0, 1]; received …</td>
-            <td>Алгоритму переданы изображения в неподдерживаемом формате</td>
-            <td>Убедиться, что значения пикселей изображений находятся в интервале [0; 1]</td>
+            <td>The format of input images in not supported</td>
+            <td>Ensure the pixel values ​​of all images are between 0 and 1</td>
         </tr>
         <tr>
             <td>fit() must be called before transform()</td>
-            <td>Метод `transform` вызван для алгоритма, который не был перед этим настроен вызовом метода `fit`</td>
-            <td>Вызвать метод `fit`</td>
+            <td>`transform` called for a class, that was not configured beforehand using `fit`</td>
+            <td>Call `fit`</td>
         </tr>
         <tr>
             <td>The pipeline is fit for … Cannot use it with …</td>
-            <td>Метод `transform` вызван с изображениями в формате, отличном от выбранного при вызове `fit`</td>
-            <td>Убедиться, что форматы изображений в тренировочной и тестовой выборках совпадают</td>
+            <td>`transform` called with images in a different format than the one seen in `fit`</td>
+            <td>Ensure the image formats in the training and test sets match</td>
         </tr>
     </tbody>
 </table>

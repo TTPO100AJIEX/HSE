@@ -19,6 +19,7 @@ class NNLearner(BaseLearner):
         self,
 
         n_jobs: int = -1,
+        lang: str = 'ru', # 'en'
         random_state: int = 42,
 
         device: torch.device = torch.device("cuda"),
@@ -34,7 +35,7 @@ class NNLearner(BaseLearner):
         skip_images: bool = False,
         skip_features: bool = False
     ):
-        super().__init__(n_jobs)
+        super().__init__(n_jobs, lang)
         self.random_state_ = random_state
 
         self.device_ = device
