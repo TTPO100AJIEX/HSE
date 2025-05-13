@@ -2,7 +2,7 @@
 
 The library provides tools to simplify the application of topological data analysis to arbitrary computer vision problems and is equipped with related tools to solve classification, face recognition, compression, and segmentation problems.
 
-The package is maintained by Aleksandr Abramov at HSE University, Faculty of Computer Science, Moscow, Russia. The work was supervised by Vsevolod Chernyshev at Ulm University, Ulm, Germany, suggesting the design and methodologies for the methods implemented.
+The package is maintained by Aleksandr Abramov at HSE University, Faculty of Computer Science. The work was supervised by Dr. Vsevolod Chernyshev at Ulm University, suggesting the design and methodologies for the methods implemented.
 
 ## Installation
 
