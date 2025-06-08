@@ -97,8 +97,8 @@ class DiagramVectorizer(sklearn.base.TransformerMixin):
                 self.calc_silhouette_features_       (batch),
                 self.calc_entropy_features_          (batch),
                 self.calc_number_of_points_features_ (batch),
-                # self.calc_heat_features_             (batch),
-                # self.calc_persistence_image_features_(batch),
+                self.calc_heat_features_             (batch),
+                self.calc_persistence_image_features_(batch),
                 self.calc_lifetime_features_         (batch)
             ])
         
