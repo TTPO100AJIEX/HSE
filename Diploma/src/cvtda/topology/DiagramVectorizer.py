@@ -63,6 +63,7 @@ class DiagramVectorizer(sklearn.base.TransformerMixin):
         
         self.filtering_epsilon_ = self.determine_filtering_epsilon_(diagrams)
         self.filtering_ = gtda.diagrams.Filtering(epsilon = self.filtering_epsilon_).fit(diagrams)
+        diagrams = self.filtering_.transform(diagrams)
 
         self.betti_curve_.fit(diagrams)
         
@@ -96,8 +97,8 @@ class DiagramVectorizer(sklearn.base.TransformerMixin):
                 self.calc_silhouette_features_       (batch),
                 self.calc_entropy_features_          (batch),
                 self.calc_number_of_points_features_ (batch),
-                self.calc_heat_features_             (batch),
-                self.calc_persistence_image_features_(batch),
+                # self.calc_heat_features_             (batch),
+                # self.calc_persistence_image_features_(batch),
                 self.calc_lifetime_features_         (batch)
             ])
         
@@ -114,6 +115,8 @@ class DiagramVectorizer(sklearn.base.TransformerMixin):
 
     def determine_filtering_epsilon_(self, diagrams: numpy.ndarray) -> float:
         life = (diagrams[:, :, 1] - diagrams[:, :, 0]).flatten()
+        if len(numpy.unique(life)) == 1:
+            return 1e-8
         return numpy.percentile(life[life != 0], self.filtering_percentile_)
 
     def calc_perdim_sequence_stats_(self, data: numpy.ndarray) -> numpy.ndarray:

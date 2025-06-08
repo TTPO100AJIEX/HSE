@@ -7,7 +7,6 @@ import skimage.measure
 import skimage.feature
 
 import cvtda.utils
-import cvtda.dumping
 import cvtda.logging
 
 from . import utils
@@ -147,6 +146,45 @@ class RGBGeometryExtractor(sklearn.base.TransformerMixin):
             )
         )
 
+class MultidimensionalGeometryExtractor(sklearn.base.TransformerMixin):
+    def __init__(self, n_jobs: int = -1, reduced: bool = True):
+        self.fitted_ = False
+        self.n_jobs_ = n_jobs
+        self.reduced_ = reduced
+
+
+    def fit(self, nd_images: numpy.ndarray):
+        self.fitted_ = True
+        return self
+
+    def transform(self, nd_images: numpy.ndarray) -> numpy.ndarray:
+        assert self.fitted_ is True, 'fit() must be called before transform()'
+        
+        def process_one_(nd_image: numpy.ndarray) -> numpy.ndarray:
+            basic_features = skimage.feature.multiscale_basic_features(nd_image)
+            basic_features = basic_features.reshape((-1, basic_features.shape[-1]))
+
+            try:
+                inertia_tensor_eigvals = skimage.measure.inertia_tensor_eigvals(nd_image)
+            except:
+                inertia_tensor_eigvals = numpy.zeros((len(nd_image.shape)))
+
+            return numpy.nan_to_num(numpy.concatenate([
+                cvtda.utils.sequence2features(numpy.ma.array(basic_features.transpose()), reduced = self.reduced_).flatten(),
+                [ skimage.measure.blur_effect(nd_image) ],
+                skimage.measure.centroid(nd_image),
+                inertia_tensor_eigvals,
+                skimage.measure.moments(nd_image, order = 9).flatten(),
+                skimage.measure.moments_central(nd_image, order = 9).flatten()
+            ]), 0)
+
+        return numpy.stack(
+            joblib.Parallel(n_jobs = self.n_jobs_)(
+                joblib.delayed(process_one_)(img)
+                for img in cvtda.logging.logger().pbar(nd_images, desc = 'MultidimensionalGeometryExtractor')
+            )
+        )
+    
 
 class GeometryExtractor(Extractor):
     def __init__(self, n_jobs: int = -1, reduced: bool = True, only_get_from_dump: bool = False):
@@ -154,10 +192,14 @@ class GeometryExtractor(Extractor):
 
         self.rgb_extractor_ = RGBGeometryExtractor(n_jobs = self.n_jobs_, reduced = self.reduced_)
         self.gray_extractor_ = GrayGeometryExtractor(n_jobs = self.n_jobs_, reduced = self.reduced_)
+        self.multidimensional_extractor_ = MultidimensionalGeometryExtractor(n_jobs = self.n_jobs_, reduced = self.reduced_)
 
 
     def process_rgb_(self, rgb_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
         return utils.process_iter_dump(self.rgb_extractor_, rgb_images, do_fit, self.features_dump_(dump_name))
     
     def process_gray_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
-        return utils.process_iter_dump(self.gray_extractor_, gray_images, do_fit, self.features_dump_(dump_name))
+        if len(gray_images.shape) == 3:
+            return utils.process_iter_dump(self.gray_extractor_, gray_images, do_fit, self.features_dump_(dump_name))
+        else:
+            return utils.process_iter_dump(self.multidimensional_extractor_, gray_images, do_fit, self.features_dump_(dump_name))

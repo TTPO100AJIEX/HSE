@@ -17,6 +17,7 @@ class MiniUnetModule(torch.nn.Module):
     ):
         super().__init__()
         self.remove_cross_maps_ = remove_cross_maps
+        start_channels = max(images_example.shape[1], start_channels)
         channels = [ images_example.shape[1], *[ (2 ** i) * start_channels for i in range(layers + 1) ] ]
 
         self.downsample_blocks = torch.nn.ModuleList([ DownsampleBlock(*c) for c in zip(channels[:-2], channels[1:-1]) ])

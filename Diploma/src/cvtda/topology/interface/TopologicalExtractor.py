@@ -71,6 +71,7 @@ class TopologicalExtractor(Extractor):
         diagrams = self.get_diagrams_(images, do_fit, dump_name)
         cvtda.logging.logger().print("Applying Scaler to persistence diagrams.")
         diagrams = utils.process_iter(self.scaler_, diagrams, do_fit)
+        diagrams = numpy.nan_to_num(diagrams, 0)
         if self.return_diagrams_:
             return diagrams
         return utils.process_iter_dump(self.vectorizer_, diagrams, do_fit, self.features_dump_(dump_name))

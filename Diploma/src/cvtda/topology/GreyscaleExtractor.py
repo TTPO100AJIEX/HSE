@@ -1,10 +1,8 @@
 import typing
 
 import numpy
-import gtda.images
 import gtda.homology
 
-import cvtda.utils
 import cvtda.logging
 
 from . import utils
@@ -28,10 +26,12 @@ class GreyscaleExtractor(TopologicalExtractor):
             return_diagrams = return_diagrams,
             **kwargs
         )
-
-        self.persistence_ = gtda.homology.CubicalPersistence(homology_dimensions = [0, 1], n_jobs = self.n_jobs_)
+        self.persistence_ = None
 
 
     def get_diagrams_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         cvtda.logging.logger().print(f"GreyscaleExtractor: processing {dump_name}, do_fit = {do_fit}")
+        if do_fit and (self.persistence_ is None):
+            dims = list(range(len(images.shape) - 1))
+            self.persistence_ = gtda.homology.CubicalPersistence(homology_dimensions = dims, n_jobs = self.n_jobs_)
         return utils.process_iter_dump(self.persistence_, images, do_fit, self.diagrams_dump_(dump_name))

@@ -67,8 +67,7 @@ class Extractor(sklearn.base.TransformerMixin):
             assert self.fit_dimensions_ == images.shape[1:], \
                     f"The pipeline is fit for {self.fit_dimensions_}. Cannot use it with {images.shape}."
         
-        if len(images.shape) == 4:
-            assert images.shape[3] == 3, f'Images with {len(images.shape)} channels are not supported'
+        if (len(images.shape) == 4) and (images.shape[3] == 3):
             cvtda.logging.logger().print("RGB images received. Transforming to grayscale.")
 
             rgb_dump = cvtda.dumping.dump_name_concat(dump_name, "rgb")
@@ -108,7 +107,6 @@ class Extractor(sklearn.base.TransformerMixin):
             
             result = utils.hstack(result, self.force_numpy_())
         else:
-            assert len(images.shape) == 3, f'{len(images.shape) - 1}d images are not supported'
             result = self.process_gray_(images, do_fit, dump_name)
     
         self.fit_dimensions_ = images.shape[1:]
