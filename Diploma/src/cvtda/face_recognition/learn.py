@@ -30,7 +30,7 @@ def learn(
     random_state: int = 42,
     dump_name: typing.Optional[str] = None,
 
-    nn_device: torch.device = torch.device('cuda'),
+    nn_device: torch.device = cvtda.neural_network.default_device,
     nn_batch_size: int = 64,
     nn_learning_rate: float = 1e-3,
     nn_epochs: int = 100,

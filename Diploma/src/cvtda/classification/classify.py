@@ -42,7 +42,7 @@ def classify(
 
     random_forest_estimators: int = 100,
 
-    nn_device: torch.device = torch.device('cuda'),
+    nn_device: torch.device = cvtda.neural_network.default_device,
     nn_batch_size: int = 256,
     nn_learning_rate: float = 1e-3,
     nn_epochs: int = 100,

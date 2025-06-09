@@ -34,7 +34,7 @@ class Dataset(torch.utils.data.Dataset):
         labels: typing.Optional[numpy.ndarray],
 
         n_jobs: int = -1,
-        device: torch.device = torch.device('cuda'),
+        device: torch.device = cvtda.neural_network.default_device,
     ):
         self.n_jobs_ = n_jobs
         self.device_ = device
