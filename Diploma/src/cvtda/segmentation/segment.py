@@ -6,6 +6,7 @@ import pandas
 
 import cvtda.logging
 import cvtda.dumping
+import cvtda.neural_network
 
 from .Dataset import Dataset
 from .MiniUnet import MiniUnet

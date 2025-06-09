@@ -1,6 +1,7 @@
 import os
 import typing
 
+import catboost.dev_utils
 import numpy
 import torch
 import pandas
@@ -57,7 +58,7 @@ def classify(
 
     catboost_iterations: int = 600,
     catboost_depth: int = 4,
-    catboost_device: str = 'GPU'
+    catboost_device: str = ('GPU' if torch.cuda.is_available() else 'CPU')
 ):
     without_diagrams = (train_diagrams is None) and (test_diagrams is None)
 

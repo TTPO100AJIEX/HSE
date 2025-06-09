@@ -8,6 +8,8 @@ import torchph.nn.slayer
 
 import cvtda.logging
 
+from .device import default_device
+
 
 def transform(diagram: torch.Tensor, dim: int):
     dim_filter = (diagram[:, 2] == dim)
@@ -34,7 +36,7 @@ class Dataset(torch.utils.data.Dataset):
         labels: typing.Optional[numpy.ndarray],
 
         n_jobs: int = -1,
-        device: torch.device = cvtda.neural_network.default_device,
+        device: torch.device = default_device,
     ):
         self.n_jobs_ = n_jobs
         self.device_ = device
