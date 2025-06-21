@@ -2,19 +2,20 @@ import typing
 
 import numpy
 import gtda.images
-import sklearn.base
 import sklearn.preprocessing
 
-from . import utils
+import cvtda.utils
 import cvtda.logging
 import cvtda.dumping
+
+from . import utils
 from .FiltrationsExtractor import FiltrationsExtractor
 from .GreyscaleExtractor import GreyscaleExtractor
 from .PointCloudsExtractor import PointCloudsExtractor
 from .GeometryExtractor import GeometryExtractor
 
 
-class FeatureExtractor(sklearn.base.TransformerMixin):
+class FeatureExtractor(cvtda.utils.FeatureExtractorBase):
     def __init__(
         self,
         n_jobs: int = -1,
@@ -45,6 +46,16 @@ class FeatureExtractor(sklearn.base.TransformerMixin):
         self.geometry_extractor_ = GeometryExtractor(**extractor_kwargs)
 
         self.scaler_ = sklearn.preprocessing.StandardScaler(copy = False)
+
+    def feature_names(self) -> typing.List[str]:
+        feature_names = []
+        if not self.reduced_:
+            feature_names.extend(self.nest_feature_names("point_clouds", self.point_clouds_extractor_.feature_names()))
+        feature_names.extend(self.nest_feature_names("greyscale", self.greyscale_extractor_.feature_names()))
+        feature_names.extend(self.nest_feature_names("inverted_greyscale", self.inverted_greyscale_extractor_.feature_names()))
+        feature_names.extend(self.filtrations_extractor_.feature_names())
+        feature_names.extend(self.nest_feature_names("geometry", self.geometry_extractor_.feature_names()))
+        return feature_names
 
     def fit(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
         self.process_(images, do_fit = True, dump_name = dump_name)
@@ -86,4 +97,6 @@ class FeatureExtractor(sklearn.base.TransformerMixin):
             return results
         
         cvtda.logging.logger().print("Applying StandardScaler.")
-        return utils.process_iter(self.scaler_, results, do_fit)
+        features = utils.process_iter(self.scaler_, results, do_fit)
+        assert features.shape == (len(images), len(self.feature_names()))
+        return features

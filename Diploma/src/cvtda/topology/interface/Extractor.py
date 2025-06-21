@@ -2,7 +2,6 @@ import abc
 import typing
 
 import numpy
-import sklearn.base
 
 import cvtda.utils
 import cvtda.dumping
@@ -11,7 +10,7 @@ import cvtda.logging
 from .. import utils
 import cvtda.dumping
 
-class Extractor(sklearn.base.TransformerMixin):
+class Extractor(cvtda.utils.FeatureExtractorBase):
     def __init__(
         self,
         n_jobs: int = -1,
@@ -42,6 +41,22 @@ class Extractor(sklearn.base.TransformerMixin):
         return True
     
 
+    def feature_names(self) -> typing.List[str]:
+        if (len(self.fit_dimensions_) == 3) and (self.fit_dimensions_[2] == 3):
+            result = [
+                *self.nest_feature_names("rgb", self.feature_names_rgb_()),
+                *self.nest_feature_names("gray", self.gray_extractor_.feature_names()),
+                *self.nest_feature_names("red", self.red_extractor_.feature_names()),
+                *self.nest_feature_names("green", self.green_extractor_.feature_names()),
+                *self.nest_feature_names("blue", self.blue_extractor_.feature_names())
+            ]
+            if not self.reduced_:
+                result.extend(self.nest_feature_names("saturation", self.saturation_extractor_.feature_names()))
+                result.extend(self.nest_feature_names("value", self.value_extractor_.feature_names()))
+            return result
+        else:
+            return self.feature_names_gray_()
+
     def fit(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
         if self.only_get_from_dump_ and (len(images.shape) != 4):
             final_dump = self.final_dump_name_(dump_name)
@@ -66,6 +81,7 @@ class Extractor(sklearn.base.TransformerMixin):
         if self.fit_dimensions_ is not None:
             assert self.fit_dimensions_ == images.shape[1:], \
                     f"The pipeline is fit for {self.fit_dimensions_}. Cannot use it with {images.shape}."
+        self.fit_dimensions_ = images.shape[1:]
         
         if (len(images.shape) == 4) and (images.shape[3] == 3):
             cvtda.logging.logger().print("RGB images received. Transforming to grayscale.")
@@ -109,7 +125,8 @@ class Extractor(sklearn.base.TransformerMixin):
         else:
             result = self.process_gray_(images, do_fit, dump_name)
     
-        self.fit_dimensions_ = images.shape[1:]
+        if self.force_numpy_():
+            assert result.shape == (len(images), len(self.feature_names())), f"{result.shape} != {(len(images), len(self.feature_names()))}"
         return result
     
     @abc.abstractmethod
@@ -117,5 +134,13 @@ class Extractor(sklearn.base.TransformerMixin):
         pass
     
     @abc.abstractmethod
+    def feature_names_rgb_(self) -> typing.List[str]:
+        pass
+    
+    @abc.abstractmethod
     def process_gray_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
+        pass
+
+    @abc.abstractmethod
+    def feature_names_gray_(self) -> typing.List[str]:
         pass

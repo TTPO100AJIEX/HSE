@@ -48,7 +48,7 @@ def calculate_information_value(
     y_true: numpy.ndarray,
     bins: int = 10,
     n_jobs: int = -1
-) -> pandas.DataFrame:
+) -> numpy.ndarray:
     iv_generator = joblib.Parallel(return_as = 'generator', n_jobs = n_jobs)(
         joblib.delayed(calculate_information_value_one_feature)(
             features[:, idx],

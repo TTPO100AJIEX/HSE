@@ -56,9 +56,17 @@ class TopologicalExtractor(Extractor):
                 return numpy.empty((len(rgb_images), 0))
         return self.do_work_(rgb_images, do_fit, dump_name)
 
+    def feature_names_rgb_(self) -> typing.List[str]:
+        if not self.supports_rgb_:
+            return []
+        return self.vectorizer_.feature_names()
+
     def process_gray_(self, gray_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         return self.do_work_(gray_images, do_fit, dump_name)
     
+    def feature_names_gray_(self) -> typing.List[str]:
+        return self.vectorizer_.feature_names()
+
     def do_work_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         if self.topo_only_get_from_dump_:
             if self.return_diagrams_:
@@ -74,7 +82,9 @@ class TopologicalExtractor(Extractor):
         diagrams = numpy.nan_to_num(diagrams, 0)
         if self.return_diagrams_:
             return diagrams
-        return utils.process_iter_dump(self.vectorizer_, diagrams, do_fit, self.features_dump_(dump_name))
+        features = utils.process_iter_dump(self.vectorizer_, diagrams, do_fit, self.features_dump_(dump_name))
+        assert features.shape == (len(images), len(self.vectorizer_.feature_names()))
+        return features
     
     @abc.abstractmethod
     def get_diagrams_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):

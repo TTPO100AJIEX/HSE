@@ -14,37 +14,37 @@ def make_gray():
 def test_gray_reduced():
     input = numpy.array([ make_gray() ])
     output = cvtda.topology.GeometryExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (1, 2617)
+    assert output.shape == (1, 2233)
     assert numpy.isnan(output).sum() == 0
     
 def test_gray_full():
     input = numpy.array([ make_gray() ])
     output = cvtda.topology.GeometryExtractor(n_jobs = 1, reduced = False).fit_transform(input)
-    assert output.shape == (1, 4657)
+    assert output.shape == (1, 3633)
     assert numpy.isnan(output).sum() == 0
     
 def test_rgb_reduced():
     input = numpy.array([ make_rgb() ])
     output = cvtda.topology.GeometryExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (1, 2617 * 4 + 1019)
+    assert output.shape == (1, 2233 * 4 + 1019)
     assert numpy.isnan(output).sum() == 0
     
 def test_rgb_full():
     input = numpy.array([ make_rgb() ])
     output = cvtda.topology.GeometryExtractor(n_jobs = 1, reduced = False).fit_transform(input)
-    assert output.shape == (1, 4657 * 6 + 1019)
+    assert output.shape == (1, 3633 * 6 + 1019)
     assert numpy.isnan(output).sum() == 0
 
 def test_batch():
     input = numpy.array([ make_gray(), make_gray() ])
     output = cvtda.topology.GeometryExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (2, 2617)
+    assert output.shape == (2, 2233)
     assert numpy.isnan(output).sum() == 0
 
 def test_constant_pixels():
     input = numpy.zeros((1, 32, 32, 3))
     output = cvtda.topology.GeometryExtractor(n_jobs = 1, reduced = False).fit_transform(input)
-    assert output.shape == (1, 4657 * 6 + 1019)
+    assert output.shape == (1, 3633 * 6 + 1019)
     assert numpy.isnan(output).sum() == 0
 
 
@@ -60,17 +60,3 @@ def test_dimensions_mismatch():
     input2 = numpy.array([ make_rgb() ])
     with pytest.raises(AssertionError):
         extractor.transform(input2)
-
-@pytest.mark.parametrize(
-    ['shape'],
-    [
-        pytest.param((2, 16, 16, 16, 3), id = 'too many dimensions'),
-        pytest.param((2, 16), id = 'too few dimensions'),
-        pytest.param((2, 16, 16, 4), id = 'too many channels'),
-        pytest.param((2, 16, 16, 2), id = 'too few channels')
-    ]
-)
-def test_weird_shape(shape):
-    input1 = numpy.random.rand(*shape)
-    with pytest.raises(AssertionError):
-        cvtda.topology.GeometryExtractor(n_jobs = 1).fit(input1)

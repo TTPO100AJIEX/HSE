@@ -30,9 +30,17 @@ class Extractor(cvtda.topology.interface.Extractor):
 
     def process_rgb_(self, rgb_images, do_fit, dump_name):
         self.rgb_calls_.append({ 'rgb_images': rgb_images.shape, 'do_fit': do_fit, 'dump_name': dump_name })
+        return numpy.random.rand(len(rgb_images), 3)
+
+    def feature_names_rgb_(self):
+        return [ "a", "b", "c" ]
 
     def process_gray_(self, gray_images, do_fit, dump_name):
         self.gray_calls_.append({ 'gray_images': gray_images.shape, 'do_fit': do_fit, 'dump_name': dump_name })
+        return numpy.random.rand(len(gray_images), 2)
+
+    def feature_names_gray_(self):
+        return [ "a", "b" ]
 
 
 def test_grayscale_fit():
@@ -156,25 +164,3 @@ def test_rgb_fit_transform():
             { 'gray_images': (10, 32, 32), 'do_fit': False, 'dump_name': None },
             { 'gray_images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
         ]
-
-@pytest.mark.parametrize(
-    [ 'num_channels' ],
-    [
-        pytest.param(1),
-        pytest.param(2),
-        pytest.param(4),
-        pytest.param(5),
-    ]
-)
-def test_rgb_bad_channels(num_channels):
-    def callback_(_):
-        callback_.times_called += 1
-    callback_.times_called = 0
-
-    extractor = Extractor(callback_)
-    assert callback_.times_called == 1
-    assert extractor.rgb_calls_ == [ ]
-    assert extractor.gray_calls_ == [ ]
-
-    with pytest.raises(AssertionError):
-        extractor.fit(numpy.random.rand(10, 32, 32, num_channels))

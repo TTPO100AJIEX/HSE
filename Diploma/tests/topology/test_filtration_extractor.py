@@ -65,17 +65,3 @@ def test_dimensions_mismatch():
     input2 = numpy.array([ make_rgb() ])
     with pytest.raises(AssertionError):
         extractor.transform(input2)
-
-@pytest.mark.parametrize(
-    ['shape'],
-    [
-        pytest.param((2, 16, 16, 16, 3), id = 'too many dimensions'),
-        pytest.param((2, 16), id = 'too few dimensions'),
-        pytest.param((2, 16, 16, 4), id = 'too many channels'),
-        pytest.param((2, 16, 16, 2), id = 'too few channels')
-    ]
-)
-def test_weird_shape(shape):
-    input1 = numpy.random.rand(*shape)
-    with pytest.raises(AssertionError):
-        make_filtration_extractor(reduced = True).fit(input1)

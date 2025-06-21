@@ -3,7 +3,6 @@ import typing
 import numpy
 import itertools
 import gtda.images
-import sklearn.base
 import gtda.homology
 
 import cvtda.utils
@@ -60,7 +59,7 @@ class FiltrationExtractor(TopologicalExtractor):
         return utils.process_iter_dump(self.persistence_, filtrations, do_fit, self.diagrams_dump_(dump_name))
 
 
-class FiltrationsExtractor(sklearn.base.TransformerMixin):
+class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
     def __init__(
         self,
 
@@ -82,6 +81,7 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
 
         self.fitted_ = False
         self.reduced_ = reduced
+        self.feature_names_ = []
         self.return_diagrams_ = return_diagrams
         self.filtrations_kwargs_ = {
             'n_jobs': n_jobs,
@@ -97,6 +97,11 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
 
         self.filtration_extractors_: typing.List[typing.Tuple[FiltrationExtractor, str]] = []
 
+    def feature_names(self) -> typing.List[str]:
+        feature_names = []
+        for extractor, _, readable_name in self.filtration_extractors_:
+            feature_names.extend(self.nest_feature_names(readable_name, extractor.feature_names()))
+        return feature_names
 
     def fit(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
         assert len(images.shape) >= 3, f'{len(images.shape) - 1}d images are not supported'
@@ -113,8 +118,8 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
             self.height_filtration_directions_ = list(directions)
 
         self._fill_filtrations(*shape[1:])
-        for i, (filtration_extractor, name) in enumerate(self.filtration_extractors_):
-            cvtda.logging.logger().print(f"Fitting filtration {i + 1}/{len(self.filtration_extractors_)}: {name}")
+        for i, (filtration_extractor, name, readable_name) in enumerate(self.filtration_extractors_):
+            cvtda.logging.logger().print(f"Fitting filtration {i + 1}/{len(self.filtration_extractors_)}: {readable_name}")
             filtration_extractor.fit(images, cvtda.dumping.dump_name_concat(dump_name, name))
         self.fitted_ = True
         return self
@@ -124,10 +129,13 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
         cvtda.logging.logger().print("Applying filtrations")
         
         outputs = [ ]
-        for i, (filtration_extractor, name) in enumerate(self.filtration_extractors_):
-            cvtda.logging.logger().print(f"Applying filtration {i + 1}/{len(self.filtration_extractors_)}: {name}")
+        for i, (filtration_extractor, name, readable_name) in enumerate(self.filtration_extractors_):
+            cvtda.logging.logger().print(f"Applying filtration {i + 1}/{len(self.filtration_extractors_)}: {readable_name}")
             outputs.append(filtration_extractor.transform(images, cvtda.dumping.dump_name_concat(dump_name, name)))
-        return utils.hstack(outputs, not self.return_diagrams_)
+        result = utils.hstack(outputs, not self.return_diagrams_)
+        if not self.return_diagrams_:
+            assert result.shape == (len(images), len(self.feature_names()))
+        return result
     
     def fit_transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
         return self.fit(images, dump_name = dump_name).transform(images, dump_name = dump_name)
@@ -146,45 +154,51 @@ class FiltrationsExtractor(sklearn.base.TransformerMixin):
     def _add_height_filtrations(self, binarizer_threshold: float):
         for direction in self.height_filtration_directions_:
             name = f'{int(binarizer_threshold * 10)}/HeightFiltrartion_{direction[0]}_{direction[1]}'
+            readable_name = f'HeightFiltration with d = ({direction[0]}, {direction[1]}), bin. thr. = 0.{int(binarizer_threshold * 10)}'
             extractor = FiltrationExtractor(
                 gtda.images.HeightFiltration, { 'direction': numpy.array(direction) }, binarizer_threshold, **self.filtrations_kwargs_
             )
-            self.filtration_extractors_.append((extractor, name))
+            self.filtration_extractors_.append((extractor, name, readable_name))
             
     def _add_radial_filtrations(self, binarizer_threshold: float, *shape: typing.List[int]):
         points = [ cvtda.utils.spread_points(coord, self.num_radial_filtrations_) for coord in shape ]
         for center in list(itertools.product(*points)):
             name = f'{int(binarizer_threshold * 10)}/RadialFiltration_{center[0]}_{center[1]}'
+            readable_name = f'RadialFiltration with c = ({center[0]}, {center[1]}), bin. thr. = 0.{int(binarizer_threshold * 10)}'
             extractor = FiltrationExtractor(
                 gtda.images.RadialFiltration, { 'center': numpy.array(center) }, binarizer_threshold, **self.filtrations_kwargs_
             )
-            self.filtration_extractors_.append((extractor, name))
+            self.filtration_extractors_.append((extractor, name, readable_name))
 
     def _add_dilation_filtrations(self, binarizer_threshold: float):
         if self.reduced_:
             return
         name = f'{int(binarizer_threshold * 10)}/DilationFiltration'
+        readable_name = f'DilationFiltration, bin. thr. = 0.{int(binarizer_threshold * 10)}'
         extractor = FiltrationExtractor(gtda.images.DilationFiltration, { }, binarizer_threshold, **self.filtrations_kwargs_)
-        self.filtration_extractors_.append((extractor, name))
+        self.filtration_extractors_.append((extractor, name, readable_name))
 
     def _add_erosion_filtrations(self, binarizer_threshold: float):
         if self.reduced_:
             return
         name = f'{int(binarizer_threshold * 10)}/ErosionFiltration'
+        readable_name = f'ErosionFiltration, bin. thr. = 0.{int(binarizer_threshold * 10)}'
         extractor = FiltrationExtractor(gtda.images.ErosionFiltration, { }, binarizer_threshold, **self.filtrations_kwargs_)
-        self.filtration_extractors_.append((extractor, name))
+        self.filtration_extractors_.append((extractor, name, readable_name))
 
     def _add_signed_distance_filtrations(self, binarizer_threshold: float):
         if self.reduced_:
             return
         name = f'{int(binarizer_threshold * 10)}/SignedDistanceFiltration'
+        readable_name = f'SignedDistanceFiltration, bin. thr. = 0.{int(binarizer_threshold * 10)}'
         extractor = FiltrationExtractor(gtda.images.SignedDistanceFiltration, { }, binarizer_threshold, **self.filtrations_kwargs_)
-        self.filtration_extractors_.append((extractor, name))
+        self.filtration_extractors_.append((extractor, name, readable_name))
         
     def _add_density_filtrations(self, binarizer_threshold: float):
         if self.reduced_:
             return
         for radius in self.density_filtration_radiuses_:
             name = f'{int(binarizer_threshold * 10)}/DensityFiltration_{radius}'
+            readable_name = f'DensityFiltration with r = {radius}, bin. thr. = 0.{int(binarizer_threshold * 10)}'
             extractor = FiltrationExtractor(gtda.images.DensityFiltration, { 'radius': radius }, binarizer_threshold, **self.filtrations_kwargs_)
-            self.filtration_extractors_.append((extractor, name))
+            self.filtration_extractors_.append((extractor, name, readable_name))
