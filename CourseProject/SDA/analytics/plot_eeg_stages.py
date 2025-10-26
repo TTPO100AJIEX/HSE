@@ -1,3 +1,5 @@
+import typing
+
 import mne
 import numpy
 import pandas
@@ -13,13 +15,24 @@ def plot_eeg_stages(
     data: mne.io.Raw, edges: numpy.ndarray,
     epochs: mne.Epochs, features: numpy.ndarray,
     df_st_edges: pandas.DataFrame, result: dict,
-    resolution: float = 1, ax = None
+    edges_true: typing.List[numpy.ndarray] = None,
+    resolution: float = 1, add_noise: bool = False, scale_data: bool = False, ax = None
 ) -> plt.Figure:
     events = mne.make_fixed_length_events(data, duration = resolution)
     draw_epochs = mne.Epochs(data, events, baseline = None, tmin = 0, tmax = resolution, preload = True, verbose = False)
-    data = numpy.average(draw_epochs.get_data(copy = True), axis = 2)
+    if add_noise:
+        numpy.random.seed(42)
+        draw_epochs = mne.simulation.add_noise(draw_epochs, mne.compute_covariance(draw_epochs), verbose = False, random_state = 42)
+
+    data = draw_epochs.get_data(copy = True)
+    if scale_data:
+        data = mne.decoding.Scaler(scalings='mean').fit_transform(data)
+    data = numpy.average(data, axis = 2)
     data = data[:, data.mean(axis = 0).argsort()[::-1]] # Sort for better picture
+    data /= (numpy.max(data) * 4e4)
     min, max = numpy.min(data), numpy.max(data)
+    # if min > -3e-5:
+    min = -3e-5
 
     edges_sec = [ ]
     for edge in edges:
@@ -52,6 +65,21 @@ def plot_eeg_stages(
     for value, edge in zip(stats, edges_sec[1:]):
         ax.text(edge + 7, max - 4e-6, "{:0.2f}".format(round(value * 100) / 100), color = 'black', horizontalalignment = 'center', fontweight = 'bold') # Index
         
+    if edges_true is not None:
+        edges_sec = [ ]
+        for edge in edges_true:
+            if edge >= len(epochs.events): edge -= 1
+            edges_sec.append(epochs.events[edge][0] / epochs.info['sfreq'])
+    
+        if min > -3.65e-5:
+            min = -3.65e-5
+        ax.set_ylim(min - 3e-6, max)
+        ax.text(edges_sec[0] + 25, min + 3e-7, 'Target stages', horizontalalignment = 'left', fontweight='bold')
+
+        for idx, (start, end) in enumerate(zip(edges_sec[:-1], edges_sec[1:])):
+            center = (start + end) / 2
+            ax.add_patch(ptchs.Rectangle((start, min - 3e-6), end - start, 2e-6, edgecolor = 'black', facecolor = 'limegreen', fill = True, lw = 1)) # Stage
+
     st_edges_all = stageprocess.form_edges_all(df_st_edges, result['St_len_min'], result['K_nb_max'], result['N_cl_max'])
     kwargs = { 'n_clusters': result['N_stages'] - 1, 'random_state': 0, 'n_init': 10 }
     labels = sklearn.cluster.KMeans(**kwargs).fit_predict(st_edges_all)
