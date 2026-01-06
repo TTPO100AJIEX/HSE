@@ -8,16 +8,13 @@ class Extractor(cvtda.topology.interface.Extractor):
         self,
         cb,
         n_jobs: int = 1,
-        reduced: bool = True,
         only_get_from_dump: bool = False,
         test_param: str = "abc"
     ):
         assert n_jobs == 1
-        assert reduced == True
         assert test_param == "abc"
         super().__init__(
             n_jobs = n_jobs,
-            reduced = reduced,
             only_get_from_dump = only_get_from_dump,
             test_param = test_param,
             cb = cb

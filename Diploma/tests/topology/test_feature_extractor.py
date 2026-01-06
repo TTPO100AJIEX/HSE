@@ -2,7 +2,7 @@ import numpy
 import pytest
 import skimage.data
 
-import cvtda.topology
+from cvtda.topology import FeatureExtractor
 
 def make_rgb():
     return skimage.transform.resize(skimage.data.astronaut(), (32, 32))
@@ -10,25 +10,32 @@ def make_rgb():
 def make_gray():
     return make_rgb()[:, :, 0]
 
-NUM_FILTRATIONS = (8 + 16) * 3
+NUM_FILTRATIONS_QUICK = (4 + 4) * 1
 
-
-def test_gray_reduced():
-    input = numpy.array([ make_gray() ])
-    output = cvtda.topology.FeatureExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (1, NUM_FILTRATIONS * 56 * 2 + 2 * 56 * 2 + 2617)
+@pytest.mark.parametrize(
+    ['num_objects'],
+    [
+        pytest.param(1, id = 'one_object'),
+        pytest.param(2, id = 'two_objects')
+    ]
+)
+def test_gray(num_objects):
+    extractor = FeatureExtractor(settings = FeatureExtractor.PRESETS.quick, n_jobs = 1)
+    output = extractor.fit_transform(numpy.array([ make_gray() ] * num_objects))
+    assert output.shape == (num_objects, NUM_FILTRATIONS_QUICK * 32 * 2 + 2 * 32 * 2 + 2593)
     assert numpy.isnan(output).sum() == 0
     
-def test_rgb_reduced():
-    input = numpy.array([ make_rgb() ])
-    output = cvtda.topology.FeatureExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (1, NUM_FILTRATIONS * 56 * 2 * 4 + 2 * 56 * 2 * 4 + 2617 * 4 + 1019)
-    assert numpy.isnan(output).sum() == 0
-    
-def test_batch():
-    input = numpy.array([ make_gray(), make_gray() ])
-    output = cvtda.topology.FeatureExtractor(n_jobs = 1).fit_transform(input)
-    assert output.shape == (2, NUM_FILTRATIONS * 56 * 2 + 2 * 56 * 2 + 2617)
+@pytest.mark.parametrize(
+    ['num_objects'],
+    [
+        pytest.param(1, id = 'one_object'),
+        pytest.param(2, id = 'two_objects')
+    ]
+)
+def test_rgb(num_objects):
+    extractor = FeatureExtractor(settings = FeatureExtractor.PRESETS.quick, n_jobs = 1)
+    output = extractor.fit_transform(numpy.array([ make_rgb() ] * num_objects))
+    assert output.shape == (num_objects, NUM_FILTRATIONS_QUICK * 32 * 2 * 4 + 2 * 32 * 2 * 4 + 2593 * 4 + 1019)
     assert numpy.isnan(output).sum() == 0
 
 
@@ -36,11 +43,11 @@ def test_batch():
 def test_transform_before_fit():
     input = numpy.array([ make_gray() ])
     with pytest.raises(AssertionError):
-        cvtda.topology.FeatureExtractor(n_jobs = 1).transform(input)
+        FeatureExtractor(FeatureExtractor.PRESETS.quick, n_jobs = 1).transform(input)
 
 def test_dimensions_mismatch():
     input1 = numpy.array([ make_gray() ])
-    extractor = cvtda.topology.FeatureExtractor(n_jobs = 1).fit(input1)
+    extractor = FeatureExtractor(FeatureExtractor.PRESETS.quick, n_jobs = 1).fit(input1)
     
     input2 = numpy.array([ make_rgb() ])
     with pytest.raises(AssertionError):

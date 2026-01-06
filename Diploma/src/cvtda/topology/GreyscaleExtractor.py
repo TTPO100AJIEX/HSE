@@ -1,29 +1,45 @@
 import typing
+import dataclasses
 
 import numpy
 import gtda.homology
 
+import cvtda.utils
 import cvtda.logging
 
 from . import utils
 from .interface import TopologicalExtractor
+from .DiagramVectorizer import DiagramVectorizer
 
 
 class GreyscaleExtractor(TopologicalExtractor):
+    @dataclasses.dataclass(frozen = True)
+    class Settings:
+        enabled: bool = True
+        vectorizer: DiagramVectorizer.Settings = DiagramVectorizer.Settings()
+
+    PRESETS = cvtda.utils.FeatureExtractorBase.Presets(
+        full = Settings(vectorizer = DiagramVectorizer.PRESETS.full),
+        reduced = Settings(vectorizer = DiagramVectorizer.PRESETS.reduced),
+        quick = Settings(vectorizer = DiagramVectorizer.PRESETS.quick)
+    )
+
     def __init__(
         self,
         n_jobs: int = -1,
-        reduced: bool = True,
-        only_get_from_dump: bool = False,
         return_diagrams: bool = False,
+        settings: Settings = Settings(),
+        only_get_from_dump: bool = False,
         **kwargs
     ):
         super().__init__(
+            enabled = settings.enabled,
+            vectorizer_settings = settings.vectorizer,
             supports_rgb = False,
             n_jobs = n_jobs,
-            reduced = reduced,
-            only_get_from_dump = only_get_from_dump,
             return_diagrams = return_diagrams,
+            settings = settings,
+            only_get_from_dump = only_get_from_dump,
             **kwargs
         )
         self.persistence_ = None

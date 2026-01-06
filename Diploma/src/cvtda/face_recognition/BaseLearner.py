@@ -10,7 +10,7 @@ import cvtda.logging
 import cvtda.neural_network
 
 
-class BaseLearner:
+class BaseLearner(abc.ABC):
     def __init__(
         self,
         n_jobs: int = -1,

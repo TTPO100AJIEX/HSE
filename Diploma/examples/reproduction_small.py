@@ -10,29 +10,6 @@ parser.add_argument("--quick", action = argparse.BooleanOptionalAction, default 
 parser.add_argument("--clean", action = argparse.BooleanOptionalAction, default = False)
 args = parser.parse_args()
 
-if args.quick:
-    FRACTION = {
-        'mnist': 0.05
-    }
-
-if args.quick:
-    features_extraction_params = dict(
-        reduced = True,
-        with_inverted = False,
-        num_radial_filtrations = 2,
-        binarizer_thresholds = [0.5],
-        height_filtration_directions = [(-1, -1), (1, -1), (-1, 1), (1, 1)]
-    )
-else:
-    features_extraction_params = dict()
-
-if args.quick:
-    classification_params = dict(
-        catboost_iterations = 100, nn_epochs = 4, nn_batch_size = 64, nn_learning_rate = 1e-4
-    )
-else:
-    classification_params = dict()
-
 import shutil
 import numpy
 import torchvision
@@ -42,12 +19,27 @@ import cvtda.logging
 import cvtda.classification
 import sklearn.model_selection
 
+if args.quick:
+    FRACTION = {
+        'mnist': 0.05
+    }
+
+if args.quick:
+    preset = cvtda.topology.FeatureExtractor.PRESETS.quick
+else:
+    preset = cvtda.topology.FeatureExtractor.PRESETS.reduced
+
+if args.quick:
+    classification_params = dict(
+        catboost_iterations = 100, nn_epochs = 4, nn_batch_size = 64, nn_learning_rate = 1e-4
+    )
+else:
+    classification_params = dict()
+
+
 def subset(images: numpy.ndarray, labels: numpy.ndarray, fraction: float):
     idxs, _ = sklearn.model_selection.train_test_split(
-        numpy.arange(len(labels)),
-        stratify = labels,
-        train_size = fraction,
-        random_state = 42
+        numpy.arange(len(labels)), stratify = labels, train_size = fraction, random_state = 42
     )
     return images[idxs], labels[idxs]
 
@@ -71,14 +63,8 @@ def classification(name, train, test):
             train_images = cvtda.utils.rgb2gray(train_images)
             test_images = cvtda.utils.rgb2gray(test_images)
 
-    from cvtda.topology.GeometryExtractor import GrayGeometryExtractor
-    features_extractor = GrayGeometryExtractor()
-    features_extractor.fit_transform(train_images)
-
-    return
-    
     features_extractor = cvtda.topology.FeatureExtractor(
-        only_get_from_dump = False, return_diagrams = False, **features_extraction_params
+        settings = preset, n_jobs = -1, return_diagrams = False, only_get_from_dump = False
     )
     train_features = features_extractor.fit_transform(train_images, f"{folder}/train")
     test_features = features_extractor.transform(test_images, f"{folder}/test")

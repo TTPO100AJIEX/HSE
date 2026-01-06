@@ -11,22 +11,22 @@ from .. import utils
 from .Extractor import Extractor
 from ..DiagramVectorizer import DiagramVectorizer
 
-class TopologicalExtractor(Extractor):
+class TopologicalExtractor(Extractor, abc.ABC):
     def __init__(
         self,
+        enabled: bool,
+        vectorizer_settings: DiagramVectorizer.Settings,
         supports_rgb: bool,
         n_jobs: int = -1,
-        reduced: bool = True,
+        return_diagrams: bool = False,
         only_get_from_dump: bool = False,
         topo_only_get_from_dump: bool = False,
-        return_diagrams: bool = False,
         **kwargs
     ):
         super().__init__(
             n_jobs = n_jobs,
-            reduced = reduced,
-            only_get_from_dump = False,
             return_diagrams = return_diagrams,
+            only_get_from_dump = False,
             topo_only_get_from_dump = (topo_only_get_from_dump or only_get_from_dump),
             **kwargs
         )
@@ -35,7 +35,8 @@ class TopologicalExtractor(Extractor):
         self.return_diagrams_ = return_diagrams
         self.supports_rgb_ = supports_rgb
 
-        self.vectorizer_ = DiagramVectorizer(n_jobs = self.n_jobs_, reduced = self.reduced_)
+        self.enabled_ = enabled
+        self.vectorizer_ = DiagramVectorizer(n_jobs = self.n_jobs_, settings = vectorizer_settings)
         self.scaler_ = gtda.diagrams.Scaler(n_jobs = self.n_jobs_)
 
 
@@ -47,15 +48,18 @@ class TopologicalExtractor(Extractor):
     
     def force_numpy_(self):
         return not self.return_diagrams_
+    
+    def nothing_(self, num_objects: int):
+        return [] if self.return_diagrams_ else numpy.empty((num_objects, 0))
 
 
     def process_rgb_(self, rgb_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         if not self.supports_rgb_:
-            return [] if self.return_diagrams_ else numpy.empty((len(rgb_images), 0))
+            return self.nothing_(len(rgb_images))
         return self.do_work_(rgb_images, do_fit, dump_name)
 
     def feature_names_rgb_(self) -> typing.List[str]:
-        if not self.supports_rgb_:
+        if not self.supports_rgb_ or not self.enabled_:
             return []
         return self.vectorizer_.feature_names()
 
@@ -63,9 +67,14 @@ class TopologicalExtractor(Extractor):
         return self.do_work_(gray_images, do_fit, dump_name)
     
     def feature_names_gray_(self) -> typing.List[str]:
+        if not self.enabled_:
+            return []
         return self.vectorizer_.feature_names()
 
     def do_work_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
+        if not self.enabled_:
+            return self.nothing_(len(images))
+
         if self.topo_only_get_from_dump_:
             if self.return_diagrams_:
                 diagrams = cvtda.dumping.dumper().get_dump(self.diagrams_dump_(dump_name))

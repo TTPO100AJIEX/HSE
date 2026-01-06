@@ -9,21 +9,13 @@ import cvtda.logging
 
 from .. import utils
 
-class Extractor(cvtda.utils.FeatureExtractorBase):
-    def __init__(
-        self,
-        n_jobs: int = -1,
-        reduced: bool = True,
-        only_get_from_dump: bool = False,
-        **kwargs
-    ):
+class Extractor(cvtda.utils.FeatureExtractorBase, abc.ABC):
+    def __init__(self, n_jobs: int = -1, only_get_from_dump: bool = False, **kwargs):
         self.n_jobs_ = n_jobs
-        self.reduced_ = reduced
         self.only_get_from_dump_ = only_get_from_dump
 
         self.kwargs_ = kwargs
         self.kwargs_['n_jobs'] = n_jobs
-        self.kwargs_['reduced'] = reduced
         self.kwargs_['only_get_from_dump'] = only_get_from_dump
 
         self.fitted_ = False
@@ -42,17 +34,13 @@ class Extractor(cvtda.utils.FeatureExtractorBase):
 
     def feature_names(self) -> typing.List[str]:
         if self.is_rgb_(self.fit_dimensions_):
-            result = [
+            return [
                 *self.nest_feature_names("rgb", self.feature_names_rgb_()),
                 *self.nest_feature_names("gray", self.gray_extractor_.feature_names()),
                 *self.nest_feature_names("red", self.red_extractor_.feature_names()),
                 *self.nest_feature_names("green", self.green_extractor_.feature_names()),
                 *self.nest_feature_names("blue", self.blue_extractor_.feature_names())
             ]
-            if not self.reduced_:
-                result.extend(self.nest_feature_names("saturation", self.saturation_extractor_.feature_names()))
-                result.extend(self.nest_feature_names("value", self.value_extractor_.feature_names()))
-            return result
         else:
             return self.feature_names_gray_()
 
@@ -93,17 +81,12 @@ class Extractor(cvtda.utils.FeatureExtractorBase):
             red_dump = cvtda.dumping.dump_name_concat(dump_name, "red")
             green_dump = cvtda.dumping.dump_name_concat(dump_name, "green")
             blue_dump = cvtda.dumping.dump_name_concat(dump_name, "blue")
-            saturation_dump = cvtda.dumping.dump_name_concat(dump_name, "saturation")
-            value_dump = cvtda.dumping.dump_name_concat(dump_name, "value")
 
             if do_fit:
                 self.gray_extractor_ = self.__class__(**self.kwargs_)
                 self.red_extractor_ = self.__class__(**self.kwargs_)
                 self.green_extractor_ = self.__class__(**self.kwargs_)
                 self.blue_extractor_ = self.__class__(**self.kwargs_)
-                if not self.reduced_:
-                    self.saturation_extractor_ = self.__class__(**self.kwargs_)
-                    self.value_extractor_ = self.__class__(**self.kwargs_)
 
             if self.only_get_from_dump_:
                 rgb_data = cvtda.dumping.dumper().get_dump(self.final_dump_name_(rgb_dump))
@@ -118,15 +101,10 @@ class Extractor(cvtda.utils.FeatureExtractorBase):
                 utils.process_iter(self.green_extractor_, images[:, :, :, 1], do_fit, green_dump),
                 utils.process_iter(self.blue_extractor_, images[:, :, :, 2], do_fit, blue_dump),
             ]
-            if not self.reduced_:
-                hsv = cvtda.utils.rgb2hsv(images, self.n_jobs_)
-                result.append(utils.process_iter(self.saturation_extractor_, hsv[:, :, :, 1], do_fit, saturation_dump))
-                result.append(utils.process_iter(self.value_extractor_, hsv[:, :, :, 2], do_fit, value_dump))
-            
-            result = utils.hstack(result, self.force_numpy_())
         else:
-            result = self.process_gray_(images, do_fit, dump_name)
+            result = [ self.process_gray_(images, do_fit, dump_name) ]
     
+        result = utils.hstack(result, self.force_numpy_())
         if self.force_numpy_():
             assert result.shape == (len(images), len(self.feature_names())), f"{result.shape} != {(len(images), len(self.feature_names()))}"
         return result

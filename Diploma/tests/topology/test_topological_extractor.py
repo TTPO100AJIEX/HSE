@@ -2,6 +2,7 @@ import numpy
 import pytest
 import sklearn.utils.validation
 
+import cvtda.topology
 import cvtda.topology.interface
 
 DIAGRAMS = numpy.array([
@@ -13,21 +14,21 @@ class TopologicalExtractor(cvtda.topology.interface.TopologicalExtractor):
     def __init__(
         self,
         cb,
+        enabled: bool = True,
         supports_rgb: bool = True,
         n_jobs: int = 1,
-        reduced: bool = True,
         only_get_from_dump: bool = False,
         topo_only_get_from_dump: bool = False,
         return_diagrams: bool = False,
         test_param: str = "abc"
     ):
         assert n_jobs == 1
-        assert reduced == True
         assert test_param == "abc"
         super().__init__(
+            enabled = enabled,
+            vectorizer_settings = cvtda.topology.DiagramVectorizer.PRESETS.reduced,
             supports_rgb = supports_rgb,
             n_jobs = n_jobs,
-            reduced = reduced,
             only_get_from_dump = only_get_from_dump,
             topo_only_get_from_dump = topo_only_get_from_dump,
             return_diagrams = return_diagrams,
