@@ -1,6 +1,8 @@
+import math
 import typing
 
 import numpy
+import joblib
 import itertools
 import gtda.images
 import gtda.homology
@@ -80,11 +82,12 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
                 binarizer_thresholds = [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ]
 
         self.fitted_ = False
+        self.n_jobs_ = n_jobs
         self.reduced_ = reduced
         self.feature_names_ = []
         self.return_diagrams_ = return_diagrams
         self.filtrations_kwargs_ = {
-            'n_jobs': n_jobs,
+            'n_jobs': 1,
             'reduced': reduced,
             'only_get_from_dump': only_get_from_dump,
             'return_diagrams': return_diagrams
@@ -104,6 +107,15 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
         return feature_names
 
     def fit(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
+        self.fit_transform(images, dump_name)
+        return self
+    
+    def transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
+        assert self.fitted_ is True, 'fit() must be called before transform()'
+        cvtda.logging.logger().print("Applying filtrations")
+        return self.do_work_(images, do_fit = False, dump_name = dump_name)
+    
+    def fit_transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
         assert len(images.shape) >= 3, f'{len(images.shape) - 1}d images are not supported'
         cvtda.logging.logger().print("Fitting filtrations")
         
@@ -118,30 +130,38 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
             self.height_filtration_directions_ = list(directions)
 
         self._fill_filtrations(*shape[1:])
-        for i, (filtration_extractor, name, readable_name) in enumerate(self.filtration_extractors_):
-            cvtda.logging.logger().print(f"Fitting filtration {i + 1}/{len(self.filtration_extractors_)}: {readable_name}")
-            filtration_extractor.fit(images, cvtda.dumping.dump_name_concat(dump_name, name))
+
+        result = self.do_work_(images, do_fit = True, dump_name = dump_name)
         self.fitted_ = True
-        return self
-    
-    def transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
-        assert self.fitted_ is True, 'fit() must be called before transform()'
-        cvtda.logging.logger().print("Applying filtrations")
-        
-        outputs = [ ]
-        for i, (filtration_extractor, name, readable_name) in enumerate(self.filtration_extractors_):
-            cvtda.logging.logger().print(f"Applying filtration {i + 1}/{len(self.filtration_extractors_)}: {readable_name}")
-            outputs.append(filtration_extractor.transform(images, cvtda.dumping.dump_name_concat(dump_name, name)))
+        return result
+
+    def do_work_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
+        def do_work_one(extractor: FiltrationExtractor, name, readable_name):
+            extractor_dump_name = cvtda.dumping.dump_name_concat(dump_name, name)
+            with cvtda.logging.DevNullLogger():
+                result = utils.process_iter(extractor, images, do_fit, dump_name = extractor_dump_name)
+                return ((extractor, name, readable_name), result) if do_fit else result
+
+        parallel = cvtda.utils.parallel(do_work_one, self.filtration_extractors_, return_as = 'generator', n_jobs = self.outer_n_jobs_)
+        outputs = list(cvtda.logging.logger().pbar(parallel, total = len(self.filtration_extractors_)))
+        if do_fit:
+            self.filtration_extractors_ = [ output[0] for output in outputs ]
+            outputs = [ output[1] for output in outputs ]
         result = utils.hstack(outputs, not self.return_diagrams_)
         if not self.return_diagrams_:
             assert result.shape == (len(images), len(self.feature_names()))
         return result
-    
-    def fit_transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
-        return self.fit(images, dump_name = dump_name).transform(images, dump_name = dump_name)
 
 
     def _fill_filtrations(self, *shape: typing.List[int]):
+        self._do_fill_filtrations(*shape)
+        n_jobs = joblib.effective_n_jobs(self.n_jobs_)
+        self.outer_n_jobs_ = math.gcd(n_jobs, len(self.filtration_extractors_))
+        self.filtrations_kwargs_['n_jobs'] = n_jobs // self.outer_n_jobs_
+        self.filtration_extractors_ = []
+        self._do_fill_filtrations(*shape)
+    
+    def _do_fill_filtrations(self, *shape: typing.List[int]):
         self.filtration_extractors_ = [ ]
         for binarizer_threshold in self.binarizer_thresholds_:
             self._add_height_filtrations(binarizer_threshold)

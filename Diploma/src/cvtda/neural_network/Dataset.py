@@ -2,10 +2,10 @@ import typing
 
 import numpy
 import torch
-import joblib
 import torch.utils.data
 import torchph.nn.slayer
 
+import cvtda.utils
 import cvtda.logging
 
 from .device import default_device
@@ -61,10 +61,8 @@ class Dataset(torch.utils.data.Dataset):
             torch.tensor(numpy.array([ item[num_diagram] for item in diagrams ]), dtype = torch.float32)
             for num_diagram in range(len(diagrams[0]))
         ]
-        diagrams = joblib.Parallel(n_jobs = self.n_jobs_)(
-            joblib.delayed(process_diagram)(d)
-            for d in cvtda.logging.logger().pbar(diagrams, desc = "Dataset: processing diagrams")
-        )
+        pbar = cvtda.logging.logger().pbar(diagrams, desc = "Dataset: processing diagrams")
+        diagrams = cvtda.utils.parallel(process_diagram, pbar, n_jobs = self.n_jobs_)
 
         self.diagrams, self.non_dummy_points = [], []
         for diag, ndp in diagrams:

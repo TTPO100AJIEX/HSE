@@ -1,7 +1,6 @@
 import typing
 
 import numpy
-import joblib
 import skimage.measure
 import skimage.feature
 
@@ -58,12 +57,8 @@ class GrayGeometryExtractor(cvtda.utils.FeatureExtractorBase):
         
         def process_one_(gray_image: numpy.ndarray) -> numpy.ndarray:
             return numpy.nan_to_num(numpy.concatenate(self.calc_raw_(gray_image)), 0)
-        features = numpy.stack(
-            joblib.Parallel(n_jobs = self.n_jobs_)(
-                joblib.delayed(process_one_)(img)
-                for img in cvtda.logging.logger().pbar(gray_images, desc = 'GrayGeometryExtractor')
-            )
-        )
+        pbar = cvtda.logging.logger().pbar(gray_images, desc = 'GrayGeometryExtractor')
+        features = numpy.stack(cvtda.utils.parallel(process_one_, pbar, n_jobs = self.n_jobs_))
         assert features.shape == (len(gray_images), len(self.feature_names()))
         return features
 
@@ -84,7 +79,7 @@ class GrayGeometryExtractor(cvtda.utils.FeatureExtractorBase):
             if orb_descriptors.shape[1] == 0:
                 raise 'How is this possible?'
         except:
-            orb_descriptors = numpy.zeros((128,1))
+            orb_descriptors = numpy.zeros((256,1))
 
         basic_features = skimage.feature.multiscale_basic_features(gray_image).reshape((-1, 24))
 
@@ -146,12 +141,8 @@ class RGBGeometryExtractor(cvtda.utils.FeatureExtractorBase):
 
         def process_one_(rgb_image: numpy.ndarray) -> numpy.ndarray:
             return numpy.nan_to_num(numpy.concatenate(self.calc_raw_(rgb_image)), 0)
-        features = numpy.stack(
-            joblib.Parallel(n_jobs = self.n_jobs_)(
-                joblib.delayed(process_one_)(img)
-                for img in cvtda.logging.logger().pbar(rgb_images, desc = 'RGBGeometryExtractor')
-            )
-        )
+        pbar = cvtda.logging.logger().pbar(rgb_images, desc = 'RGBGeometryExtractor')
+        features = numpy.stack(cvtda.utils.parallel(process_one_, pbar, n_jobs = self.n_jobs_))
         assert features.shape == (len(rgb_images), len(self.feature_names()))
         return features
     
@@ -199,12 +190,8 @@ class MultidimensionalGeometryExtractor(cvtda.utils.FeatureExtractorBase):
         
         def process_one_(nd_image: numpy.ndarray) -> numpy.ndarray:
             return numpy.nan_to_num(numpy.concatenate(self.calc_raw_(nd_image)), 0)
-        features = numpy.stack(
-            joblib.Parallel(n_jobs = self.n_jobs_)(
-                joblib.delayed(process_one_)(img)
-                for img in cvtda.logging.logger().pbar(nd_images, desc = 'MultidimensionalGeometryExtractor')
-            )
-        )
+        pbar = cvtda.logging.logger().pbar(nd_images, desc = 'MultidimensionalGeometryExtractor')
+        features = numpy.stack(cvtda.utils.parallel(process_one_, pbar, n_jobs = self.n_jobs_))
         assert features.shape == (len(nd_images), len(self.feature_names()))
         return features
     

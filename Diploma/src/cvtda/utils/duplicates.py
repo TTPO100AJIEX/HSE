@@ -1,9 +1,9 @@
 import typing
 
 import numpy
-import joblib
 import sklearn.base
 
+import cvtda.utils
 import cvtda.logging
 
 class DuplicateFeaturesRemover(sklearn.base.TransformerMixin):
@@ -97,9 +97,9 @@ class DuplicateFeaturesRemover(sklearn.base.TransformerMixin):
         def bulk_biggest_partition_(items: numpy.ndarray) -> list:
             return [ numpy.max(numpy.unique(item, return_counts = True)[1]) for item in items ]
         
-        partitions = joblib.Parallel(return_as = 'generator', n_jobs = self.n_jobs_)(
-            joblib.delayed(bulk_biggest_partition_)(features[batch_start:batch_start + self.partition_search_batch_size_])
+        partitions = [
+            features[batch_start:batch_start + self.partition_search_batch_size_]
             for batch_start in range(0, features.shape[0], self.partition_search_batch_size_)
-        )
-        partitions = numpy.hstack(list(partitions))
-        return numpy.argmin(partitions)
+        ]
+        partitions = cvtda.utils.parallel(bulk_biggest_partition_, partitions, return_as = 'list', n_jobs = self.n_jobs_)
+        return numpy.argmin(numpy.hstack(partitions))

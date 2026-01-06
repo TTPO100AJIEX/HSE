@@ -1,7 +1,7 @@
 import numpy
-import joblib
 import typing
 
+import cvtda.utils
 import cvtda.logging
 
 
@@ -12,9 +12,7 @@ def image2pointcloud(images: numpy.ndarray, n_jobs: int = -1) -> typing.List[num
         y = numpy.indices((width, height))[1]
         return numpy.dstack([ x, y, image ]).reshape((width * height, -1))
 
-    return list(
-        joblib.Parallel(n_jobs = n_jobs)(
-            joblib.delayed(_impl)(img)
-            for img in cvtda.logging.logger().pbar(images, desc = "image2pointcloud")
-        )
+    return cvtda.utils.parallel(
+        _impl, cvtda.logging.logger().pbar(images, desc = "image2pointcloud"),
+        n_jobs = n_jobs, return_as = 'list'
     )

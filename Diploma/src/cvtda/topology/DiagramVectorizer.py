@@ -1,4 +1,6 @@
+import math
 import typing
+import dataclasses
 
 import numpy
 import joblib
@@ -15,7 +17,7 @@ class DiagramVectorizer(cvtda.utils.FeatureExtractorBase):
         reduced: bool = True,
 
         n_bins: int = 64,
-        batch_size: int = 512,
+        batch_size: int = None,
         filtering_percentile: int = 10,
         
         persistence_landscape_layers: int = 3,
@@ -33,9 +35,7 @@ class DiagramVectorizer(cvtda.utils.FeatureExtractorBase):
         self.betti_curve_ = gtda.diagrams.BettiCurve(n_bins = n_bins, n_jobs = 1)
 
         self.persistence_landscape_ = gtda.diagrams.PersistenceLandscape(
-            n_layers = persistence_landscape_layers,
-            n_bins = n_bins,
-            n_jobs = 1
+            n_layers = persistence_landscape_layers, n_bins = n_bins, n_jobs = 1
         )
 
         self.silhouettes_ = [
@@ -87,7 +87,7 @@ class DiagramVectorizer(cvtda.utils.FeatureExtractorBase):
             persistence_image.fit(diagrams)
 
         feature_names = [ "betti", "landscape", "silhouette", "entropy", "number_of_points", "heat", "persistence_image", "lifetime" ]
-        for features, name in zip(self.transform_batch_raw_(diagrams[:self.batch_size_]), feature_names):
+        for features, name in zip(self.transform_batch_raw_(diagrams[:32]), feature_names):
             self.feature_names_.extend([ f"{name}-{i}" for i in range(features.shape[1]) ])
     
         cvtda.logging.logger().print('DiagramVectorizer: fitting complete')
@@ -96,15 +96,12 @@ class DiagramVectorizer(cvtda.utils.FeatureExtractorBase):
     
     def transform(self, diagrams: numpy.ndarray) -> numpy.ndarray:
         assert self.fitted_ is True, 'fit() must be called before transform()'
+        batch_size = self.get_batch_size_(len(diagrams))
+        loop = list(range(0, len(diagrams), batch_size))
         
-        def transform_batch(batch: numpy.ndarray) -> numpy.ndarray:
-            return numpy.hstack(self.transform_batch_raw_(batch))
-        
-        loop = range(0, len(diagrams), self.batch_size_)
-        features = joblib.Parallel(return_as = 'generator', n_jobs = self.n_jobs_)(
-            joblib.delayed(transform_batch)(diagrams[batch_start:batch_start + self.batch_size_])
-            for batch_start in loop
-        )
+        def transform_batch(batch_start: numpy.ndarray) -> numpy.ndarray:
+            return numpy.hstack(self.transform_batch_raw_(diagrams[batch_start:batch_start + batch_size]))
+        features = cvtda.utils.parallel(transform_batch, loop, return_as = 'generator', n_jobs = self.n_jobs_)
 
         collector = cvtda.logging.logger().pbar(features, total = len(loop), desc = 'DiagramVectorizer: batch')
         features = numpy.vstack(list(collector))
@@ -124,6 +121,13 @@ class DiagramVectorizer(cvtda.utils.FeatureExtractorBase):
             self.calc_lifetime_features_         (batch)
         ]
 
+
+    def get_batch_size_(self, num_objects: int):
+        if self.batch_size_ is not None:
+            return self.batch_size_
+        n_jobs = joblib.effective_n_jobs(self.n_jobs_)
+        batch_size = math.ceil(num_objects / n_jobs)
+        return math.ceil(batch_size / math.ceil(batch_size / 256))
 
     def determine_filtering_epsilon_(self, diagrams: numpy.ndarray) -> float:
         life = (diagrams[:, :, 1] - diagrams[:, :, 0]).flatten()

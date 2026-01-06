@@ -2,10 +2,10 @@ import abc
 import typing
 
 import numpy
-import joblib
 import itertools
 import matplotlib.pyplot as plt
 
+import cvtda.utils
 import cvtda.logging
 import cvtda.neural_network
 
@@ -34,10 +34,8 @@ class BaseLearner:
             return (i, j, self.calculate_distance_(i, j, dataset))
 
         idxs = list(itertools.product(range(len(dataset)), range(len(dataset))))
-        distances_flat = joblib.Parallel(n_jobs = self.n_jobs_)(
-            joblib.delayed(calculate_distance_)(i, j)
-            for i, j in cvtda.logging.logger().pbar(idxs, desc = "Calculating pairwise distances")
-        )
+        pbar = cvtda.logging.logger().pbar(idxs, desc = "Calculating pairwise distances")
+        distances_flat = cvtda.utils.parallel(calculate_distance_, pbar, n_jobs = self.n_jobs_)
 
         correct_dists, incorrect_dists = {}, {}
         for i, j, distance in cvtda.logging.logger().pbar(distances_flat, desc = "Analyzing distances"):

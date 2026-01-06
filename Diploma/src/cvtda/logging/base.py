@@ -9,6 +9,7 @@ class BaseLogger(abc.ABC):
     def __enter__(self):
         self.__previous = BaseLogger.current_logger
         BaseLogger.current_logger = self
+        return self
 
     def __exit__(self, *args):
         BaseLogger.current_logger = self.__previous

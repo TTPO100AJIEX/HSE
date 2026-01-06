@@ -6,3 +6,4 @@ from .rgb2hsv import rgb2hsv
 from .sequence2features import sequence2features
 from .set_random_seed import set_random_seed
 from .spread_points import spread_points
+from .parallel import parallel

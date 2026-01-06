@@ -14,9 +14,5 @@ def process_iter_dump(
     *args,
     **kwargs
 ):
-    if dump_name is None:
-        return process_iter(transformer, data, do_fit, *args, **kwargs)
-    
-    if do_fit:
-        transformer.fit(data, *args, **kwargs)
-    return cvtda.dumping.dumper().execute(lambda: transformer.transform(data, *args, **kwargs), dump_name)
+    function = lambda: process_iter(transformer, data, do_fit, *args, **kwargs)
+    return function() if dump_name is None else cvtda.dumping.dumper().execute(function, dump_name)

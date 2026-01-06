@@ -8,7 +8,6 @@ import cvtda.dumping
 import cvtda.logging
 
 from .. import utils
-import cvtda.dumping
 
 class Extractor(cvtda.utils.FeatureExtractorBase):
     def __init__(
@@ -42,7 +41,7 @@ class Extractor(cvtda.utils.FeatureExtractorBase):
     
 
     def feature_names(self) -> typing.List[str]:
-        if (len(self.fit_dimensions_) == 3) and (self.fit_dimensions_[2] == 3):
+        if self.is_rgb_(self.fit_dimensions_):
             result = [
                 *self.nest_feature_names("rgb", self.feature_names_rgb_()),
                 *self.nest_feature_names("gray", self.gray_extractor_.feature_names()),
@@ -58,32 +57,35 @@ class Extractor(cvtda.utils.FeatureExtractorBase):
             return self.feature_names_gray_()
 
     def fit(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
-        if self.only_get_from_dump_ and (len(images.shape) != 4):
-            final_dump = self.final_dump_name_(dump_name)
-            assert cvtda.dumping.dumper().has_dump(final_dump), f"There is no dump at {final_dump}"
-        else:
-            self.process_(images, do_fit = True, dump_name = dump_name)
-        self.fitted_ = True
+        self.fit_transform(images, dump_name)
         return self
     
     def transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
         assert self.fitted_ is True, 'fit() must be called before transform()'
-        final_dump = self.final_dump_name_(dump_name)
-        if (self.only_get_from_dump_ and (len(images.shape) != 4)) or cvtda.dumping.dumper().has_dump(final_dump):
-            return cvtda.dumping.dumper().get_dump(final_dump)
         return self.process_(images, do_fit = False, dump_name = dump_name)
     
     def fit_transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
-        return self.fit(images, dump_name = dump_name).transform(images, dump_name = dump_name)
+        result = self.process_(images, do_fit = True, dump_name = dump_name)
+        self.fitted_ = True
+        return result
 
+
+    def is_rgb_(self, shape):
+        return (len(shape) == 3) and (shape[2] == 3)
 
     def process_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         if self.fit_dimensions_ is not None:
             assert self.fit_dimensions_ == images.shape[1:], \
                     f"The pipeline is fit for {self.fit_dimensions_}. Cannot use it with {images.shape}."
         self.fit_dimensions_ = images.shape[1:]
+
+        final_dump = self.final_dump_name_(dump_name)
+        if self.only_get_from_dump_ and not self.is_rgb_(self.fit_dimensions_):
+            return cvtda.dumping.dumper().get_dump(final_dump)
+        if not do_fit and cvtda.dumping.dumper().has_dump(final_dump):
+            return cvtda.dumping.dumper().get_dump(final_dump)
         
-        if (len(images.shape) == 4) and (images.shape[3] == 3):
+        if self.is_rgb_(self.fit_dimensions_):
             cvtda.logging.logger().print("RGB images received. Transforming to grayscale.")
 
             rgb_dump = cvtda.dumping.dump_name_concat(dump_name, "rgb")

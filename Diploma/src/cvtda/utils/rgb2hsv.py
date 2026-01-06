@@ -1,15 +1,15 @@
 import numpy
-import joblib
 
 import skimage.color
 
+import cvtda.utils
 import cvtda.logging
 
 
 def rgb2hsv(images: numpy.ndarray, n_jobs: int = -1) -> numpy.ndarray:
     return numpy.stack(
-        joblib.Parallel(n_jobs = n_jobs)(
-            joblib.delayed(skimage.color.rgb2hsv)(img)
-            for img in cvtda.logging.logger().pbar(images, desc = "rgb2hsv")
+        cvtda.utils.parallel(
+            skimage.color.rgb2hsv, cvtda.logging.logger().pbar(images, desc = "rgb2hsv"),
+            n_jobs = n_jobs, return_as = 'list', num_parameters = 1
         )
     )

@@ -1,9 +1,8 @@
 import numpy
-import pandas
-import joblib
 import sklearn.base
 import matplotlib.pyplot as plt
 
+import cvtda.utils
 import cvtda.logging
 
 
@@ -49,12 +48,9 @@ def calculate_information_value(
     bins: int = 10,
     n_jobs: int = -1
 ) -> numpy.ndarray:
-    iv_generator = joblib.Parallel(return_as = 'generator', n_jobs = n_jobs)(
-        joblib.delayed(calculate_information_value_one_feature)(
-            features[:, idx],
-            y_true,
-            bins
-        ) for idx in range(features.shape[1])
+    params = [ (features[:, idx], y_true, bins) for idx in range(features.shape[1]) ]
+    iv_generator = cvtda.utils.parallel(
+        calculate_information_value_one_feature, params, return_as = 'generator', n_jobs = n_jobs
     )
     pbar = cvtda.logging.logger().pbar(iv_generator, total = features.shape[1], desc = 'information values')
     return numpy.array(list(pbar))

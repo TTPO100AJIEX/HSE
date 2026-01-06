@@ -9,6 +9,7 @@ class BaseDumper(abc.ABC, typing.Generic[T]):
     def __enter__(self):
         self.__previous = BaseDumper.current_dumper
         BaseDumper.current_dumper = self
+        return self
 
     def __exit__(self, *args):
         BaseDumper.current_dumper = self.__previous

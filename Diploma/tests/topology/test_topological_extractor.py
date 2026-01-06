@@ -71,10 +71,7 @@ def test_grayscale_fit_transform():
 
     assert extractor.fit_transform(numpy.random.rand(10, 32, 32)).shape != DIAGRAMS.shape
     assert callback_.times_called == 1
-    assert extractor.diagrams_calls_ == [
-        { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None },
-        { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
-    ]
+    assert extractor.diagrams_calls_ == [ { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None } ]
     sklearn.utils.validation.check_is_fitted(extractor.scaler_)
     assert extractor.vectorizer_.fitted_ is True
 
@@ -106,10 +103,7 @@ def test_grayscale_fit_transform_return_diagrams():
 
     assert (extractor.fit_transform(numpy.random.rand(10, 32, 32)) == DIAGRAMS).all()
     assert callback_.times_called == 1
-    assert extractor.diagrams_calls_ == [
-        { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None },
-        { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
-    ]
+    assert extractor.diagrams_calls_ == [ { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None } ]
     sklearn.utils.validation.check_is_fitted(extractor.scaler_)
     assert extractor.vectorizer_.fitted_ is False
 
@@ -131,10 +125,7 @@ def test_rgb_fit():
     assert extractor.vectorizer_.fitted_ is True
 
     for e in [ extractor.gray_extractor_, extractor.red_extractor_, extractor.green_extractor_, extractor.blue_extractor_ ]:
-        assert e.diagrams_calls_ ==  [
-            { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None },
-            { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
-        ]
+        assert e.diagrams_calls_ ==  [ { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None } ]
         sklearn.utils.validation.check_is_fitted(e.scaler_)
         assert e.vectorizer_.fitted_ is True
         
@@ -150,19 +141,12 @@ def test_rgb_fit_transform():
     assert extractor.fit_transform(numpy.random.rand(10, 32, 32, 3)).shape == (10, 56 * 5)
     assert callback_.times_called == 5
 
-    assert extractor.diagrams_calls_ == [
-        { 'images': (10, 32, 32, 3), 'do_fit': True, 'dump_name': None },
-        { 'images': (10, 32, 32, 3), 'do_fit': False, 'dump_name': None }
-    ]
+    assert extractor.diagrams_calls_ == [ { 'images': (10, 32, 32, 3), 'do_fit': True, 'dump_name': None } ]
     sklearn.utils.validation.check_is_fitted(extractor.scaler_)
     assert extractor.vectorizer_.fitted_ is True
 
     for e in [ extractor.gray_extractor_, extractor.red_extractor_, extractor.green_extractor_, extractor.blue_extractor_ ]:
-        assert e.diagrams_calls_ ==  [
-            { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None },
-            { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None },
-            { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
-        ]
+        assert e.diagrams_calls_ ==  [ { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None } ]
         sklearn.utils.validation.check_is_fitted(e.scaler_)
         assert e.vectorizer_.fitted_ is True
 
@@ -183,10 +167,7 @@ def test_rgb_fit_return_diagrams():
     assert extractor.vectorizer_.fitted_ is False
 
     for e in [ extractor.gray_extractor_, extractor.red_extractor_, extractor.green_extractor_, extractor.blue_extractor_ ]:
-        assert e.diagrams_calls_ ==  [
-            { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None },
-            { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
-        ]
+        assert e.diagrams_calls_ ==  [ { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None } ]
         sklearn.utils.validation.check_is_fitted(e.scaler_)
         assert e.vectorizer_.fitted_ is False
         
@@ -207,19 +188,12 @@ def test_rgb_fit_transform_return_diagrams():
         for item in res:
             assert (item == DIAGRAMS[0]).all()
 
-    assert extractor.diagrams_calls_ == [
-        { 'images': (10, 32, 32, 3), 'do_fit': True, 'dump_name': None },
-        { 'images': (10, 32, 32, 3), 'do_fit': False, 'dump_name': None }
-    ]
+    assert extractor.diagrams_calls_ == [ { 'images': (10, 32, 32, 3), 'do_fit': True, 'dump_name': None } ]
     sklearn.utils.validation.check_is_fitted(extractor.scaler_)
     assert extractor.vectorizer_.fitted_ is False
 
     for e in [ extractor.gray_extractor_, extractor.red_extractor_, extractor.green_extractor_, extractor.blue_extractor_ ]:
-        assert e.diagrams_calls_ ==  [
-            { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None },
-            { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None },
-            { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
-        ]
+        assert e.diagrams_calls_ ==  [ { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None } ]
         sklearn.utils.validation.check_is_fitted(e.scaler_)
         assert e.vectorizer_.fitted_ is False
 
@@ -241,11 +215,7 @@ def test_rgb_fit_transform_not_supports_rgb():
     assert extractor.vectorizer_.fitted_ is False
 
     for e in [ extractor.gray_extractor_, extractor.red_extractor_, extractor.green_extractor_, extractor.blue_extractor_ ]:
-        assert e.diagrams_calls_ ==  [
-            { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None },
-            { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None },
-            { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
-        ]
+        assert e.diagrams_calls_ ==  [ { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None } ]
         sklearn.utils.validation.check_is_fitted(e.scaler_)
         assert e.vectorizer_.fitted_ is True
 
@@ -272,10 +242,6 @@ def test_rgb_fit_transform_not_supports_rgb_return_diagrams():
     assert extractor.vectorizer_.fitted_ is False
 
     for e in [ extractor.gray_extractor_, extractor.red_extractor_, extractor.green_extractor_, extractor.blue_extractor_ ]:
-        assert e.diagrams_calls_ ==  [
-            { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None },
-            { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None },
-            { 'images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
-        ]
+        assert e.diagrams_calls_ ==  [ { 'images': (10, 32, 32), 'do_fit': True, 'dump_name': None } ]
         sklearn.utils.validation.check_is_fitted(e.scaler_)
         assert e.vectorizer_.fitted_ is False

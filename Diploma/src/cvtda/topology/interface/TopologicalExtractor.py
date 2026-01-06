@@ -4,9 +4,10 @@ import typing
 import numpy
 import gtda.diagrams
 
-from .. import utils
 import cvtda.logging
 import cvtda.dumping
+
+from .. import utils
 from .Extractor import Extractor
 from ..DiagramVectorizer import DiagramVectorizer
 
@@ -36,10 +37,10 @@ class TopologicalExtractor(Extractor):
 
         self.vectorizer_ = DiagramVectorizer(n_jobs = self.n_jobs_, reduced = self.reduced_)
         self.scaler_ = gtda.diagrams.Scaler(n_jobs = self.n_jobs_)
-        
+
 
     def final_dump_name_(self, dump_name: typing.Optional[str] = None):
-        return None
+        return self.diagrams_dump_(dump_name) if self.return_diagrams_ else self.features_dump_(dump_name)
     
     def diagrams_dump_(self, dump_name: typing.Optional[str]):
         return cvtda.dumping.dump_name_concat(dump_name, "diagrams")
@@ -50,10 +51,7 @@ class TopologicalExtractor(Extractor):
 
     def process_rgb_(self, rgb_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         if not self.supports_rgb_:
-            if self.return_diagrams_:
-                return []
-            else:
-                return numpy.empty((len(rgb_images), 0))
+            return [] if self.return_diagrams_ else numpy.empty((len(rgb_images), 0))
         return self.do_work_(rgb_images, do_fit, dump_name)
 
     def feature_names_rgb_(self) -> typing.List[str]:
@@ -78,8 +76,7 @@ class TopologicalExtractor(Extractor):
 
         diagrams = self.get_diagrams_(images, do_fit, dump_name)
         cvtda.logging.logger().print("Applying Scaler to persistence diagrams.")
-        diagrams = utils.process_iter(self.scaler_, diagrams, do_fit)
-        diagrams = numpy.nan_to_num(diagrams, 0)
+        diagrams = numpy.nan_to_num(utils.process_iter(self.scaler_, diagrams, do_fit), 0)
         if self.return_diagrams_:
             return diagrams
         features = utils.process_iter_dump(self.vectorizer_, diagrams, do_fit, self.features_dump_(dump_name))

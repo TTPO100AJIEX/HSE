@@ -76,10 +76,7 @@ def test_grayscale_fit_transform():
     assert extractor.fit_dimensions_ == (32, 32)
     assert callback_.times_called == 1
     assert extractor.rgb_calls_ == [ ]
-    assert extractor.gray_calls_ == [
-        { 'gray_images': (10, 32, 32), 'do_fit': True, 'dump_name': None },
-        { 'gray_images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
-    ]
+    assert extractor.gray_calls_ == [ { 'gray_images': (10, 32, 32), 'do_fit': True, 'dump_name': None } ]
 
 def test_grayscale_transform():
     def callback_(_):
@@ -131,10 +128,7 @@ def test_rgb_fit():
 
     for e in [ extractor.gray_extractor_, extractor.red_extractor_, extractor.green_extractor_, extractor.blue_extractor_ ]:
         assert e.rgb_calls_ == [ ]
-        assert e.gray_calls_ == [
-            { 'gray_images': (10, 32, 32), 'do_fit': True, 'dump_name': None },
-            { 'gray_images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
-        ]
+        assert e.gray_calls_ == [ { 'gray_images': (10, 32, 32), 'do_fit': True, 'dump_name': None } ]
         
 def test_rgb_fit_transform():
     def callback_(_):
@@ -151,16 +145,9 @@ def test_rgb_fit_transform():
     assert extractor.fit_dimensions_ == (32, 32, 3)
     assert callback_.times_called == 5
 
-    assert extractor.rgb_calls_ == [
-        { 'rgb_images': (10, 32, 32, 3), 'do_fit': True, 'dump_name': None },
-        { 'rgb_images': (10, 32, 32, 3), 'do_fit': False, 'dump_name': None }
-    ]
+    assert extractor.rgb_calls_ == [ { 'rgb_images': (10, 32, 32, 3), 'do_fit': True, 'dump_name': None } ]
     assert extractor.gray_calls_ == [ ]
 
     for e in [ extractor.gray_extractor_, extractor.red_extractor_, extractor.green_extractor_, extractor.blue_extractor_ ]:
         assert e.rgb_calls_ == [ ]
-        assert e.gray_calls_ == [
-            { 'gray_images': (10, 32, 32), 'do_fit': True, 'dump_name': None },
-            { 'gray_images': (10, 32, 32), 'do_fit': False, 'dump_name': None },
-            { 'gray_images': (10, 32, 32), 'do_fit': False, 'dump_name': None }
-        ]
+        assert e.gray_calls_ == [ { 'gray_images': (10, 32, 32), 'do_fit': True, 'dump_name': None } ]

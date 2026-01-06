@@ -126,7 +126,7 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         )
         
         def lr_scheduler_lambda(epoch):
-            if epoch < self.n_epochs_ // 10:
+            if (self.n_epochs_ < 10) or (epoch < self.n_epochs_ // 10):
                 return 1
             if epoch < self.n_epochs_ // 4:
                 return 0.1

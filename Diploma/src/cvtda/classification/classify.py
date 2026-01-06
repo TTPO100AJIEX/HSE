@@ -34,7 +34,7 @@ def classify(
     confusion_matrix_include_values: bool = True,
 
     n_jobs: int = -1,
-    lang: str = 'ru', # 'en'
+    lang: str = 'en', # 'ru'
     random_state: int = 42,
     dump_name: typing.Optional[str] = None,
     only_get_from_dump: bool = False,
@@ -150,7 +150,7 @@ def classify(
             device = nn_device,
             batch_size = nn_batch_size,
             learning_rate = nn_learning_rate,
-            n_epochs = nn_epochs // 5,
+            n_epochs = nn_epochs // 5 if nn_epochs >= 5 else nn_epochs,
             skip_diagrams = False,
             skip_images = True,
             skip_features = True,
@@ -159,7 +159,7 @@ def classify(
             random_state = random_state,
             device = nn_device,
             batch_size = nn_batch_size,
-            learning_rate = nn_learning_rate,
+            learning_rate = nn_learning_rate if nn_epochs >= 5 else nn_learning_rate / 10,
             n_epochs = nn_epochs,
             skip_diagrams = True,
             skip_images = False,

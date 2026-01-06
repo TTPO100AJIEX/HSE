@@ -22,12 +22,15 @@ class FeatureExtractor(cvtda.utils.FeatureExtractorBase):
         reduced: bool = True,
         only_get_from_dump: bool = False,
         return_diagrams: bool = False,
+        with_inverted: bool = True,
 
         num_radial_filtrations: int = 4,
         binarizer_thresholds: typing.Optional[typing.List[float]] = None,
+        height_filtration_directions: typing.Optional[typing.Iterable[typing.Tuple[float, float]]] = None,
     ):
         self.fitted_ = False
         self.reduced_ = reduced
+        self.with_inverted_ = with_inverted
         self.return_diagrams_ = return_diagrams
         
         extractor_kwargs = { 'n_jobs': n_jobs, 'reduced': reduced, 'only_get_from_dump': only_get_from_dump }
@@ -41,7 +44,8 @@ class FeatureExtractor(cvtda.utils.FeatureExtractorBase):
         self.filtrations_extractor_ = FiltrationsExtractor(
             **topological_extractor_kwargs,
             binarizer_thresholds = binarizer_thresholds,
-            num_radial_filtrations = num_radial_filtrations
+            num_radial_filtrations = num_radial_filtrations,
+            height_filtration_directions = height_filtration_directions
         )
         self.geometry_extractor_ = GeometryExtractor(**extractor_kwargs)
 
@@ -52,43 +56,47 @@ class FeatureExtractor(cvtda.utils.FeatureExtractorBase):
         if not self.reduced_:
             feature_names.extend(self.nest_feature_names("point_clouds", self.point_clouds_extractor_.feature_names()))
         feature_names.extend(self.nest_feature_names("greyscale", self.greyscale_extractor_.feature_names()))
-        feature_names.extend(self.nest_feature_names("inverted_greyscale", self.inverted_greyscale_extractor_.feature_names()))
+        if self.with_inverted_:
+            feature_names.extend(self.nest_feature_names("inverted_greyscale", self.inverted_greyscale_extractor_.feature_names()))
         feature_names.extend(self.filtrations_extractor_.feature_names())
         feature_names.extend(self.nest_feature_names("geometry", self.geometry_extractor_.feature_names()))
         return feature_names
 
     def fit(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
-        self.process_(images, do_fit = True, dump_name = dump_name)
-        self.fitted_ = True
+        self.fit_transform(images, dump_name)
         return self
-    
+
     def transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
         assert self.fitted_ is True, 'fit() must be called before transform()'
         return self.process_(images, do_fit = False, dump_name = dump_name)
     
     def fit_transform(self, images: numpy.ndarray, dump_name: typing.Optional[str] = None):
-        return self.fit(images, dump_name = dump_name).transform(images, dump_name = dump_name)
+        result = self.process_(images, do_fit = True, dump_name = dump_name)
+        self.fitted_ = True
+        return result
 
 
     def process_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
-        cvtda.logging.logger().print("Calculating inverted images")
-        inverted_images = utils.process_iter(self.inverter_, images, do_fit = do_fit)
-
-        point_clouds_dump = cvtda.dumping.dump_name_concat(dump_name, "point_clouds")
-        greyscale_dump = cvtda.dumping.dump_name_concat(dump_name, "greyscale")
-        inverted_greyscale_dump = cvtda.dumping.dump_name_concat(dump_name, "inverted_greyscale")
-        filtrations_dump = cvtda.dumping.dump_name_concat(dump_name, "filtrations")
-        geometry_dump = cvtda.dumping.dump_name_concat(dump_name, "geometry")
-
         results = []
+
         if not self.reduced_:
+            point_clouds_dump = cvtda.dumping.dump_name_concat(dump_name, "point_clouds")
             results.append(utils.process_iter(self.point_clouds_extractor_, images, do_fit, point_clouds_dump))
 
+        greyscale_dump = cvtda.dumping.dump_name_concat(dump_name, "greyscale")
         results.append(utils.process_iter(self.greyscale_extractor_, images, do_fit, greyscale_dump))
-        results.append(utils.process_iter(self.inverted_greyscale_extractor_, inverted_images, do_fit, inverted_greyscale_dump))
+    
+        if self.with_inverted_:
+            cvtda.logging.logger().print("Calculating inverted images")
+            inverted_greyscale_dump = cvtda.dumping.dump_name_concat(dump_name, "inverted_greyscale")
+            inverted_images = utils.process_iter(self.inverter_, images, do_fit = do_fit)
+            results.append(utils.process_iter(self.inverted_greyscale_extractor_, inverted_images, do_fit, inverted_greyscale_dump))
+            
+        filtrations_dump = cvtda.dumping.dump_name_concat(dump_name, "filtrations")
         results.append(utils.process_iter(self.filtrations_extractor_, images, do_fit, filtrations_dump))
         
         if not self.return_diagrams_:
+            geometry_dump = cvtda.dumping.dump_name_concat(dump_name, "geometry")
             results.append(utils.process_iter(self.geometry_extractor_, images, do_fit, geometry_dump))
         
         results = utils.hstack(results, not self.return_diagrams_)
