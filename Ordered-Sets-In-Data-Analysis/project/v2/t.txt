@@ -1,0 +1,19 @@
+X_test_bin = pandas.DataFrame(X_test.copy(), columns = ct.get_feature_names_out())
+
+for threshold in tenure_thresholds:
+    X_test_bin[f"Tenture_lt_{threshold}"] = X_test_bin["numeric__tenure"] <= threshold
+    X_test_bin[f"Tenture_gt_{threshold}"] = X_test_bin["numeric__tenure"] >= threshold
+    
+for threshold in total_charges_thresholds:
+    X_test_bin[f"TotalCharges_lt_{threshold}"] = X_test_bin["numeric__TotalCharges"] <= threshold
+    X_test_bin[f"TotalCharges_gt_{threshold}"] = X_test_bin["numeric__TotalCharges"] >= threshold
+    
+for threshold in monthly_charges_thresholds:
+    X_test_bin[f"MonthlyCharges_lt_{threshold}"] = X_test_bin["numeric__MonthlyCharges"] <= threshold
+    X_test_bin[f"MonthlyCharges_gt_{threshold}"] = X_test_bin["numeric__MonthlyCharges"] >= threshold
+
+X_test_bin = X_test_bin.drop(columns = ["numeric__tenure"])
+X_test_bin = X_test_bin.drop(columns = ["numeric__MonthlyCharges"])
+X_test_bin = X_test_bin.drop(columns = ["numeric__TotalCharges"])
+
+X_test_bin
