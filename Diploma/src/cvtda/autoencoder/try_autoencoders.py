@@ -3,6 +3,7 @@ import typing
 import numpy
 import torch
 import pandas
+import torchvision
 
 import cvtda.logging
 import cvtda.dumping
@@ -21,7 +22,6 @@ def try_autoencoders(
     test_diagrams: typing.Optional[typing.List[numpy.ndarray]],
 
     n_jobs: int = -1,
-    lang: str = 'ru', # 'en'
     random_state: int = 42,
     dump_name: typing.Optional[str] = None,
     only_get_from_dump: bool = False,
@@ -30,7 +30,8 @@ def try_autoencoders(
     nn_batch_size: int = 256,
     nn_learning_rate: float = 1e-3,
     nn_epochs: int = 100,
-    nn_latent_dim: int = 256
+    nn_latent_dim: int = 256,
+    nn_base = torchvision.models.resnet50
 ):
     without_diagrams = (train_diagrams is None) and (test_diagrams is None)
 
@@ -79,6 +80,7 @@ def try_autoencoders(
             skip_diagrams = True,
             skip_images = True,
             skip_features = False,
+            base = nn_base,
         ),
         Autoencoder(
             random_state = random_state,
@@ -90,6 +92,7 @@ def try_autoencoders(
             skip_diagrams = True,
             skip_images = False,
             skip_features = True,
+            base = nn_base,
         ),
         Autoencoder(
             random_state = random_state,
@@ -101,6 +104,7 @@ def try_autoencoders(
             skip_diagrams = True,
             skip_images = False,
             skip_features = False,
+            base = nn_base,
         ),
         Autoencoder(
             random_state = random_state,
@@ -112,6 +116,7 @@ def try_autoencoders(
             skip_diagrams = False,
             skip_images = True,
             skip_features = True,
+            base = nn_base,
         )
     ]
 
@@ -121,21 +126,10 @@ def try_autoencoders(
         'features_images',
         'diagrams'
     ]
-    
-    match lang:
-        case 'ru':
-            display_names = [
-                'Топологические признаки',
-                'ResNet50 – базовая модель',
-                'Комбинированная нейронная сеть',
-                'Обучаемая векторизация диаграмм'
-            ]
-        case _:
-            display_names = [
-                'FC over topological features',
-                'ResNet50 – baseline model',
-                'Combined neural network',
-                'Trainable vectorization'
-            ]
-
+    display_names = [
+        'FC over topological features',
+        'ResNet – baseline model',
+        'Combined neural network',
+        'Trainable vectorization'
+    ]
     return pandas.DataFrame([ try_one(*args) for args in zip(models, names, display_names) ])

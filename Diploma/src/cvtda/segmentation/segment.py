@@ -21,7 +21,6 @@ def segment(
     test_features: numpy.ndarray,
     test_masks: numpy.ndarray,
 
-    lang: str = 'ru', # 'en'
     random_state: int = 42,
     dump_name: typing.Optional[str] = None,
     only_get_from_dump: bool = False,
@@ -74,21 +73,11 @@ def segment(
         'topological',
         'combined'
     ]
-    
-    match lang:
-        case 'ru':
-            display_names = [
-                'Без признаков',
-                'Без топологических признаков',
-                'Только топологические признаки',
-                'Комбинированные признаки'
-            ]
-        case _:
-            display_names = [
-                'No features',
-                'Without topological features',
-                'Only topological features',
-                'Combined features'
-            ]
+    display_names = [
+        'No features',
+        'Without topological features',
+        'Only topological features',
+        'Combined features'
+    ]
 
     return pandas.DataFrame([ try_one(*args) for args in zip(models, names, display_names) ])

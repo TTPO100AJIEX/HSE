@@ -1,12 +1,12 @@
 import os
 import typing
 
-import catboost.dev_utils
 import numpy
 import torch
 import pandas
 import xgboost
 import catboost
+import torchvision
 import sklearn.base
 import sklearn.ensemble
 import sklearn.neighbors
@@ -34,7 +34,6 @@ def classify(
     confusion_matrix_include_values: bool = True,
 
     n_jobs: int = -1,
-    lang: str = 'en', # 'ru'
     random_state: int = 42,
     dump_name: typing.Optional[str] = None,
     only_get_from_dump: bool = False,
@@ -47,6 +46,7 @@ def classify(
     nn_batch_size: int = 256,
     nn_learning_rate: float = 1e-3,
     nn_epochs: int = 100,
+    nn_base = torchvision.models.resnet50,
 
     grad_boost_max_iter: int = 20,
     grad_boost_max_depth: int = 4,
@@ -118,7 +118,7 @@ def classify(
             max_iter = grad_boost_max_iter,
             max_depth = grad_boost_max_depth,
             max_features = grad_boost_max_features,
-            verbose = 2
+            verbose = cvtda.logging.logger().verbosity()
         ),
         catboost.CatBoostClassifier(
             iterations = catboost_iterations,
@@ -127,7 +127,7 @@ def classify(
             loss_function = 'MultiClass',
             devices = '0-3',
             task_type = catboost_device,
-            verbose = True
+            verbose = (cvtda.logging.logger().verbosity() != 0)
         ),
         xgboost.XGBClassifier(
             n_jobs = n_jobs,
@@ -144,26 +144,29 @@ def classify(
             skip_diagrams = True,
             skip_images = True,
             skip_features = False,
+            base = nn_base,
         ),
         NNClassifier(
             random_state = random_state,
             device = nn_device,
             batch_size = nn_batch_size,
             learning_rate = nn_learning_rate,
-            n_epochs = nn_epochs // 5 if nn_epochs >= 5 else nn_epochs,
+            n_epochs = nn_epochs // 5,
             skip_diagrams = False,
             skip_images = True,
             skip_features = True,
+            base = nn_base,
         ),
         NNClassifier(
             random_state = random_state,
             device = nn_device,
             batch_size = nn_batch_size,
-            learning_rate = nn_learning_rate if nn_epochs >= 5 else nn_learning_rate / 10,
+            learning_rate = nn_learning_rate,
             n_epochs = nn_epochs,
             skip_diagrams = True,
             skip_images = False,
             skip_features = True,
+            base = nn_base,
         ),
         NNClassifier(
             random_state = random_state,
@@ -174,6 +177,7 @@ def classify(
             skip_diagrams = True,
             skip_images = False,
             skip_features = False,
+            base = nn_base,
         )
     ]
     names = [
@@ -188,31 +192,17 @@ def classify(
         'NNClassifier_features_images'
     ]
 
-    match lang:
-        case 'ru':
-            display_names = [
-                'Метод k ближайших соседей',
-                'Случайный лес',
-                'Град. бустинг на основе гистограмм',
-                'CatBoost',
-                'XGBoost',
-                'Нейронная сеть для тополог. признаков',
-                'Обучаемая векторизация диаграмм',
-                'ResNet50 – базовая модель',
-                'Комбинированная нейронная сеть'
-            ]
-        case _:
-            display_names = [
-                'KNN',
-                'Random forest',
-                'Histogram-based boosting',
-                'CatBoost',
-                'XGBoost',
-                'FC over topological features',
-                'Trainable vectorization',
-                'ResNet50 – baseline model',
-                'Combined neural network'
-            ]
+    display_names = [
+        'KNN',
+        'Random forest',
+        'Histogram-based boosting',
+        'CatBoost',
+        'XGBoost',
+        'FC over topological features',
+        'Trainable vectorization',
+        'Baseline model',
+        'Combined neural network'
+    ]
 
     figure, axes = plt.subplots(3, 3, figsize = (15, 15))
     df = pandas.DataFrame([ classify_one(*args) for args in zip(classifiers, names, display_names, axes.flat) ])

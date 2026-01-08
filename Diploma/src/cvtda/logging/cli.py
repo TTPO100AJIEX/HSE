@@ -11,6 +11,9 @@ class CLILogger(BaseLogger):
     def __init__(self):
         pass
 
+    def verbosity(self) -> int:
+        return 2
+
     def print(self, data: T, *args) -> None:
         print(data, *args)
 

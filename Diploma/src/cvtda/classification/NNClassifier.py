@@ -2,6 +2,7 @@ import typing
 
 import numpy
 import torch
+import torchvision
 import sklearn.base
 import sklearn.metrics
 import torch.utils.data
@@ -24,7 +25,8 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         
         skip_diagrams: bool = False,
         skip_images: bool = False,
-        skip_features: bool = False
+        skip_features: bool = False,
+        base = torchvision.models.resnet50
     ):
         self.random_state_ = random_state
 
@@ -36,6 +38,7 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         self.skip_diagrams_ = skip_diagrams
         self.skip_images_ = skip_images
         self.skip_features_ = skip_features
+        self.base_ = base
 
 
     def fit(self, train: cvtda.neural_network.Dataset, val: typing.Optional[cvtda.neural_network.Dataset]):
@@ -104,14 +107,16 @@ class NNClassifier(sklearn.base.ClassifierMixin):
             skip_images = self.skip_images_,
             skip_features = self.skip_features_,
             images_n_channels = images.shape[1],
-            images_output = images_output
+            images_output = images_output,
+            base = self.base_
         ).to(self.device_).train()
 
+        base_dropout = self.n_epochs_ / 1000.0
         self.model_ = torch.nn.Sequential(
-            torch.nn.Dropout(0.4), torch.nn.LazyLinear(256), torch.nn.BatchNorm1d(256), torch.nn.GELU(),
-            torch.nn.Dropout(0.3), torch.nn.Linear(256, 128), torch.nn.BatchNorm1d(128), torch.nn.GELU(),
-            torch.nn.Dropout(0.2), torch.nn.Linear(128, 64), torch.nn.BatchNorm1d(64), torch.nn.GELU(),
-            torch.nn.Dropout(0.1), torch.nn.Linear(64, 32), torch.nn.BatchNorm1d(32), torch.nn.GELU(),
+            torch.nn.Dropout(4 * base_dropout), torch.nn.LazyLinear(256), torch.nn.BatchNorm1d(256), torch.nn.GELU(),
+            torch.nn.Dropout(3 * base_dropout), torch.nn.Linear(256, 128), torch.nn.BatchNorm1d(128), torch.nn.GELU(),
+            torch.nn.Dropout(2 * base_dropout), torch.nn.Linear(128, 64), torch.nn.BatchNorm1d(64), torch.nn.GELU(),
+            torch.nn.Dropout(1 * base_dropout), torch.nn.Linear(64, 32), torch.nn.BatchNorm1d(32), torch.nn.GELU(),
             torch.nn.Linear(32, num_classes)
         ).to(self.device_).train()
 
@@ -126,7 +131,7 @@ class NNClassifier(sklearn.base.ClassifierMixin):
         )
         
         def lr_scheduler_lambda(epoch):
-            if (self.n_epochs_ < 10) or (epoch < self.n_epochs_ // 10):
+            if epoch < self.n_epochs_ // 10:
                 return 1
             if epoch < self.n_epochs_ // 4:
                 return 0.1

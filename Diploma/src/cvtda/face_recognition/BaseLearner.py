@@ -11,13 +11,8 @@ import cvtda.neural_network
 
 
 class BaseLearner(abc.ABC):
-    def __init__(
-        self,
-        n_jobs: int = -1,
-        lang: str = 'ru', # 'en'
-    ):
+    def __init__(self, n_jobs: int = -1):
         self.n_jobs_ = n_jobs
-        self.lang_ = lang
 
     
     @abc.abstractmethod
@@ -50,20 +45,8 @@ class BaseLearner(abc.ABC):
         if ax is not None:
             ax.set_ylim(0, 1)
             ax.get_yaxis().set_ticks([])
-
-            match self.lang_:
-                case 'ru':
-                    label = "Одного человека"
-                case _:
-                    label = "Same person"
-            ax.plot(correct_dists_values, numpy.ones_like(correct_dists_values) * 0.35, 'x', label = label)
-            
-            match self.lang_:
-                case 'ru':
-                    label = "Разных людей"
-                case _:
-                    label = "Different people"
-            ax.plot(incorrect_dists_values, numpy.ones_like(incorrect_dists_values) * 0.65, 'x', label = label)
+            ax.plot(correct_dists_values, numpy.ones_like(correct_dists_values) * 0.35, 'x', label = "Same person")
+            ax.plot(incorrect_dists_values, numpy.ones_like(incorrect_dists_values) * 0.65, 'x', label = "Different people")
         return correct_dists, incorrect_dists
 
 

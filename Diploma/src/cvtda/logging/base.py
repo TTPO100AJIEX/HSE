@@ -15,6 +15,10 @@ class BaseLogger(abc.ABC):
         BaseLogger.current_logger = self.__previous
 
     @abc.abstractmethod
+    def verbosity(self) -> int:
+        pass
+
+    @abc.abstractmethod
     def print(self, data: T, *args) -> None:
         pass
 

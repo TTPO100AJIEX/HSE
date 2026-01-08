@@ -3,6 +3,7 @@ import typing
 
 import numpy
 import torch
+import torchvision
 import matplotlib.pyplot as plt
 
 import cvtda.logging
@@ -26,7 +27,6 @@ def learn(
     test_diagrams: typing.List[numpy.ndarray],
 
     n_jobs: int = 1,
-    lang: str = 'ru', # 'en'
     random_state: int = 42,
     dump_name: typing.Optional[str] = None,
 
@@ -36,7 +36,8 @@ def learn(
     nn_epochs: int = 100,
     nn_margin: int = 0.1,
     nn_latent_dim: int = 256,
-    nn_length_before_new_iter: typing.Optional[int] = None
+    nn_length_before_new_iter: typing.Optional[int] = None,
+    nn_base = torchvision.models.resnet50
 ):
     nn_train = cvtda.neural_network.Dataset(
         train_images, train_diagrams, train_features, train_labels, n_jobs = n_jobs, device = nn_device
@@ -53,7 +54,6 @@ def learn(
 
     nn_kwargs = dict(
         n_jobs = n_jobs,
-        lang = lang,
         random_state = random_state,
         device = nn_device,
         batch_size = nn_batch_size,
@@ -63,12 +63,12 @@ def learn(
         length_before_new_iter = nn_length_before_new_iter
     )
     classifiers = [
-        SimpleTopologicalLearner(n_jobs = n_jobs, lang = lang),
-        DiagramsLearner(n_jobs = n_jobs, lang = lang),
-        NNLearner(**nn_kwargs, n_epochs = nn_epochs,      skip_diagrams = True,  skip_images = False, skip_features = True),
-        NNLearner(**nn_kwargs, n_epochs = nn_epochs * 2,  skip_diagrams = True,  skip_images = True,  skip_features = False),
-        NNLearner(**nn_kwargs, n_epochs = nn_epochs,      skip_diagrams = True,  skip_images = False, skip_features = False),
-        NNLearner(**nn_kwargs, n_epochs = nn_epochs // 4, skip_diagrams = False, skip_images = True,  skip_features = True)
+        SimpleTopologicalLearner(n_jobs = n_jobs),
+        DiagramsLearner(n_jobs = n_jobs),
+        NNLearner(**nn_kwargs, n_epochs = nn_epochs,      skip_diagrams = True,  skip_images = False, skip_features = True,  base = nn_base),
+        NNLearner(**nn_kwargs, n_epochs = nn_epochs * 2,  skip_diagrams = True,  skip_images = True,  skip_features = False, base = nn_base),
+        NNLearner(**nn_kwargs, n_epochs = nn_epochs,      skip_diagrams = True,  skip_images = False, skip_features = False, base = nn_base),
+        NNLearner(**nn_kwargs, n_epochs = nn_epochs // 4, skip_diagrams = False, skip_images = True,  skip_features = True,  base = nn_base)
     ]
 
     names = [
@@ -79,25 +79,14 @@ def learn(
         'NNLearner_features_images',
         'NNLearner_diagrams'
     ]
-    match lang:
-        case 'ru':
-            display_names = [
-                'Топологические признаки',
-                'Диаграммы устойчивости',
-                'ResNet50 – базовая модель',
-                'Нейронная сеть для тополог. признаков',
-                'Комбинированная нейронная сеть',
-                'Обучаемая векторизация диаграмм'
-            ]
-        case _:
-            display_names = [
-                'Topological features',
-                'Persistence diagrams',
-                'ResNet50 – baseline model',
-                'FC over topological features',
-                'Combined neural network',
-                'Trainable vectorization'
-            ]
+    display_names = [
+        'Topological features',
+        'Persistence diagrams',
+        'ResNet – baseline model',
+        'FC over topological features',
+        'Combined neural network',
+        'Trainable vectorization'
+    ]
 
     figure, axes = plt.subplots(2, 3, figsize = (12, 5))
     for args in zip(classifiers, names, display_names, axes.flat):
@@ -114,3 +103,4 @@ def learn(
         os.makedirs(os.path.dirname(file), exist_ok = True)
         figure.savefig(file[:-4] + ".svg")
         figure.savefig(file[:-4] + ".png")
+    return figure

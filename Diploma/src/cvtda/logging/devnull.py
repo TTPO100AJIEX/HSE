@@ -8,6 +8,9 @@ class DevNullLogger(BaseLogger):
     def print(self, data: T, *args) -> None:
         pass
 
+    def verbosity(self) -> int:
+        return 0
+
     def pbar(
         self,
         data: typing.Iterable[T],

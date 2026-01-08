@@ -103,12 +103,8 @@ class Extractor(cvtda.utils.FeatureExtractorBase, abc.ABC):
             ]
         else:
             result = [ self.process_gray_(images, do_fit, dump_name) ]
-    
-        result = utils.hstack(result, self.force_numpy_())
-        if self.force_numpy_():
-            assert result.shape == (len(images), len(self.feature_names())), f"{result.shape} != {(len(images), len(self.feature_names()))}"
-        return result
-    
+        return utils.hstack(result, self.force_numpy_())
+
     @abc.abstractmethod
     def process_rgb_(self, rgb_images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         pass

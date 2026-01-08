@@ -1,6 +1,7 @@
 import typing
 
 import torch
+import torchvision
 import torch.utils.data
 import pytorch_metric_learning.miners
 import pytorch_metric_learning.losses
@@ -19,7 +20,6 @@ class NNLearner(BaseLearner):
         self,
 
         n_jobs: int = -1,
-        lang: str = 'ru', # 'en'
         random_state: int = 42,
 
         device: torch.device = torch.device("cuda"),
@@ -33,9 +33,10 @@ class NNLearner(BaseLearner):
         
         skip_diagrams: bool = False,
         skip_images: bool = False,
-        skip_features: bool = False
+        skip_features: bool = False,
+        base = torchvision.models.resnet50
     ):
-        super().__init__(n_jobs, lang)
+        super().__init__(n_jobs)
         self.random_state_ = random_state
 
         self.device_ = device
@@ -50,6 +51,7 @@ class NNLearner(BaseLearner):
         self.skip_diagrams_ = skip_diagrams
         self.skip_images_ = skip_images
         self.skip_features_ = skip_features
+        self.base_ = base
 
 
     def fit(self, train: cvtda.neural_network.Dataset, val: typing.Optional[cvtda.neural_network.Dataset]):
@@ -145,13 +147,15 @@ class NNLearner(BaseLearner):
             skip_images = self.skip_images_,
             skip_features = self.skip_features_,
             images_n_channels = images.shape[1],
-            images_output = images_output
+            images_output = images_output,
+            base = self.base_
         ).to(self.device_).train()
 
+        base_dropout = self.n_epochs_ / 1000.0
         self.model_ = torch.nn.Sequential(
-            torch.nn.Dropout(0.3), torch.nn.LazyLinear(1024), torch.nn.BatchNorm1d(1024), torch.nn.GELU(),
-            torch.nn.Dropout(0.2), torch.nn.Linear(1024, 768), torch.nn.BatchNorm1d(768), torch.nn.GELU(),
-            torch.nn.Dropout(0.1), torch.nn.Linear(768, 512), torch.nn.BatchNorm1d(512), torch.nn.GELU(),
+            torch.nn.Dropout(3 * base_dropout), torch.nn.LazyLinear(1024), torch.nn.BatchNorm1d(1024), torch.nn.GELU(),
+            torch.nn.Dropout(2 * base_dropout), torch.nn.Linear(1024, 768), torch.nn.BatchNorm1d(768), torch.nn.GELU(),
+            torch.nn.Dropout(1 * base_dropout), torch.nn.Linear(768, 512), torch.nn.BatchNorm1d(512), torch.nn.GELU(),
             torch.nn.Linear(512, self.latent_dim_)
         ).to(self.device_).train()
 

@@ -58,6 +58,7 @@ class FeatureExtractor(cvtda.utils.FeatureExtractorBase):
     ):
         self.fitted_ = False
         self.return_diagrams_ = return_diagrams
+        self.only_get_from_dump_ = only_get_from_dump
         
         extractor_kwargs = { 'n_jobs': n_jobs, 'only_get_from_dump': only_get_from_dump }
         topological_extractor_kwargs = { **extractor_kwargs, 'return_diagrams': return_diagrams }
@@ -120,5 +121,6 @@ class FeatureExtractor(cvtda.utils.FeatureExtractorBase):
         
         cvtda.logging.logger().print("Applying StandardScaler.")
         features = utils.process_iter(self.scaler_, results, do_fit)
-        assert features.shape == (len(images), len(self.feature_names()))
+        if not self.only_get_from_dump_:
+            assert features.shape == (len(images), len(self.feature_names()))
         return features
