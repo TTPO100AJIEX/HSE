@@ -23,7 +23,7 @@ class NNLearner(BaseLearner):
         random_state: int = 42,
 
         device: torch.device = torch.device("cuda"),
-        batch_size: int = 64,
+        batch_size: int = 32,
         learning_rate: float = 1e-4,
         n_epochs: int = 25,
         length_before_new_iter: typing.Optional[int] = None,
@@ -34,7 +34,7 @@ class NNLearner(BaseLearner):
         skip_diagrams: bool = False,
         skip_images: bool = False,
         skip_features: bool = False,
-        base = torchvision.models.resnet50
+        base = torchvision.models.resnet34
     ):
         super().__init__(n_jobs)
         self.random_state_ = random_state

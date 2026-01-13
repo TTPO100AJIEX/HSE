@@ -19,11 +19,11 @@ from .GeometryExtractor import GeometryExtractor
 class FeatureExtractor(cvtda.utils.FeatureExtractorBase):
     @dataclasses.dataclass(frozen = True)
     class Settings:
-        greyscale: GreyscaleExtractor.Settings
-        inverted: GreyscaleExtractor.Settings
-        filtrations: FiltrationsExtractor.Settings
-        point_clouds: PointCloudsExtractor.Settings
-        geometry: GeometryExtractor.Settings
+        greyscale: GreyscaleExtractor.Settings = GreyscaleExtractor.Settings()
+        inverted: GreyscaleExtractor.Settings = GreyscaleExtractor.Settings()
+        filtrations: FiltrationsExtractor.Settings = FiltrationsExtractor.Settings()
+        point_clouds: PointCloudsExtractor.Settings = PointCloudsExtractor.Settings()
+        geometry: GeometryExtractor.Settings = GeometryExtractor.Settings()
 
     PRESETS = cvtda.utils.FeatureExtractorBase.Presets(
         full = Settings(
@@ -51,10 +51,10 @@ class FeatureExtractor(cvtda.utils.FeatureExtractorBase):
 
     def __init__(
         self,
-        settings: Settings,
         n_jobs: int = -1,
         return_diagrams: bool = False,
         only_get_from_dump: bool = False,
+        settings: Settings = PRESETS.reduced,
     ):
         self.fitted_ = False
         self.return_diagrams_ = return_diagrams

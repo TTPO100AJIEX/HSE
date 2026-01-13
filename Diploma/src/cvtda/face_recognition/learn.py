@@ -31,13 +31,13 @@ def learn(
     dump_name: typing.Optional[str] = None,
 
     nn_device: torch.device = cvtda.neural_network.default_device,
-    nn_batch_size: int = 64,
+    nn_batch_size: int = 32,
     nn_learning_rate: float = 1e-3,
-    nn_epochs: int = 100,
+    nn_epochs: int = 25,
     nn_margin: int = 0.1,
     nn_latent_dim: int = 256,
     nn_length_before_new_iter: typing.Optional[int] = None,
-    nn_base = torchvision.models.resnet50
+    nn_base = torchvision.models.resnet34
 ):
     nn_train = cvtda.neural_network.Dataset(
         train_images, train_diagrams, train_features, train_labels, n_jobs = n_jobs, device = nn_device
@@ -82,7 +82,7 @@ def learn(
     display_names = [
         'Topological features',
         'Persistence diagrams',
-        'ResNet – baseline model',
+        'Baseline model',
         'FC over topological features',
         'Combined neural network',
         'Trainable vectorization'

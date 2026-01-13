@@ -159,7 +159,7 @@ class HeatKernel(SequenceStats):
         reduced_stats: bool = True
 
     PRESETS = cvtda.utils.FeatureExtractorBase.Presets(
-        full = Settings(reduced_stats = False), reduced = Settings(), quick = Settings(enabled = False)
+        full = Settings(reduced_stats = False), reduced = Settings(enabled = False), quick = Settings(enabled = False)
     )
     
     def __init__(self, settings = Settings()):
@@ -178,7 +178,7 @@ class PersistenceImage(SequenceStats):
         reduced_stats: bool = True
 
     PRESETS = cvtda.utils.FeatureExtractorBase.Presets(
-        full = Settings(reduced_stats = False), reduced = Settings(), quick = Settings(enabled = False)
+        full = Settings(reduced_stats = False), reduced = Settings(enabled = False), quick = Settings(enabled = False)
     )
     
     def __init__(self, settings = Settings()):

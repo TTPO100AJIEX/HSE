@@ -14,12 +14,12 @@ from .device import default_device
 def transform(diagram: torch.Tensor, dim: int):
     dim_filter = (diagram[:, 2] == dim)
     non_degenerate_filter = (diagram[:, 0] < diagram[:, 1])
-    rotation = torchph.nn.slayer.UpperDiagonalThresholdedLogTransform(0.01)
+    rotation = torchph.nn.slayer.LogStretchedBirthLifeTimeCoordinateTransform(0.01)
     return rotation(diagram[dim_filter & non_degenerate_filter][:, 0:2])
 
 def process_diagram(diags: torch.Tensor):
     diagrams, non_dummy_points = [], []
-    for dim in diags[:, :, 2].unique(sorted = False):
+    for dim in diags[:, :, 2].unique(sorted = True):
         diags_dim = [ transform(diag, dim) for diag in diags ]
         processed = torchph.nn.slayer.prepare_batch(diags_dim)
         diagrams.append(processed[0].cpu())

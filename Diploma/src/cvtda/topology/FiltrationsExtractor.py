@@ -68,14 +68,14 @@ class FiltrationExtractor(TopologicalExtractor):
 class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
     @dataclasses.dataclass(frozen = True)
     class Settings:
-        binarizer_thresholds: typing.List[float]
+        binarizer_thresholds: typing.List[float] = dataclasses.field(default_factory = lambda: [ 0.25, 0.5, 0.75 ])
 
-        height_directions: typing.Optional[typing.Iterable[typing.Tuple[float, float]]]
-        num_radial: int
-        dilation: bool
-        erosion: bool
-        signed_distance: bool
-        density_radiuses: typing.Iterable[int]
+        height_directions: typing.Optional[typing.Iterable[typing.Tuple[float, float]]] = None
+        num_radial: int = 4
+        dilation: bool = False
+        erosion: bool = False
+        signed_distance: bool = False
+        density_radiuses: typing.Iterable[int] = dataclasses.field(default_factory = lambda: [])
         
         vectorizer: DiagramVectorizer.Settings = DiagramVectorizer.Settings()
 
@@ -91,7 +91,7 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
             vectorizer = DiagramVectorizer.PRESETS.full
         ),
         reduced = Settings(
-            binarizer_thresholds = [ 0.2, 0.4, 0.6 ],
+            binarizer_thresholds = [ 0.25, 0.5, 0.75 ],
             height_directions = None,
             num_radial = 4,
             dilation = False,

@@ -41,7 +41,8 @@ class TopologicalExtractor(Extractor, abc.ABC):
 
 
     def final_dump_name_(self, dump_name: typing.Optional[str] = None):
-        return self.diagrams_dump_(dump_name) if self.return_diagrams_ else self.features_dump_(dump_name)
+        # Disable taking the final dump in Extractor. We need to process reading from dump here (to apply Scaler, e.g.)!
+        return None
     
     def diagrams_dump_(self, dump_name: typing.Optional[str]):
         return cvtda.dumping.dump_name_concat(dump_name, "diagrams")

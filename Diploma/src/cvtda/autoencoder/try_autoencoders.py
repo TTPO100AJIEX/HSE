@@ -27,11 +27,11 @@ def try_autoencoders(
     only_get_from_dump: bool = False,
 
     nn_device: torch.device = cvtda.neural_network.default_device,
-    nn_batch_size: int = 256,
+    nn_batch_size: int = 128,
     nn_learning_rate: float = 1e-3,
-    nn_epochs: int = 100,
+    nn_epochs: int = 20,
     nn_latent_dim: int = 256,
-    nn_base = torchvision.models.resnet50
+    nn_base = torchvision.models.resnet34
 ):
     without_diagrams = (train_diagrams is None) and (test_diagrams is None)
 
@@ -111,7 +111,7 @@ def try_autoencoders(
             device = nn_device,
             batch_size = nn_batch_size,
             learning_rate = nn_learning_rate,
-            n_epochs = nn_epochs // 5,
+            n_epochs = nn_epochs // 4,
             latent_dim = nn_latent_dim,
             skip_diagrams = False,
             skip_images = True,
@@ -128,7 +128,7 @@ def try_autoencoders(
     ]
     display_names = [
         'FC over topological features',
-        'ResNet – baseline model',
+        'Baseline model',
         'Combined neural network',
         'Trainable vectorization'
     ]

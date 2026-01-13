@@ -18,15 +18,15 @@ class Autoencoder:
         random_state: int = 42,
 
         device: torch.device = torch.device("cuda"),
-        batch_size: int = 256,
+        batch_size: int = 128,
         learning_rate: float = 1e-3,
-        n_epochs: int = 100,
+        n_epochs: int = 20,
         latent_dim: int = 256,
         
         skip_diagrams: bool = False,
         skip_images: bool = False,
         skip_features: bool = False,
-        base = torchvision.models.resnet50
+        base = torchvision.models.resnet34
     ):
         self.random_state_ = random_state
 

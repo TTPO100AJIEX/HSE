@@ -9,21 +9,25 @@ class NNBase(torch.nn.Module):
 
         num_diagrams: int,
         skip_diagrams: bool = False,
-        features_per_diagram: int = 64,
+        features_per_diagram: int = 8,
 
         skip_images: bool = False,
         images_n_channels: int = 3,
-        images_output: int = 1024,
+        images_output: int = 512,
 
         skip_features: bool = False,
-        features_output: int = 1024,
+        features_output: int = 512,
 
-        base = torchvision.models.resnet50
+        base = torchvision.models.resnet34
     ):
         super().__init__()
         
         def make_slayer():
-            return torchph.nn.slayer.SLayerExponential(features_per_diagram)
+            n = features_per_diagram
+            return torch.nn.Sequential(
+                torchph.nn.slayer.SLayerExponential(n),
+                torch.nn.Linear(n, n), torch.nn.BatchNorm1d(n), torch.nn.GELU(),
+            )
         self.slayers_ = None if skip_diagrams else torch.nn.ModuleList([ make_slayer() for _ in range(num_diagrams) ])
         self.slayers_compressor_ = torch.nn.Linear(num_diagrams * features_per_diagram, features_output)
 
@@ -43,10 +47,10 @@ class NNBase(torch.nn.Module):
         if self.slayers_ is not None:
             result.append(
                 self.slayers_compressor_(
-                    torch.cat([
+                    torch.hstack([
                         self.slayers_[i]((diagrams[2 * i], diagrams[2 * i + 1], diagrams[2 * i].shape[1], len(images)))
                         for i in range(len(self.slayers_))
-                    ], dim = 1)
+                    ])
                 )
             )
     
