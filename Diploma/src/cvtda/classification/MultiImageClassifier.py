@@ -112,7 +112,7 @@ class MultiImageClassifier(sklearn.base.ClassifierMixin):
 
         self.optimizer_ = torch.optim.AdamW(
             params = self.model_list_.parameters(),
-            lr = self.learning_rate_ * 100
+            lr = self.learning_rate_
         )
         
         def lr_scheduler_lambda(epoch):

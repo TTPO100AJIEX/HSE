@@ -111,12 +111,11 @@ class NNClassifier(sklearn.base.ClassifierMixin):
             base = self.base_
         ).to(self.device_).train()
 
-        base_dropout = self.n_epochs_ / 1000.0
         self.model_ = torch.nn.Sequential(
-            torch.nn.Dropout(4 * base_dropout), torch.nn.LazyLinear(256), torch.nn.BatchNorm1d(256), torch.nn.GELU(),
-            torch.nn.Dropout(3 * base_dropout), torch.nn.Linear(256, 128), torch.nn.BatchNorm1d(128), torch.nn.GELU(),
-            torch.nn.Dropout(2 * base_dropout), torch.nn.Linear(128, 64), torch.nn.BatchNorm1d(64), torch.nn.GELU(),
-            torch.nn.Dropout(1 * base_dropout), torch.nn.Linear(64, 32), torch.nn.BatchNorm1d(32), torch.nn.GELU(),
+            torch.nn.Dropout(0.4), torch.nn.LazyLinear(256), torch.nn.BatchNorm1d(256), torch.nn.GELU(),
+            torch.nn.Dropout(0.3), torch.nn.Linear(256, 128), torch.nn.BatchNorm1d(128), torch.nn.GELU(),
+            torch.nn.Dropout(0.2), torch.nn.Linear(128, 64), torch.nn.BatchNorm1d(64), torch.nn.GELU(),
+            torch.nn.Dropout(0.1), torch.nn.Linear(64, 32), torch.nn.BatchNorm1d(32), torch.nn.GELU(),
             torch.nn.Linear(32, num_classes)
         ).to(self.device_).train()
 
@@ -127,7 +126,7 @@ class NNClassifier(sklearn.base.ClassifierMixin):
 
         self.optimizer_ = torch.optim.AdamW(
             params = self.model_list_.parameters(),
-            lr = self.learning_rate_ * 100
+            lr = self.learning_rate_
         )
         
         def lr_scheduler_lambda(epoch):

@@ -43,7 +43,6 @@ if args.quick:
 
 if args.quick:
     preset = cvtda.topology.FeatureExtractor.PRESETS.quick
-    resize_transform = torchvision.transforms.v2.Resize((32, 32), antialias = True)
     classification_params = dict(
         nn_epochs = 10,
         grad_boost_max_iter = 15,
@@ -64,7 +63,6 @@ if args.quick:
     )
 else:
     preset = cvtda.topology.FeatureExtractor.PRESETS.reduced
-    resize_transform = torchvision.transforms.v2.Resize((64, 64), antialias = True)
     classification_params = dict()
     face_recognition_params = dict()
     autoencoders_params = dict()
@@ -229,25 +227,28 @@ with cvtda.logging.DevNullLogger():
     )
 
     do_download = not os.path.exists("./imagenette/imagenette2-160")
+    transform = torchvision.transforms.v2.Resize((32, 32), antialias = True)
     classification(
         'imagenette',
         torchvision.datasets.Imagenette(
-            'imagenette', split = 'train', size = '160px', transform = resize_transform, download = do_download
+            'imagenette', split = 'train', size = '160px', transform = transform, download = do_download
         ),
         torchvision.datasets.Imagenette(
-            'imagenette', split = 'val', size = '160px', transform = resize_transform, download = False
+            'imagenette', split = 'val', size = '160px', transform = transform, download = False
         )
     )
 
+    transform = torchvision.transforms.v2.Resize((32, 32), antialias = True)
     classification(
         'gtsrb',
-        torchvision.datasets.GTSRB('gtsrb', split = 'train', transform = resize_transform, download = True),
-        torchvision.datasets.GTSRB('gtsrb', split = 'test', transform = resize_transform, download = True)
+        torchvision.datasets.GTSRB('gtsrb', split = 'train', transform = transform, download = True),
+        torchvision.datasets.GTSRB('gtsrb', split = 'test', transform = transform, download = True)
     )
 
     # Download manually into 'faces' folder from https://cam-orl.co.uk/facedatabase.html
     transform = torchvision.transforms.v2.Compose([
-        resize_transform, torchvision.transforms.v2.Grayscale(),
+        torchvision.transforms.v2.Resize((32, 32), antialias = True),
+        torchvision.transforms.v2.Grayscale(),
     ])
     face_recognition(
         'faces',
@@ -257,7 +258,8 @@ with cvtda.logging.DevNullLogger():
 
     # Download manually into 'lfw' folder from https://vis-www.cs.umass.edu/lfw
     transform = torchvision.transforms.v2.Compose([
-        torchvision.transforms.v2.CenterCrop((128, 128)), resize_transform
+        torchvision.transforms.v2.CenterCrop((128, 128)), 
+        torchvision.transforms.v2.Resize((32, 32), antialias = True),
     ])
     face_recognition(
         'lfw',
@@ -277,16 +279,18 @@ with cvtda.logging.DevNullLogger():
         torchvision.datasets.CIFAR10('cifar-10', train = False),
     )
 
+    transform = torchvision.transforms.v2.Resize((32, 32), antialias = True)
     compression(
         'imagenette',
-        torchvision.datasets.Imagenette('imagenette', split = 'train', size = '160px', transform = resize_transform),
-        torchvision.datasets.Imagenette('imagenette', split = 'val', size = '160px', transform = resize_transform)
+        torchvision.datasets.Imagenette('imagenette', split = 'train', size = '160px', transform = transform),
+        torchvision.datasets.Imagenette('imagenette', split = 'val', size = '160px', transform = transform)
     )
 
+    transform = torchvision.transforms.v2.Resize((32, 32), antialias = True)
     compression(
         'gtsrb',
-        torchvision.datasets.GTSRB('gtsrb', split = 'train', transform = resize_transform),
-        torchvision.datasets.GTSRB('gtsrb', split = 'test', transform = resize_transform)
+        torchvision.datasets.GTSRB('gtsrb', split = 'train', transform = transform),
+        torchvision.datasets.GTSRB('gtsrb', split = 'test', transform = transform)
     )
 
     # Download manually into 'midv500' folder: https://doi.org/10.48550/arXiv.1807.05786

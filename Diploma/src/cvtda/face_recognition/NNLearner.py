@@ -24,11 +24,11 @@ class NNLearner(BaseLearner):
 
         device: torch.device = torch.device("cuda"),
         batch_size: int = 32,
-        learning_rate: float = 1e-4,
+        learning_rate: float = 1e-3,
         n_epochs: int = 25,
         length_before_new_iter: typing.Optional[int] = None,
 
-        margin: int = 1,
+        margin: int = 0.1,
         latent_dim: int = 256,
         
         skip_diagrams: bool = False,
@@ -151,11 +151,10 @@ class NNLearner(BaseLearner):
             base = self.base_
         ).to(self.device_).train()
 
-        base_dropout = self.n_epochs_ / 1000.0
         self.model_ = torch.nn.Sequential(
-            torch.nn.Dropout(3 * base_dropout), torch.nn.LazyLinear(1024), torch.nn.BatchNorm1d(1024), torch.nn.GELU(),
-            torch.nn.Dropout(2 * base_dropout), torch.nn.Linear(1024, 768), torch.nn.BatchNorm1d(768), torch.nn.GELU(),
-            torch.nn.Dropout(1 * base_dropout), torch.nn.Linear(768, 512), torch.nn.BatchNorm1d(512), torch.nn.GELU(),
+            torch.nn.Dropout(0.3), torch.nn.LazyLinear(1024), torch.nn.BatchNorm1d(1024), torch.nn.GELU(),
+            torch.nn.Dropout(0.2), torch.nn.Linear(1024, 768), torch.nn.BatchNorm1d(768), torch.nn.GELU(),
+            torch.nn.Dropout(0.1), torch.nn.Linear(768, 512), torch.nn.BatchNorm1d(512), torch.nn.GELU(),
             torch.nn.Linear(512, self.latent_dim_)
         ).to(self.device_).train()
 
@@ -166,7 +165,7 @@ class NNLearner(BaseLearner):
 
         self.optimizer_ = torch.optim.AdamW(
             params = self.model_list_.parameters(),
-            lr = self.learning_rate_ * 100
+            lr = self.learning_rate_
         )
         
         def lr_scheduler_lambda(epoch):

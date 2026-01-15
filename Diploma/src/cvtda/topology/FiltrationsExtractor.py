@@ -176,8 +176,12 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
         self.inner_n_jobs_ = 1
         self.do_fill_filtrations_(*shape)
         n_jobs = joblib.effective_n_jobs(self.n_jobs_)
-        self.outer_n_jobs_ = math.gcd(n_jobs, len(self.filtration_extractors_))
-        self.inner_n_jobs_ = n_jobs // self.outer_n_jobs_
+        if len(self.filtration_extractors_) > n_jobs * 3:
+            self.outer_n_jobs_ = -1
+            self.inner_n_jobs_ = 1
+        else:
+            self.outer_n_jobs_ = math.gcd(n_jobs, len(self.filtration_extractors_))
+            self.inner_n_jobs_ = n_jobs // self.outer_n_jobs_
         self.filtration_extractors_ = []
         self.do_fill_filtrations_(*shape)
     

@@ -21,7 +21,7 @@ class MiniUnet:
 
         device: torch.device = torch.device("cuda"),
         batch_size: int = 64,
-        learning_rate: float = 1e-4,
+        learning_rate: float = 1e-3,
         n_epochs: int = 100,
         remove_cross_maps: bool = False,
         
@@ -97,7 +97,7 @@ class MiniUnet:
             remove_cross_maps = self.remove_cross_maps_
         ).to(self.device_)
 
-        self.optimizer_ = torch.optim.AdamW(params = self.model_.parameters(), lr = self.learning_rate_ * 100)
+        self.optimizer_ = torch.optim.AdamW(params = self.model_.parameters(), lr = self.learning_rate_)
         
         def lr_scheduler_lambda(epoch):
             if epoch < self.n_epochs_ // 10:
