@@ -68,7 +68,7 @@ def learn(
         NNLearner(**nn_kwargs, n_epochs = nn_epochs,      skip_diagrams = True,  skip_images = False, skip_features = True,  base = nn_base),
         NNLearner(**nn_kwargs, n_epochs = nn_epochs * 2,  skip_diagrams = True,  skip_images = True,  skip_features = False, base = nn_base),
         NNLearner(**nn_kwargs, n_epochs = nn_epochs,      skip_diagrams = True,  skip_images = False, skip_features = False, base = nn_base),
-        NNLearner(**nn_kwargs, n_epochs = nn_epochs // 4, skip_diagrams = False, skip_images = True,  skip_features = True,  base = nn_base)
+        NNLearner(**nn_kwargs, n_epochs = nn_epochs // 2, skip_diagrams = False, skip_images = True,  skip_features = True,  base = nn_base)
     ]
 
     names = [

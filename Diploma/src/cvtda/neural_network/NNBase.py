@@ -2,6 +2,21 @@ import torch
 import torchph.nn.slayer
 import torchvision.models
 
+class Slayer(torch.nn.Module):
+    def __init__(self, n_elements: int):
+        super().__init__()
+        self.slayer = torchph.nn.slayer.SLayerExponential(n_elements)
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        output = self.slayer(input)
+        # There as a squeeze() at the end of SLayerExponential.forward()
+        # that breaks everything if n_elements=1 or batch_size=1
+        if len(output.shape) != 1:
+            return output
+        if self.slayer.n_elements == 1:
+            return output.unsqueeze(1)
+        return output.unsqueeze(0)
+
 
 class NNBase(torch.nn.Module):
     def __init__(
@@ -25,8 +40,7 @@ class NNBase(torch.nn.Module):
         def make_slayer():
             n = features_per_diagram
             return torch.nn.Sequential(
-                torchph.nn.slayer.SLayerExponential(n),
-                torch.nn.Linear(n, n), torch.nn.BatchNorm1d(n), torch.nn.GELU(),
+                Slayer(n), torch.nn.Linear(n, n), torch.nn.BatchNorm1d(n), torch.nn.GELU(),
             )
         self.slayers_ = None if skip_diagrams else torch.nn.ModuleList([ make_slayer() for _ in range(num_diagrams) ])
         self.slayers_compressor_ = torch.nn.Linear(num_diagrams * features_per_diagram, features_output)

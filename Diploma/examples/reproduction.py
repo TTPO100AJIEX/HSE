@@ -44,7 +44,7 @@ if args.quick:
 if args.quick:
     preset = cvtda.topology.FeatureExtractor.PRESETS.quick
     classification_params = dict(
-        nn_epochs = 10,
+        nn_epochs = 6,
         grad_boost_max_iter = 15,
         grad_boost_max_depth = 3,
         xgboost_n_classifiers = 20,
@@ -53,10 +53,10 @@ if args.quick:
         catboost_depth = 3,
     )
     face_recognition_params = dict(
-        nn_epochs = 10
+        nn_epochs = 6
     )
     autoencoders_params = dict(
-        nn_epochs = 10
+        nn_epochs = 6
     )
     segmentation_params = dict(
         n_epochs = 20
