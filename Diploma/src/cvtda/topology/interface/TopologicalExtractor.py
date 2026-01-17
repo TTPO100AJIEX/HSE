@@ -37,7 +37,7 @@ class TopologicalExtractor(Extractor, abc.ABC):
 
         self.enabled_ = enabled
         self.vectorizer_ = DiagramVectorizer(n_jobs = self.n_jobs_, settings = vectorizer_settings)
-        self.scaler_ = gtda.diagrams.Scaler(n_jobs = self.n_jobs_)
+        self.scaler_ = gtda.diagrams.Scaler(n_jobs = self.n_jobs_, function = lambda x: numpy.max(x))
 
 
     def final_dump_name_(self, dump_name: typing.Optional[str] = None):
