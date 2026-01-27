@@ -1,20 +1,19 @@
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join('../../src')))
 
-sys.path.append(os.path.abspath(os.path.join('../')))
+sys.path.append(os.path.abspath(os.path.join("../../src")))
+
+sys.path.append(os.path.abspath(os.path.join("../")))
 
 import numpy
 
-train_features = numpy.hstack([
-    numpy.load(f"1/{media_code}/train_features.npy")
-    for media_code in [ "lightbox_left", "lightbox_right", "front" ]
-])
+train_features = numpy.hstack(
+    [numpy.load(f"1/{media_code}/train_features.npy") for media_code in ["lightbox_left", "lightbox_right", "front"]]
+)
 
-test_features = numpy.hstack([
-    numpy.load(f"1/{media_code}/test_features.npy")
-    for media_code in [ "lightbox_left", "lightbox_right", "front" ]
-])
+test_features = numpy.hstack(
+    [numpy.load(f"1/{media_code}/test_features.npy") for media_code in ["lightbox_left", "lightbox_right", "front"]]
+)
 
 print(train_features.shape, test_features.shape)
 
@@ -31,11 +30,11 @@ classify(
     None,
     train_features,
     train_labels,
-    
     None,
     test_features,
     test_labels,
-    
-    nn_device = torch.device('cpu'), dump_name = "1/predictions",
-    catboost_device = 'CPU', xgboost_device = 'cpu'# , only_get_from_dump = True
+    nn_device=torch.device("cpu"),
+    dump_name="1/predictions",
+    catboost_device="CPU",
+    xgboost_device="cpu",  # , only_get_from_dump = True
 )

@@ -1,6 +1,7 @@
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join('../../src')))
+
+sys.path.append(os.path.abspath(os.path.join("../../src")))
 
 import numpy
 
@@ -17,9 +18,16 @@ import torch
 import cvtda.classification
 
 cvtda.classification.classify(
-    train_images, train_features, train_labels, None,
-    test_images, test_features, test_labels, None,
-    dump_name = "1/number_visible",
-    nn_device = torch.device('cpu'),
-    catboost_device = 'CPU', xgboost_device = 'cpu'# , only_get_from_dump = True
+    train_images,
+    train_features,
+    train_labels,
+    None,
+    test_images,
+    test_features,
+    test_labels,
+    None,
+    dump_name="1/number_visible",
+    nn_device=torch.device("cpu"),
+    catboost_device="CPU",
+    xgboost_device="cpu",  # , only_get_from_dump = True
 )

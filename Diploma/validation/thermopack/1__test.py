@@ -1,18 +1,16 @@
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join('../../src')))
 
-import tqdm
+sys.path.append(os.path.abspath(os.path.join("../../src")))
+
 import numpy
 import torchvision
 import torchvision.transforms.v2
 
-transforms = torchvision.transforms.v2.Compose([
-    torchvision.transforms.v2.Resize((48, 48), antialias = True)
-])
+transforms = torchvision.transforms.v2.Compose([torchvision.transforms.v2.Resize((48, 48), antialias=True)])
 
-train = torchvision.datasets.ImageFolder('data/train', transform = transforms)
-test = torchvision.datasets.ImageFolder('data/test', transform = transforms)
+train = torchvision.datasets.ImageFolder("data/train", transform=transforms)
+test = torchvision.datasets.ImageFolder("data/test", transform=transforms)
 
 # train_images = numpy.array([ numpy.array(item[0]) / 255 for item in tqdm.tqdm(train) ])[:40000]
 # train_labels = numpy.array([ item[1] for item in tqdm.tqdm(train) ])[:40000]
@@ -47,9 +45,16 @@ import torch
 import cvtda.classification
 
 cvtda.classification.classify(
-    train_images, train_features, train_labels, None,
-    test_images, test_features, test_labels, None,
-    dump_name = "1/predictions",
-    nn_device = torch.device('cpu'),
-    catboost_device = 'CPU', xgboost_device = 'cpu'# , only_get_from_dump = True
+    train_images,
+    train_features,
+    train_labels,
+    None,
+    test_images,
+    test_features,
+    test_labels,
+    None,
+    dump_name="1/predictions",
+    nn_device=torch.device("cpu"),
+    catboost_device="CPU",
+    xgboost_device="cpu",  # , only_get_from_dump = True
 )

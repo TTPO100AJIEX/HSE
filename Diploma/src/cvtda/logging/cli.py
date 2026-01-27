@@ -7,7 +7,12 @@ from .base import BaseLogger
 
 T = typing.TypeVar("T")
 
+
 class CLILogger(BaseLogger):
+    """
+    A logger that prints to the standard output.
+    """
+
     def __init__(self):
         pass
 
@@ -18,19 +23,12 @@ class CLILogger(BaseLogger):
         print(data, *args)
 
     def pbar(
-        self,
-        data: typing.Iterable[T],
-        total: int = None,
-        desc: typing.Optional[str] = None
+        self, data: typing.Iterable[T], total: int = None, desc: typing.Optional[str] = None
     ) -> typing.Iterable[T]:
-        return tqdm.tqdm(data, total = total, desc = desc)
+        return tqdm.tqdm(data, total=total, desc=desc)
 
-    def zip(
-        self,
-        *iterables, 
-        desc: typing.Optional[str] = None
-    ):
-        return tqdm.contrib.tzip(*iterables, desc = desc)
+    def zip(self, *iterables, desc: typing.Optional[str] = None):
+        return tqdm.contrib.tzip(*iterables, desc=desc)
 
     def set_pbar_postfix(self, pbar: tqdm.tqdm, data: dict):
         pbar.set_postfix(data)
