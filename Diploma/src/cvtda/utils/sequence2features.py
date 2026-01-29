@@ -3,7 +3,7 @@ import numpy.ma.core
 
 
 def base_(data: numpy.ndarray) -> numpy.ndarray:
-    if data is numpy.ma.core.MaskedArray:
+    if isinstance(data, numpy.ma.core.MaskedArray):
         return numpy.ma.hstack(
             [
                 numpy.ma.sum(numpy.ma.abs(data), axis=1, keepdims=True),  # manhattan norm
@@ -23,7 +23,7 @@ def base_(data: numpy.ndarray) -> numpy.ndarray:
 
 
 def extension_(data: numpy.ndarray) -> numpy.ndarray:
-    if data is numpy.ma.core.MaskedArray:
+    if isinstance(data, numpy.ma.core.MaskedArray):
         return numpy.ma.hstack(
             [
                 numpy.ma.max(data, axis=1, keepdims=True),
@@ -75,7 +75,7 @@ def sequence2features(sequence_batch: numpy.ndarray, reduced: bool = True) -> nu
     if reduced:
         return base
 
-    if sequence_batch is numpy.ma.core.MaskedArray:
+    if isinstance(sequence_batch, numpy.ma.core.MaskedArray):
         return numpy.ma.hstack([base, extension_(sequence_batch)])
     else:
         return numpy.hstack([base, extension_(sequence_batch)])

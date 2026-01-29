@@ -180,7 +180,7 @@ def classify(
             y_pred_proba = dumper.get_dump(model_dump_name)
         else:
             # Train and test
-            if classifier is NNClassifier:
+            if isinstance(classifier, NNClassifier):
                 # Different inputs for neural networks
                 classifier.fit(nn_train, nn_test)
                 y_pred_proba = classifier.predict_proba(nn_test)
