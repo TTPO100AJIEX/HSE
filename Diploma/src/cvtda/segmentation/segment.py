@@ -31,6 +31,7 @@ def segment(
     batch_size: int = 64,
     learning_rate: float = 1e-3,
     n_epochs: int = 100,
+    remove_cross_maps: bool = False,
 ):
     """
     Tries 4 UNet-based segmentation models on the given dataset.
@@ -105,7 +106,12 @@ def segment(
 
     # Initialize models.
     unet_kwargs = dict(
-        random_state=random_state, device=device, batch_size=batch_size, learning_rate=learning_rate, n_epochs=n_epochs
+        random_state=random_state,
+        device=device,
+        batch_size=batch_size,
+        learning_rate=learning_rate,
+        n_epochs=n_epochs,
+        remove_cross_maps=remove_cross_maps,
     )
     models = [
         MiniUnet(**unet_kwargs, with_images=False, with_features=False),
