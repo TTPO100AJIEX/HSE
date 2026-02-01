@@ -7,6 +7,11 @@ from .BaseLearner import BaseLearner
 
 
 class SimpleTopologicalLearner(BaseLearner):
+    """
+    Face recognition model that uses topological feature vectors
+    with Euclidean distance as the latent space.
+    """
+
     def fit(self, train: cvtda.neural_network.Dataset, val: typing.Optional[cvtda.neural_network.Dataset]):
         pass
 

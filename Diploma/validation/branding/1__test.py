@@ -1,20 +1,19 @@
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join('../../src')))
 
-sys.path.append(os.path.abspath(os.path.join('../')))
+sys.path.append(os.path.abspath(os.path.join("../../src")))
+
+sys.path.append(os.path.abspath(os.path.join("../")))
 
 import numpy
 
-train_features = numpy.hstack([
-    numpy.load(f"1/{media_code}/train_features.npy")
-    for media_code in [ "back", "front", "left", "right" ]
-])
+train_features = numpy.hstack(
+    [numpy.load(f"1/{media_code}/train_features.npy") for media_code in ["back", "front", "left", "right"]]
+)
 
-test_features = numpy.hstack([
-    numpy.load(f"1/{media_code}/test_features.npy")
-    for media_code in [ "back", "front", "left", "right" ]
-])
+test_features = numpy.hstack(
+    [numpy.load(f"1/{media_code}/test_features.npy") for media_code in ["back", "front", "left", "right"]]
+)
 
 print(train_features.shape, test_features.shape)
 
@@ -43,7 +42,7 @@ if False:
     import cvtda.utils
     import cvtda.classification
 
-    iv = cvtda.classification.InformationValueFeatureSelector(threshold = 2e-2)
+    iv = cvtda.classification.InformationValueFeatureSelector(threshold=2e-2)
     train_features = iv.fit_transform(train_features, train_labels)
     test_features = iv.transform(test_features)
 
@@ -64,21 +63,21 @@ classify(
         numpy.load("1/back/train_images.npy"),
         numpy.load("1/front/train_images.npy"),
         numpy.load("1/left/train_images.npy"),
-        numpy.load("1/right/train_images.npy")
+        numpy.load("1/right/train_images.npy"),
     ],
     train_features,
     train_labels,
-    
     [
         numpy.load("1/back/test_images.npy"),
         numpy.load("1/front/test_images.npy"),
         numpy.load("1/left/test_images.npy"),
-        numpy.load("1/right/test_images.npy")
+        numpy.load("1/right/test_images.npy"),
     ],
     test_features,
     test_labels,
-    
-    nn_device = torch.device('cpu'), dump_name = "1/predictions",
-    catboost_device = 'CPU', xgboost_device = 'cpu',
-    label_names = [ "no", "other", "yandex", "yango" ], # , only_get_from_dump = True
+    nn_device=torch.device("cpu"),
+    dump_name="1/predictions",
+    catboost_device="CPU",
+    xgboost_device="cpu",
+    label_names=["no", "other", "yandex", "yango"],  # , only_get_from_dump = True
 )

@@ -2,6 +2,7 @@ import torch
 
 from .conv import make_conv
 
+
 class Bottom(torch.nn.Module):
     def __init__(
         self,
@@ -10,7 +11,7 @@ class Bottom(torch.nn.Module):
         with_images: bool,
         with_features: bool,
         in_channels: int,
-        out_channels: int
+        out_channels: int,
     ):
         super().__init__()
         self.with_images = with_images
@@ -23,12 +24,20 @@ class Bottom(torch.nn.Module):
 
         flat_shape = torch.nn.Flatten()(images_example).shape[1]
         self.features = torch.nn.Sequential(
-            torch.nn.Linear(features_example.shape[1], 4096), torch.nn.BatchNorm1d(4096), torch.nn.GELU(),
-            torch.nn.Linear(4096, 2048), torch.nn.BatchNorm1d(2048), torch.nn.GELU(),
-            torch.nn.Linear(2048, 1024), torch.nn.BatchNorm1d(1024), torch.nn.GELU(),
-            torch.nn.Linear(1024, flat_shape), torch.nn.BatchNorm1d(flat_shape), torch.nn.GELU()
+            torch.nn.Linear(features_example.shape[1], 4096),
+            torch.nn.BatchNorm1d(4096),
+            torch.nn.GELU(),
+            torch.nn.Linear(4096, 2048),
+            torch.nn.BatchNorm1d(2048),
+            torch.nn.GELU(),
+            torch.nn.Linear(2048, 1024),
+            torch.nn.BatchNorm1d(1024),
+            torch.nn.GELU(),
+            torch.nn.Linear(1024, flat_shape),
+            torch.nn.BatchNorm1d(flat_shape),
+            torch.nn.GELU(),
         )
-        
+
     def forward(self, images: torch.Tensor, features: torch.Tensor):
         if not self.with_features and not self.with_images:
             return self.conv(torch.zeros_like(images))
@@ -42,4 +51,4 @@ class Bottom(torch.nn.Module):
             data_in.append(images)
         if self.with_features:
             data_in.append(features)
-        return self.conv(torch.cat(data_in, dim = 1))
+        return self.conv(torch.cat(data_in, dim=1))
