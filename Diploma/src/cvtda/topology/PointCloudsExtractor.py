@@ -64,3 +64,11 @@ class PointCloudsExtractor(TopologicalExtractor):
 
         point_clouds = cvtda.utils.image2pointcloud(images, self.n_jobs_)
         return utils.process_iter_dump(self.persistence_, point_clouds, do_fit, self.diagrams_dump_(dump_name))
+
+    def explain_gray_diagram_(
+        self,
+        diagram: numpy.ndarray,
+        diagram_explanation: cvtda.utils.FeatureExplanation.PersistenceDiagram,
+        image: numpy.ndarray,
+    ) -> cvtda.utils.FeatureExplanation:
+        raise NotImplementedError

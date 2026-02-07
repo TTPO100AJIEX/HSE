@@ -57,6 +57,23 @@ class Vectorizer(cvtda.utils.FeatureExtractorBase):
         assert self.fitted_ is True, "fit() must be called before feature_names()"
         return self.feature_names_
 
+    def explain(self, feature_name: str, diagram: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        if (diagram[:, 1] - diagram[:, 0] > 0).sum() == 0:
+            return cvtda.utils.FeatureExplanation(messages=[f"Persistence diagram is empty"])
+        feature_idx = int(feature_name)
+        original = self.transform(numpy.array([diagram]))[0][feature_idx]
+        stats = []
+        for i in range(len(diagram)):
+            cpy = diagram.copy()
+            cpy[i][0] = 0.0
+            cpy[i][1] = 0.0
+            computed = self.transform(numpy.array([cpy]))[0][feature_idx]
+            stats.append(numpy.abs(original - computed))
+        explanation = cvtda.utils.FeatureExplanation.PersistenceDiagram(
+            diagram=diagram.copy(), per_point_stats=numpy.array(stats)
+        )
+        return cvtda.utils.FeatureExplanation(persistence_diagrams=[explanation])
+
 
 class SequenceStats(Vectorizer):
     """
@@ -371,6 +388,13 @@ class NumberOfPoints(Proxy):
     def __init__(self, settings=Settings()):
         super().__init__(gtda.diagrams.NumberOfPoints(n_jobs=1), settings.enabled)
 
+    def explain(self, feature_name: str, diagram: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        feature_idx = int(feature_name)
+        features = self.transform(numpy.array([diagram]))[0]
+        return cvtda.utils.FeatureExplanation(
+            messages=[f"Number of points in the H{feature_idx} diagram is {features[feature_idx]}"]
+        )
+
 
 class Lifetime(SequenceStats):
     """
@@ -616,3 +640,9 @@ class DiagramVectorizer(cvtda.utils.FeatureExtractorBase):
 
         batch = self.filtering_.transform(batch)
         return numpy.hstack([extractor.transform(batch) for extractor in self.extractors_])
+
+    def explain(self, feature_name: str, diagram: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        assert self.fitted_ is True, "fit() must be called before feature_names()"
+        extractor_name, subfeature_name = self.unnest_feature_name(feature_name)
+        extractor_idx = DiagramVectorizer.EXTRACTOR_NAMES.index(extractor_name)
+        return self.extractors_[extractor_idx].explain(subfeature_name, diagram)

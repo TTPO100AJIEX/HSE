@@ -6,28 +6,31 @@ import numpy
 import joblib
 import itertools
 import gtda.images
-import gtda.homology
 
 import cvtda.utils
 import cvtda.logging
 
 from . import utils
 import cvtda.dumping
-from .interface import TopologicalExtractor
 from .DiagramVectorizer import DiagramVectorizer
+from .GreyscaleExtractor import GreyscaleExtractor
 
 
-class FiltrationExtractor(TopologicalExtractor):
+class FiltrationExtractor(GreyscaleExtractor):
     """
     Binarizes the images, computes the filtration, and uses cubical persistence to calculate the features.
     """
 
+    @dataclasses.dataclass(frozen=True)
+    class Settings:
+        filtration_class: typing.Any
+        filtation_kwargs: dict
+        binarizer_threshold: float
+        greyscale_settings: GreyscaleExtractor.Settings = GreyscaleExtractor.Settings()
+
     def __init__(
         self,
-        filtration_class,
-        filtation_kwargs: dict,
-        binarizer_threshold: float,
-        diagram_settings: DiagramVectorizer.Settings,
+        settings: Settings,
         n_jobs: int = -1,
         return_diagrams: bool = False,
         only_get_from_dump: bool = False,
@@ -52,32 +55,16 @@ class FiltrationExtractor(TopologicalExtractor):
             If true, all results will be obtained from dump, and no computations will be performed.
         """
         super().__init__(
-            enabled=True,
-            filtration_class=filtration_class,
-            filtation_kwargs=filtation_kwargs,
-            binarizer_threshold=binarizer_threshold,
-            vectorizer_settings=diagram_settings,
-            supports_rgb=False,
             n_jobs=n_jobs,
             return_diagrams=return_diagrams,
-            diagram_settings=diagram_settings,
+            settings=settings.greyscale_settings,
             only_get_from_dump=only_get_from_dump,
             **kwargs,
         )
+        self.binarizer_ = gtda.images.Binarizer(threshold=settings.binarizer_threshold, n_jobs=self.n_jobs_)
+        self.filtration_ = settings.filtration_class(**settings.filtation_kwargs, n_jobs=self.n_jobs_)
 
-        self.binarizer_ = gtda.images.Binarizer(threshold=binarizer_threshold, n_jobs=self.n_jobs_)
-        self.filtration_ = filtration_class(**filtation_kwargs, n_jobs=self.n_jobs_)
-        self.persistence_ = None
-
-    def get_diagrams_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
-        cvtda.logging.logger().print(
-            f"FiltrationExtractor: processing {dump_name}, do_fit = {do_fit}, filtration = {self.filtration_}"
-        )
-
-        if do_fit and (self.persistence_ is None):
-            dims = list(range(len(images.shape) - 1))
-            self.persistence_ = gtda.homology.CubicalPersistence(homology_dimensions=dims, n_jobs=self.n_jobs_)
-
+    def process_images_(self, images: numpy.ndarray, do_fit: bool):
         # Binarization
         bin_images = utils.process_iter(self.binarizer_, images, do_fit)
         assert bin_images.shape == images.shape
@@ -85,9 +72,22 @@ class FiltrationExtractor(TopologicalExtractor):
         # Filtration
         filtrations = utils.process_iter(self.filtration_, bin_images, do_fit)
         assert filtrations.shape == images.shape
+        return filtrations
 
-        # Persistence
-        return utils.process_iter_dump(self.persistence_, filtrations, do_fit, self.diagrams_dump_(dump_name))
+    def get_diagrams_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
+        cvtda.logging.logger().print(
+            f"FiltrationExtractor: processing {dump_name}, do_fit = {do_fit}, filtration = {self.filtration_}"
+        )
+        return super().get_diagrams_(self.process_images_(images, do_fit), do_fit, dump_name)
+
+    def explain_gray_diagram_(
+        self,
+        diagram: numpy.ndarray,
+        diagram_explanation: cvtda.utils.FeatureExplanation.PersistenceDiagram,
+        image: numpy.ndarray,
+    ) -> cvtda.utils.FeatureExplanation:
+        image = self.process_images_(numpy.array([image]), False)[0]
+        return super().explain_gray_diagram_(diagram, diagram_explanation, image)
 
 
 class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
@@ -171,7 +171,7 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
 
     def __init__(
         self,
-        settings: Settings,
+        settings: Settings = Settings(),
         n_jobs: int = -1,
         return_diagrams: bool = False,
         only_get_from_dump: bool = False,
@@ -210,6 +210,14 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
         result = self.do_work_(images, do_fit=True, dump_name=dump_name)
         self.fitted_ = True
         return result
+
+    def explain(self, feature_name: str, image: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        assert self.fitted_ is True, "fit() must be called before feature_names()"
+        extractor_name, subfeature_name = self.unnest_feature_name(feature_name)
+        for extractor, _, readable_name in self.filtration_extractors_:
+            if readable_name == extractor_name:
+                return extractor.explain(subfeature_name, image)
+        assert False, f"Feature name {feature_name} is malformed"
 
     def do_work_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
         """
@@ -258,7 +266,7 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
         # and the parallelization level used within each filtration.
         n_jobs = joblib.effective_n_jobs(self.n_jobs_)
         if len(self.filtration_extractors_) > n_jobs * 3:
-            self.outer_n_jobs_ = -1
+            self.outer_n_jobs_ = n_jobs
             self.inner_n_jobs_ = 1
         else:
             self.outer_n_jobs_ = math.gcd(n_jobs, len(self.filtration_extractors_))
@@ -278,13 +286,18 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
 
     def make_filtration_(self, filtration_class, filtation_kwargs: dict, binarizer_threshold: float):
         return FiltrationExtractor(
-            filtration_class,
-            filtation_kwargs,
-            binarizer_threshold,
-            self.settings_.vectorizer,
             n_jobs=self.inner_n_jobs_,
             return_diagrams=self.return_diagrams_,
             only_get_from_dump=self.only_get_from_dump_,
+            settings=FiltrationExtractor.Settings(
+                filtration_class=filtration_class,
+                filtation_kwargs=filtation_kwargs,
+                binarizer_threshold=binarizer_threshold,
+                greyscale_settings=GreyscaleExtractor.Settings(
+                    enabled=True,
+                    vectorizer=self.settings_.vectorizer,
+                ),
+            ),
         )
 
     def add_height_filtrations_(self, binarizer_threshold: float, *shape: typing.List[int]):

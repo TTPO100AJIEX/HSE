@@ -85,6 +85,7 @@ class GrayGeometryExtractor(cvtda.utils.FeatureExtractorBase):
             Whether to compute the local curvature features.
         """
 
+        enabled: bool = True
         reduced_stats: bool = True
 
         daisy: bool = True
@@ -127,19 +128,19 @@ class GrayGeometryExtractor(cvtda.utils.FeatureExtractorBase):
         self.feature_names_ = []
         self.reduced_stats_ = settings.reduced_stats
         self.features_mask = [
-            settings.daisy,
-            settings.sift,
-            settings.orb,
-            settings.hog,
-            settings.basic,
-            settings.blur_effect,
-            settings.centroid,
-            settings.inertia_tensor_eigvals,
-            settings.moments,
-            settings.moments_central,
-            settings.moments_hu,
-            settings.shannon_entropy,
-            settings.curvature,
+            settings.enabled and settings.daisy,
+            settings.enabled and settings.sift,
+            settings.enabled and settings.orb,
+            settings.enabled and settings.hog,
+            settings.enabled and settings.basic,
+            settings.enabled and settings.blur_effect,
+            settings.enabled and settings.centroid,
+            settings.enabled and settings.inertia_tensor_eigvals,
+            settings.enabled and settings.moments,
+            settings.enabled and settings.moments_central,
+            settings.enabled and settings.moments_hu,
+            settings.enabled and settings.shannon_entropy,
+            settings.enabled and settings.curvature,
         ]
 
     def feature_names(self) -> typing.List[str]:
@@ -160,12 +161,18 @@ class GrayGeometryExtractor(cvtda.utils.FeatureExtractorBase):
         assert self.fitted_ is True, "fit() must be called before transform()"
 
         def process_one_(gray_image: numpy.ndarray) -> numpy.ndarray:
-            return numpy.nan_to_num(numpy.concatenate(self.calc_raw_(gray_image)), 0)
+            raw = self.calc_raw_(gray_image)
+            if len(raw) == 0:
+                return numpy.empty((0,))
+            return numpy.nan_to_num(numpy.concatenate(raw), 0)
 
         pbar = cvtda.logging.logger().pbar(gray_images, desc="GrayGeometryExtractor")
         features = numpy.stack(cvtda.utils.parallel(process_one_, pbar, n_jobs=self.n_jobs_))
         assert features.shape == (len(gray_images), len(self.feature_names()))
         return features
+
+    def explain(self, feature_name: str, input: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        raise NotImplementedError
 
     def calc_raw_(self, gray_image: numpy.ndarray) -> typing.List[numpy.ndarray]:
         """
@@ -327,6 +334,7 @@ class RGBGeometryExtractor(cvtda.utils.FeatureExtractorBase):
             Whether to compute the correlations between color channels.
         """
 
+        enabled: bool = True
         reduced_stats: bool = True
 
         hog: bool = True
@@ -348,12 +356,12 @@ class RGBGeometryExtractor(cvtda.utils.FeatureExtractorBase):
         self.feature_names_ = []
         self.reduced_stats_ = settings.reduced_stats
         self.features_mask = [
-            settings.hog,
-            settings.centroid,
-            settings.inertia_tensor_eigvals,
-            settings.moments,
-            settings.moments_central,
-            settings.corr_coef,
+            settings.enabled and settings.hog,
+            settings.enabled and settings.centroid,
+            settings.enabled and settings.inertia_tensor_eigvals,
+            settings.enabled and settings.moments,
+            settings.enabled and settings.moments_central,
+            settings.enabled and settings.corr_coef,
         ]
 
     def feature_names(self) -> typing.List[str]:
@@ -374,12 +382,18 @@ class RGBGeometryExtractor(cvtda.utils.FeatureExtractorBase):
         assert self.fitted_ is True, "fit() must be called before transform()"
 
         def process_one_(rgb_image: numpy.ndarray) -> numpy.ndarray:
-            return numpy.nan_to_num(numpy.concatenate(self.calc_raw_(rgb_image)), 0)
+            raw = self.calc_raw_(rgb_image)
+            if len(raw) == 0:
+                return numpy.empty((0,))
+            return numpy.nan_to_num(numpy.concatenate(raw), 0)
 
         pbar = cvtda.logging.logger().pbar(rgb_images, desc="RGBGeometryExtractor")
         features = numpy.stack(cvtda.utils.parallel(process_one_, pbar, n_jobs=self.n_jobs_))
         assert features.shape == (len(rgb_images), len(self.feature_names()))
         return features
+
+    def explain(self, feature_name: str, input: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        raise NotImplementedError
 
     def calc_raw_(self, rgb_image: numpy.ndarray) -> typing.List[numpy.ndarray]:
         """
@@ -472,6 +486,7 @@ class MultidimensionalGeometryExtractor(cvtda.utils.FeatureExtractorBase):
             Whether to compute the eigenvalues of the intertia vector.
         """
 
+        enabled: bool = True
         reduced_stats: bool = True
 
         basic: bool = True
@@ -493,12 +508,12 @@ class MultidimensionalGeometryExtractor(cvtda.utils.FeatureExtractorBase):
         self.feature_names_ = []
         self.reduced_stats_ = settings.reduced_stats
         self.features_mask = [
-            settings.basic,
-            settings.blur_effect,
-            settings.centroid,
-            settings.inertia_tensor_eigvals,
-            settings.moments,
-            settings.moments_central,
+            settings.enabled and settings.basic,
+            settings.enabled and settings.blur_effect,
+            settings.enabled and settings.centroid,
+            settings.enabled and settings.inertia_tensor_eigvals,
+            settings.enabled and settings.moments,
+            settings.enabled and settings.moments_central,
         ]
 
     def feature_names(self) -> typing.List[str]:
@@ -521,12 +536,18 @@ class MultidimensionalGeometryExtractor(cvtda.utils.FeatureExtractorBase):
         assert self.fitted_ is True, "fit() must be called before transform()"
 
         def process_one_(nd_image: numpy.ndarray) -> numpy.ndarray:
-            return numpy.nan_to_num(numpy.concatenate(self.calc_raw_(nd_image)), 0)
+            raw = self.calc_raw_(nd_image)
+            if len(raw) == 0:
+                return numpy.empty((0,))
+            return numpy.nan_to_num(numpy.concatenate(raw), 0)
 
         pbar = cvtda.logging.logger().pbar(nd_images, desc="MultidimensionalGeometryExtractor")
         features = numpy.stack(cvtda.utils.parallel(process_one_, pbar, n_jobs=self.n_jobs_))
         assert features.shape == (len(nd_images), len(self.feature_names()))
         return features
+
+    def explain(self, feature_name: str, input: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        raise NotImplementedError
 
     def calc_raw_(self, nd_image: numpy.ndarray) -> typing.List[numpy.ndarray]:
         """
@@ -651,3 +672,9 @@ class GeometryExtractor(Extractor):
             return self.gray_extractor_.feature_names()
         else:
             return self.multidimensional_extractor_.feature_names()
+
+    def explain_rgb_(self, feature_name: str, image: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        raise NotImplementedError
+
+    def explain_gray_(self, feature_name: str, image: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        raise NotImplementedError

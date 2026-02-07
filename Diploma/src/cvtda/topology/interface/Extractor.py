@@ -79,6 +79,25 @@ class Extractor(cvtda.utils.FeatureExtractorBase, abc.ABC):
         self.fitted_ = True
         return result
 
+    def explain(self, feature_name: str, image: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        if self.is_rgb_(self.fit_dimensions_):
+            extractor_name, subfeature_name = self.unnest_feature_name(feature_name)
+            match extractor_name:
+                case "rgb":
+                    return self.explain_rgb_(subfeature_name, image)
+                case "gray":
+                    return self.gray_extractor_.explain(subfeature_name, image)
+                case "red":
+                    return self.red_extractor_.explain(subfeature_name, image)
+                case "green":
+                    return self.green_extractor_.explain(subfeature_name, image)
+                case "blue":
+                    return self.blue_extractor_.explain(subfeature_name, image)
+                case __:
+                    assert False, f"Feature name {feature_name} is malformed"
+        else:
+            return self.explain_gray_(feature_name, image)
+
     def is_rgb_(self, shape) -> bool:
         return (len(shape) == 3) and (shape[2] == 3)
 
@@ -216,4 +235,12 @@ class Extractor(cvtda.utils.FeatureExtractorBase, abc.ABC):
         ``list[str]``
             Feature names.
         """
+        pass
+
+    @abc.abstractmethod
+    def explain_rgb_(self, feature_name: str, image: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        pass
+
+    @abc.abstractmethod
+    def explain_gray_(self, feature_name: str, image: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
         pass

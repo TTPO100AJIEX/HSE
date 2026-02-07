@@ -4,6 +4,7 @@ import typing
 import numpy
 import gtda.diagrams
 
+import cvtda.utils
 import cvtda.logging
 import cvtda.dumping
 
@@ -98,6 +99,18 @@ class TopologicalExtractor(Extractor, abc.ABC):
             return []
         return self.vectorizer_.feature_names()
 
+    def explain_rgb_(self, feature_name: str, image: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        raise NotImplementedError
+
+    def explain_gray_(self, feature_name: str, image: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
+        with cvtda.logging.DevNullLogger():
+            raw_diagrams = self.get_diagrams_(numpy.array([image]), do_fit=False)
+        diagrams = numpy.nan_to_num(self.scaler_.transform(raw_diagrams), 0)
+        explanation = self.vectorizer_.explain(feature_name, diagrams[0])
+        for diagram_explanation in explanation.persistence_diagrams:
+            explanation.extend(self.explain_gray_diagram_(raw_diagrams[0], diagram_explanation, image))
+        return explanation
+
     def do_work_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         """
         Performs the actual computations for a batch of images.
@@ -165,4 +178,13 @@ class TopologicalExtractor(Extractor, abc.ABC):
         ``list[numpy.ndarray]``
             Persistence diagrams.
         """
+        pass
+
+    @abc.abstractmethod
+    def explain_gray_diagram_(
+        self,
+        diagram: numpy.ndarray,
+        diagram_explanation: cvtda.utils.FeatureExplanation.PersistenceDiagram,
+        image: numpy.ndarray,
+    ) -> cvtda.utils.FeatureExplanation:
         pass
