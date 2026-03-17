@@ -28,13 +28,11 @@ class FeatureExplanation:
         def get_best_points(self):
             non_zero_stats = self.per_point_stats[self.diagram[:, 1] - self.diagram[:, 0] > 0]
             threshold = max(numpy.percentile(non_zero_stats, 75), 1e-8)
-            
+
             best_idx = numpy.argsort(self.per_point_stats)[::-1]
             return best_idx[self.per_point_stats[best_idx] >= threshold]
 
         def display(self, ax: matplotlib.axes.Axes):
-            print(self.diagram)
-            print(self.get_best_points())
             def draw(diagram, description: str):
                 for dim in range(int(numpy.max(diagram[:, 2], initial=0)) + 1):
                     points = diagram[diagram[:, 2] == dim]
@@ -44,7 +42,7 @@ class FeatureExplanation:
 
             limits = [-0.1, self.diagram[:, 1].max() * 1.1]
             draw(self.diagram[self.get_best_points(), :], "Good")
-            draw(numpy.delete(self.diagram, self.get_best_points(), axis = 0), "Bad")
+            draw(numpy.delete(self.diagram, self.get_best_points(), axis=0), "Bad")
             ax.plot(limits, limits, linestyle="dashed", color="black")
 
             ax.set_xlim(*limits)
@@ -57,19 +55,33 @@ class FeatureExplanation:
         class Point:
             x: float
             y: float
+            s: typing.Optional[float] = None
             label: typing.Optional[str] = None
+            facecolor: typing.Optional[str] = None
+            edgecolor: typing.Optional[str] = None
 
-        image: numpy.ndarray
+        @dataclasses.dataclass
+        class Line:
+            x: typing.List[float]
+            y: typing.List[float]
+
+        image: typing.Optional[numpy.ndarray] = None
         title: typing.Optional[str] = None
         mask: typing.Optional[numpy.ndarray] = None
         points: typing.List[Point] = dataclasses.field(default_factory=lambda: [])
+        lines: typing.List[Line] = dataclasses.field(default_factory=lambda: [])
 
         def display(self, ax: matplotlib.axes.Axes):
-            ax.imshow(self.image, cmap="gray")
+            if self.image is not None:
+                ax.imshow(self.image, cmap="gray")
             if self.title is not None:
                 ax.set_title(self.title)
             for point in self.points:
-                ax.scatter(point.x, point.y, label=point.label)
+                ax.scatter(
+                    point.x, point.y, point.s, label=point.label, facecolor=point.facecolor, edgecolor=point.edgecolor
+                )
+            for line in self.lines:
+                ax.plot(line.x, line.y)
             if self.mask is not None:
                 ax.imshow(self.mask, cmap="gray", alpha=0.75)
             ax.legend()
@@ -84,14 +96,14 @@ class FeatureExplanation:
         self.messages.extend(other.messages)
         self.visualizations.extend(other.visualizations)
 
-    def display(self, feature_name: str):
+    def display(self, feature_name: str, with_diagrams: bool = True):
         print(f"Explaining {feature_name}:")
         for message in self.messages:
             print(f"    {message}")
 
         matplotlib.rcParams.update({"font.size": 6})
 
-        if len(self.persistence_diagrams) != 0:
+        if with_diagrams and len(self.persistence_diagrams) != 0:
             fig, axes = make_axes(len(self.persistence_diagrams), 3)
             fig.suptitle(feature_name)
             for ax, diagram_explanation in zip(axes, self.persistence_diagrams):
@@ -99,7 +111,7 @@ class FeatureExplanation:
             fig.tight_layout()
 
         if len(self.visualizations) != 0:
-            fig, axes = make_axes(len(self.visualizations), 1.5)
+            fig, axes = make_axes(len(self.visualizations), 2)
             fig.suptitle(feature_name)
             for ax, visualization in zip(axes, self.visualizations):
                 visualization.display(ax)

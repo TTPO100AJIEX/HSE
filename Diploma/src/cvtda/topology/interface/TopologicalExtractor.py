@@ -100,7 +100,9 @@ class TopologicalExtractor(Extractor, abc.ABC):
         return self.vectorizer_.feature_names()
 
     def explain_rgb_(self, feature_name: str, image: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
-        raise NotImplementedError
+        if not self.supports_rgb_:
+            return
+        return self.explain_gray_(feature_name, image)
 
     def explain_gray_(self, feature_name: str, image: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
         with cvtda.logging.DevNullLogger():

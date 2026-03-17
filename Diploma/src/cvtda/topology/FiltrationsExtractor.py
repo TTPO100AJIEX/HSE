@@ -54,11 +54,14 @@ class FiltrationExtractor(GreyscaleExtractor):
         only_get_from_dump : ``bool``, default `False`
             If true, all results will be obtained from dump, and no computations will be performed.
         """
+        if "raw_settings" in kwargs:
+            settings = kwargs.pop("raw_settings")
         super().__init__(
             n_jobs=n_jobs,
             return_diagrams=return_diagrams,
             settings=settings.greyscale_settings,
             only_get_from_dump=only_get_from_dump,
+            raw_settings=settings,
             **kwargs,
         )
         self.binarizer_ = gtda.images.Binarizer(threshold=settings.binarizer_threshold, n_jobs=self.n_jobs_)

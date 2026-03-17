@@ -80,23 +80,25 @@ class Extractor(cvtda.utils.FeatureExtractorBase, abc.ABC):
         return result
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
-        if self.is_rgb_(self.fit_dimensions_):
-            extractor_name, subfeature_name = self.unnest_feature_name(feature_name)
-            match extractor_name:
-                case "rgb":
-                    return self.explain_rgb_(subfeature_name, image)
-                case "gray":
-                    return self.gray_extractor_.explain(subfeature_name, image)
-                case "red":
-                    return self.red_extractor_.explain(subfeature_name, image)
-                case "green":
-                    return self.green_extractor_.explain(subfeature_name, image)
-                case "blue":
-                    return self.blue_extractor_.explain(subfeature_name, image)
-                case __:
-                    assert False, f"Feature name {feature_name} is malformed"
-        else:
-            return self.explain_gray_(feature_name, image)
+        with cvtda.logging.DevNullLogger():
+            if self.is_rgb_(self.fit_dimensions_):
+                extractor_name, subfeature_name = self.unnest_feature_name(feature_name)
+                match extractor_name:
+                    case "rgb":
+                        return self.explain_rgb_(subfeature_name, image)
+                    case "gray":
+                        gray_image = cvtda.utils.rgb2gray([image], 1)[0]
+                        return self.gray_extractor_.explain(subfeature_name, gray_image)
+                    case "red":
+                        return self.red_extractor_.explain(subfeature_name, image[:, :, 0])
+                    case "green":
+                        return self.green_extractor_.explain(subfeature_name, image[:, :, 1])
+                    case "blue":
+                        return self.blue_extractor_.explain(subfeature_name, image[:, :, 2])
+                    case __:
+                        assert False, f"Feature name {feature_name} is malformed"
+            else:
+                return self.explain_gray_(feature_name, image)
 
     def is_rgb_(self, shape) -> bool:
         return (len(shape) == 3) and (shape[2] == 3)
