@@ -120,53 +120,56 @@ class ZIGZAG:
         self.reps = reps 
         self.sID = {}
 
-    def generate_simplex_tree(self, reps = None, params = None, labels=None):
+    def generate_simplex_tree(self, reps=None, params=None, labels=None, knn_graphs=None):
         if labels is not None:
-	        print("Generating simplex tree with labels")
+            print("Generating simplex tree with labels")
         else:
             print("Generating simplex tree without labels")
-	   
+
         if params is None:
             params = self.params
         if reps is None:
             reps = self.reps
+
+        n_layers = len(knn_graphs) if knn_graphs is not None else len(reps)
         simplices = []
         simplices_padded = []
         simplices_set = set()
-        
-        for i in tqdm(range(len(reps))):
+
+        for i in tqdm(range(n_layers)):
             simplices_padded.append([])
-            G=sklearn.neighbors.kneighbors_graph(reps[i], n_neighbors= params['knn'])
-            
-            
+
+            if knn_graphs is not None:
+                G = knn_graphs[i]
+                n_vertices = G.shape[0]
+            else:
+                G = sklearn.neighbors.kneighbors_graph(reps[i], n_neighbors=params['knn'])
+                n_vertices = len(reps[i])
+
             G_arr = G.toarray()
-            S = gd.SimplexTree()                    # most time spent building the simplex tree
-            #ind = np.array(list_for_numpy)
-            ind=np.array(np.where(G_arr ==1)).T
-            # adding vertices to the simplex tree
-            for k in range(len(reps[i])): 
-                S.insert([k])    
+            S = gd.SimplexTree()
+            ind = np.array(np.where(G_arr == 1)).T
+
+            for k in range(n_vertices):
+                S.insert([k])
             for k in range(len(ind)):
-                u,v = ind[k]
+                u, v = ind[k]
                 if labels is not None:
                     if labels[u] != labels[v]:
                         S.insert(list(ind[k]))
-                else: 
+                else:
                     S.insert(list(ind[k]))
-                
+
             S.expansion(params['dim'])
 
-            for s in S.get_skeleton(params['dim']):                
-                if(tuple(s[0]) not in simplices_set):
+            for s in S.get_skeleton(params['dim']):
+                if tuple(s[0]) not in simplices_set:
                     self.sID[tuple(s[0])] = len(simplices)
                     simplices.append(s[0])
                     simplices_set.add(tuple(s[0]))
-
-                ## we pad simplices with the last appearing number 
-                ## in order to have homogeneous arrays for each layer
                 simplices_padded[i].append(self.sID[tuple(s[0])])
-        
-        return simplices,simplices_padded
+
+        return simplices, simplices_padded
     
     def compute_layers_with_intersection(self,simplices_padded):
         layers = []

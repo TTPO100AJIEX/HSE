@@ -71,3 +71,36 @@ class TopologicalAnalyzer:
             'filtration': filtration,
             'times': times
         }
+
+    @staticmethod
+    def compute_zigzag_barcodes_from_knn_graphs(
+        knn_graphs: list,
+        params: Optional[Dict] = None,
+    ) -> Dict[str, Any]:
+        """Compute zigzag persistent homology barcodes from precomputed k-NN graphs.
+
+        knn_graphs: list of L sparse matrices (one per layer), each shape (N, N).
+        params:     dict with keys 'dim' (max simplex dimension, default 3).
+        """
+        if params is None:
+            params = {"knn": 4, "dim": 3}
+
+        zigclass = ZIGZAG(params)
+        simplices, simplices_padded = zigclass.generate_simplex_tree(knn_graphs=knn_graphs)
+        layers = zigclass.compute_layers_with_intersection(simplices_padded)
+        filtration, times = zigclass.compute_filtration_times(simplices, layers)
+        zz, diagrams, cells = zigclass.compute_zigzag_persistence(filtration, times)
+
+        diagrams_numpy = TopologicalAnalyzer.convert_diagrams_to_numpy(diagrams)
+        converted_diagrams = [np.array(dgm) // 2 for dgm in diagrams_numpy]
+        dionysus_diagrams = [d.Diagram(dgm) for dgm in converted_diagrams]
+
+        return {
+            'diagrams': dionysus_diagrams,
+            'raw_diagrams': diagrams_numpy,
+            'converted_diagrams': converted_diagrams,
+            'simplices': simplices,
+            'layers': layers,
+            'filtration': filtration,
+            'times': times,
+        }
