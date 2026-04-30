@@ -1,5 +1,8 @@
 import torch
-import torchph.nn.slayer
+try:
+    import torchph.nn.slayer
+except ImportError:
+    pass
 import torchvision.models
 
 
