@@ -6,6 +6,9 @@ import typing
 import numpy
 import gudhi
 import dionysus
+import scipy.sparse
+
+import cvtda.logging
 
 
 def _ranges(indices: numpy.ndarray) -> typing.Iterator[int]:
@@ -16,17 +19,17 @@ def _ranges(indices: numpy.ndarray) -> typing.Iterator[int]:
 
 
 def generate_simplex_tree(
-    knn_graphs: typing.List[numpy.ndarray], dimension: int
+    knn_graphs: typing.List[scipy.sparse.csr_matrix], dimension: int
 ) -> typing.Tuple[typing.List[typing.List[int]], typing.List[typing.List[int]]]:
     simplices: typing.List[typing.List[int]] = []
     simplices_padded: typing.List[typing.List[int]] = []
     simplex_id: typing.Dict[typing.Tuple[int, ...], int] = {}
 
-    for knn_graph in knn_graphs:
+    for knn_graph in cvtda.logging.logger().pbar(knn_graphs, desc="Generate simplex tree"):
         S = gudhi.SimplexTree()
         for point in range(knn_graph.shape[0]):
             S.insert([point])
-        for line in numpy.array(numpy.where(knn_graph == 1)).T:
+        for line in numpy.array(numpy.where(knn_graph.toarray() == 1)).T:
             S.insert(list(line))
         S.expansion(dimension)
 
