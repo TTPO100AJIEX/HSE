@@ -7,7 +7,7 @@ import torch.utils.data
 import cvtda.neural_network
 
 
-def collect_hidden_states_vit(model: torchvision.models.VisionTransformer, data: torch.utils.data.DataLoader):
+def collect_hidden_states_vit(model: torchvision.models.VisionTransformer, data: torch.Tensor):
     x = model._process_input(data)
 
     batch_class_token = model.class_token.expand(x.shape[0], -1, -1)
@@ -23,11 +23,26 @@ def collect_hidden_states_vit(model: torchvision.models.VisionTransformer, data:
     return hidden_states
 
 
+def collect_hidden_states_resnet(model: torchvision.models.ResNet, data: torch.Tensor):
+    x = model.conv1(data)
+    x = model.bn1(x)
+    x = model.relu(x)
+    x = model.maxpool(x)
+
+    hidden_states = [x]
+    for layer in [model.layer1, model.layer2, model.layer3, model.layer4]:
+        for block in layer:
+            x = block(x)
+            hidden_states.append(x)
+    return hidden_states
+
+
 def collect_hidden_states_batch(model: torch.nn.Module, data: torch.Tensor):
     if isinstance(model, torchvision.models.vision_transformer.VisionTransformer):
         return collect_hidden_states_vit(model, data)
-    else:
-        assert False, f"{type(model)} is not supported"
+    if isinstance(model, torchvision.models.ResNet):
+        return collect_hidden_states_resnet(model, data)
+    assert False, f"{type(model)} is not supported"
 
 
 def collect_hidden_states(

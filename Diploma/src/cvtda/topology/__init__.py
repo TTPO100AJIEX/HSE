@@ -15,6 +15,9 @@ __all__ = [
     "FiltrationExtractor",
     "FiltrationsExtractor",
     "GeometryExtractor",
+    "GrayGeometryExtractor",
+    "RGBGeometryExtractor",
+    "MultidimensionalGeometryExtractor",
     "GreyscaleExtractor",
     "PointCloudsExtractor",
 ]

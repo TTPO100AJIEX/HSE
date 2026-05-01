@@ -1,4 +1,6 @@
-from .knn_graph import make_knn_graphs
+from .knn_graph import make_knn_graphs_vector
+from .knn_graph import make_knn_graphs_pds
+from .knn_graph import make_cubical_persistence
 from .metrics import betti_curve
 from .metrics import betti_layer
 from .metrics import persistence_image
@@ -13,7 +15,9 @@ from .plotting import plot_weighted_inter_layer_persistence
 from .plotting import plot_births_relative_frequency
 
 __all__ = [
-    "make_knn_graphs",
+    "make_knn_graphs_vector",
+    "make_knn_graphs_pds",
+    "make_cubical_persistence",
     "compute_zigzag_barcodes",
     "betti_curve",
     "betti_layer",

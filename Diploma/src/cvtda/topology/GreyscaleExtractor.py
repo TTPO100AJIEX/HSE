@@ -1,11 +1,9 @@
 import typing
 import dataclasses
-import collections.abc
 
 import numpy
 import gudhi
 import gtda.homology
-import matplotlib.pyplot as plt
 
 import cvtda.utils
 import cvtda.logging
@@ -107,7 +105,7 @@ class GreyscaleExtractor(TopologicalExtractor):
         image: numpy.ndarray,
     ) -> cvtda.utils.FeatureExplanation:
         cc = gudhi.CubicalComplex(top_dimensional_cells=image)
-        cc.persistence()
+        cc.persistence(homology_coeff_field=2, min_persistence=0)
         reps, _ = cc.cofaces_of_persistence_pairs()
 
         result = cvtda.utils.FeatureExplanation()

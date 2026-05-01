@@ -124,9 +124,9 @@ class Extractor(cvtda.utils.FeatureExtractorBase, abc.ABC):
 
         # Ensure `transform` got the same image format as `fit`.
         if self.fit_dimensions_ is not None:
-            assert self.fit_dimensions_ == images.shape[1:], (
-                f"The pipeline is fit for {self.fit_dimensions_}. Cannot use it with {images.shape}."
-            )
+            assert (
+                self.fit_dimensions_ == images.shape[1:]
+            ), f"The pipeline is fit for {self.fit_dimensions_}. Cannot use it with {images.shape}."
         self.fit_dimensions_ = images.shape[1:]
 
         # Handle dumping.

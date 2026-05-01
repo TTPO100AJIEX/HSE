@@ -59,7 +59,7 @@ class Vectorizer(cvtda.utils.FeatureExtractorBase):
 
     def explain(self, feature_name: str, diagram: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
         if (diagram[:, 1] - diagram[:, 0] > 0).sum() == 0:
-            return cvtda.utils.FeatureExplanation(messages=[f"Persistence diagram is empty"])
+            return cvtda.utils.FeatureExplanation(messages=["Persistence diagram is empty"])
         feature_idx = int(feature_name)
         original = self.transform(numpy.array([diagram]))[0][feature_idx]
         stats = []
@@ -596,9 +596,10 @@ class DiagramVectorizer(cvtda.utils.FeatureExtractorBase):
         features = cvtda.utils.parallel(transform_batch, loop, return_as="generator", n_jobs=self.n_jobs_)
         collector = cvtda.logging.logger().pbar(features, total=len(loop), desc="DiagramVectorizer: batch")
         features = numpy.vstack(list(collector))
-        assert features.shape == (len(diagrams), len(self.feature_names())), (
-            f"{features.shape} != {(len(diagrams), len(self.feature_names()))}"
-        )
+        assert features.shape == (
+            len(diagrams),
+            len(self.feature_names()),
+        ), f"{features.shape} != {(len(diagrams), len(self.feature_names()))}"
         return features
 
     def get_batch_size_(self, num_objects: int):
