@@ -1,4 +1,6 @@
+from __future__ import annotations
 import os
+import shutil
 import typing
 import pathlib
 import inspect
@@ -14,7 +16,7 @@ from cvtda.dumping import BaseDumper
 
 T = typing.TypeVar("T")
 
-EXTENSIONS = ["pt", "npy", "csv", "npz", ""]
+EXTENSIONS = ["pt", "pth", "npy", "csv", "npz", ""]
 
 
 def get_data_type(data) -> type:
@@ -22,6 +24,8 @@ def get_data_type(data) -> type:
         return data
     if type(data) == list:
         return typing.List
+    if isinstance(data, torch.nn.Module):
+        return torch.nn.Module
     return type(data)
 
 
@@ -30,6 +34,8 @@ def get_extension(data_type):
         return ""
     if data_type == torch.Tensor:
         return "pt"
+    if data_type == torch.nn.Module:
+        return "pth"
     if data_type == numpy.ndarray:
         return "npy"
     if data_type == pandas.DataFrame:
@@ -42,6 +48,12 @@ def get_extension(data_type):
 class UniversalDumper(BaseDumper[torch.Tensor]):
     def __init__(self, directory: str):
         self.directory_ = directory
+
+    def clear(self):
+        shutil.rmtree(self.directory_, ignore_errors=True)
+
+    def make_subdumper(self, subdir: str) -> UniversalDumper:
+        return UniversalDumper(f"{self.directory_}/{subdir}")
 
     def get_file_name_(self, name: str, ext: typing.Optional[str]):
         name = f"{name}.{ext}" if ext != "" else name
@@ -70,10 +82,11 @@ class UniversalDumper(BaseDumper[torch.Tensor]):
 
         data_type = get_data_type(data)
         if data_type.__name__ in ("list", "List"):
-            for i, item in enumerate(data):
-                self.save_dump(item, f"{name}/{i}")
+            with cvtda.logging.DevNullLogger():
+                for i, item in enumerate(data):
+                    self.save_dump(item, f"{name}/{i}")
             return
-        if data_type == torch.Tensor:
+        if data_type == torch.Tensor or data_type == torch.nn.Module:
             return torch.save(data, file)
         if data_type == numpy.ndarray:
             return numpy.save(file, data)
@@ -93,13 +106,14 @@ class UniversalDumper(BaseDumper[torch.Tensor]):
 
             def get_subfolder_dump(filename: str):
                 path = pathlib.Path(filename)
-                return self.get_dump(f"{name}/{path.stem}", path.suffix[1:])
+                with cvtda.logging.DevNullLogger():
+                    return self.get_dump(f"{name}/{path.stem}", path.suffix[1:])
 
             def file_key(filename):
                 return int(pathlib.Path(filename).stem)
 
             return [get_subfolder_dump(filename) for filename in sorted(os.listdir(file), key=file_key)]
-        elif file.endswith(".pt"):
+        elif file.endswith(".pt") or file.endswith(".pth"):
             return torch.load(file)
         elif file.endswith(".npy"):
             return numpy.load(file)

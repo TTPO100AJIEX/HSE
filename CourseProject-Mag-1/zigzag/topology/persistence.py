@@ -41,12 +41,13 @@ def generate_simplex_tree(
                 simplices.append(s[0])
             simplices_padded[-1].append(simplex_id[key])
 
+    cvtda.logging.logger().print(f"simplices: {len(simplices)}, simplices_padded: {len(simplices_padded)}")
     return simplices, simplices_padded
 
 
 def compute_layers_with_intersection(simplices_padded: typing.List[typing.List[int]]) -> typing.List[typing.List[int]]:
     layers: typing.List[typing.List[int]] = []
-    for i in range(2 * len(simplices_padded) - 1):
+    for i in cvtda.logging.logger().pbar(list(range(2 * len(simplices_padded) - 1)), desc="Intersection layers"):
         layers.append([])
         if i % 2 == 1:
             layers[i] = list(set(simplices_padded[i // 2]).intersection(simplices_padded[(i + 1) // 2]))
@@ -59,21 +60,29 @@ def compute_filtration_times(
     simplices: typing.List[typing.List[int]], layers: typing.List[typing.List[int]]
 ) -> typing.Tuple[dionysus.Filtration, typing.List[typing.List[int]]]:
     appearance_matrix = numpy.zeros((len(layers), len(simplices)), dtype=int)
-    for k in range(len(layers)):
+    for k in cvtda.logging.logger().pbar(list(range(len(layers))), desc="Appearance matrix"):
         appearance_matrix[k, layers[k]] = 1
-    times = [list(_ranges(numpy.where(appearance_matrix[:, i] == 1)[0])) for i in range(appearance_matrix.shape[1])]
+    times = [
+        list(_ranges(numpy.where(appearance_matrix[:, i] == 1)[0]))
+        for i in cvtda.logging.logger().pbar(list(range(appearance_matrix.shape[1])), desc="Filtration times")
+    ]
     return dionysus.Filtration(simplices), times
 
 
 def compute_zigzag_persistence(
     filtration: dionysus.Filtration, times: typing.List[typing.List[int]]
 ) -> typing.List[dionysus.Diagram]:
-    zz, dgms, cells = dionysus.zigzag_homology_persistence(filtration, times, progress=True)
+    zz, dgms, cells = dionysus.zigzag_homology_persistence(
+        filtration, times, progress=(cvtda.logging.logger().verbosity() != 0)
+    )
     return dgms
 
 
 def convert_diagrams_to_numpy(diagrams: typing.List[dionysus.Diagram]) -> typing.List[numpy.ndarray]:
-    return [numpy.array([[int(interval.birth) - 1, int(interval.death) - 1] for interval in diag]) for diag in diagrams]
+    return [
+        numpy.array([[int(interval.birth) - 1, int(interval.death) - 1] for interval in diag])
+        for diag in cvtda.logging.logger().pbar(diagrams, desc="To numpy")
+    ]
 
 
 def compute_zigzag_barcodes(knn_graphs: typing.List[numpy.ndarray], dimension: int) -> typing.List[numpy.ndarray]:

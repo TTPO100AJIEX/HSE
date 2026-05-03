@@ -2,29 +2,37 @@ import typing
 
 import numpy
 import torch
+import joblib
+import cvtda.dumping
 import cvtda.logging
 import gtda.homology
 import gtda.diagrams
+import cvtda.topology
 import sklearn.neighbors
 from scipy.sparse import csr_matrix
 
 
-def make_knn_graphs_vector(hidden_states: typing.List[torch.Tensor], k_neighbors: int) -> typing.List[csr_matrix]:
-    def impl(hs: torch.Tensor):
-        hs = hs.flatten(start_dim=1).numpy()
+def make_knn_graphs_vector(
+    hidden_states: typing.List[typing.Union[numpy.ndarray, torch.Tensor]], k_neighbors: int
+) -> typing.List[csr_matrix]:
+    def impl(hs: typing.Union[numpy.ndarray, torch.Tensor]):
+        if hs is torch.Tensor:
+            hs = hs.numpy()
+        hs = hs.reshape(len(hs), -1)
         return sklearn.neighbors.kneighbors_graph(hs, n_neighbors=k_neighbors, n_jobs=-1)
 
     return [impl(hs) for hs in cvtda.logging.logger().pbar(hidden_states, desc="KNN graphs")]
 
 
 def make_knn_graphs_pds(
-    persistence: typing.List[numpy.ndarray], k_neighbors: int, metric: str
+    persistence: typing.List[numpy.ndarray], k_neighbors: int, metric: str, metric_params: typing.Optional[dict] = None
 ) -> typing.List[csr_matrix]:
     def impl(diagrams: numpy.ndarray):
         return sklearn.neighbors.kneighbors_graph(
             gtda.diagrams.PairwiseDistance(metric=metric, n_jobs=-1).fit_transform(diagrams),
             n_neighbors=k_neighbors,
             metric="precomputed",
+            metric_params=metric_params,
             n_jobs=-1,
         )
 
@@ -37,3 +45,46 @@ def make_cubical_persistence(hidden_states: typing.List[torch.Tensor]) -> typing
         return gtda.homology.CubicalPersistence(n_jobs=-1).fit_transform(hs)
 
     return [impl(hs) for hs in cvtda.logging.logger().pbar(hidden_states, desc="Cubical persistence")]
+
+
+def make_features(
+    hidden_states: typing.List[torch.Tensor], dump_name: typing.Optional[str] = None
+) -> typing.List[numpy.ndarray]:
+    def vectorize_channel(representations: torch.Tensor, layer_idx: int, channel_idx: int):
+        extractor = cvtda.topology.FeatureExtractor(
+            n_jobs=1,
+            settings=cvtda.topology.FeatureExtractor.Settings(
+                greyscale=cvtda.topology.GreyscaleExtractor.PRESETS.reduced,
+                inverted=cvtda.topology.GreyscaleExtractor.PRESETS.reduced,
+                filtrations=cvtda.topology.FiltrationsExtractor.Settings(binarizer_thresholds=[]),
+                point_clouds=cvtda.topology.PointCloudsExtractor.Settings(enabled=False),
+                geometry=cvtda.topology.GeometryExtractor.Settings(
+                    gray=cvtda.topology.GrayGeometryExtractor.Settings(
+                        daisy=False, sift=False, orb=False, basic=False, curvature=False
+                    )
+                ),
+            ),
+        )
+        mini, maxi = representations.min(), representations.max()
+        if maxi == mini:
+            return None
+        with cvtda.logging.DevNullLogger():
+            return extractor.fit_transform(
+                (representations - mini) / (maxi - mini).numpy(),
+                dump_name=cvtda.dumping.dump_name_concat(dump_name, f"layer_{layer_idx}/channel_{channel_idx}"),
+            )
+
+    def vectorize_layer(representations: torch.Tensor, layer_idx: int) -> numpy.ndarray:
+        if representations.shape[2] < 16:
+            # Last several layers where locations do not really matter
+            return representations.flatten(start_dim=1).numpy()
+        res = joblib.Parallel(n_jobs=-1)(
+            joblib.delayed(vectorize_channel)(representations[:, channel_idx, :, :], layer_idx, channel_idx)
+            for channel_idx in range(representations.shape[1])
+        )
+        return numpy.hstack([item for item in res if item is not None])
+
+    return [
+        vectorize_layer(hidden_states[i], i)
+        for i in cvtda.logging.logger().pbar(list(range(len(hidden_states))), desc="Features")
+    ]

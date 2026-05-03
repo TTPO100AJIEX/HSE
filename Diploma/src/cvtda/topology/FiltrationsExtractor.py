@@ -255,6 +255,8 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
         if do_fit:
             self.filtration_extractors_ = [output[0] for output in outputs]
             outputs = [output[1] for output in outputs]
+        if len(outputs) == 0:
+            return [] if self.return_diagrams_ else numpy.empty((len(images), 0))
         result = utils.hstack(outputs, not self.return_diagrams_)
         if not self.return_diagrams_ and not self.only_get_from_dump_:
             assert result.shape == (len(images), len(self.feature_names()))

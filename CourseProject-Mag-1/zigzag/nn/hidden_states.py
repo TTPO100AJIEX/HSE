@@ -19,21 +19,61 @@ def collect_hidden_states_vit(model: torchvision.models.VisionTransformer, data:
     hidden_states = [x[:, -1, :]]
     for layer in model.encoder.layers:
         x = layer(x)
-        hidden_states.append(x[:, -1, :])
+        hidden_states.append(x[:, -1, :].clone())
     return hidden_states
 
 
 def collect_hidden_states_resnet(model: torchvision.models.ResNet, data: torch.Tensor):
+    def run_block_no_relu(block: torch.nn.Module, x: torch.Tensor) -> torch.Tensor:
+        if type(block) == torchvision.models.resnet.BasicBlock:
+            identity = x
+
+            out = block.conv1(x)
+            out = block.bn1(out)
+            out = block.relu(out)
+
+            out = block.conv2(out)
+            out = block.bn2(out)
+
+            if block.downsample is not None:
+                identity = block.downsample(x)
+
+            out += identity
+        elif type(block) == torchvision.models.resnet.Bottleneck:
+            identity = x
+
+            out = block.conv1(x)
+            out = block.bn1(out)
+            out = block.relu(out)
+
+            out = block.conv2(out)
+            out = block.bn2(out)
+            out = block.relu(out)
+
+            out = block.conv3(out)
+            out = block.bn3(out)
+
+            if block.downsample is not None:
+                identity = block.downsample(x)
+
+            out += identity
+        else:
+            assert False, f"Unknown resnet block: {type(block)}"
+        return out
+
+    hidden_states = []
+
     x = model.conv1(data)
     x = model.bn1(x)
+    hidden_states.append(model.maxpool(x.clone()))
     x = model.relu(x)
     x = model.maxpool(x)
 
-    hidden_states = [x]
     for layer in [model.layer1, model.layer2, model.layer3, model.layer4]:
         for block in layer:
-            x = block(x)
-            hidden_states.append(x)
+            x = run_block_no_relu(block, x)
+            hidden_states.append(x.clone())
+            x = block.relu(x)
     return hidden_states
 
 
@@ -47,11 +87,12 @@ def collect_hidden_states_batch(model: torch.nn.Module, data: torch.Tensor):
 
 def collect_hidden_states(
     model: torch.nn.Module,
-    data: torch.utils.data.DataLoader,
+    dataset: torch.utils.data.Dataset,
     device: torch.device = cvtda.neural_network.default_device,
 ) -> typing.List[torch.Tensor]:
     result = []
     model = model.to(device).eval()
+    data = torch.utils.data.DataLoader(dataset, batch_size=128, shuffle=False, num_workers=3)
     for X, *_ in cvtda.logging.logger().pbar(data, desc="Collect hidden states"):
         with torch.no_grad():
             batch_result = collect_hidden_states_batch(model, X.to(device))

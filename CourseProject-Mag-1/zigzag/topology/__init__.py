@@ -1,6 +1,7 @@
 from .knn_graph import make_knn_graphs_vector
 from .knn_graph import make_knn_graphs_pds
 from .knn_graph import make_cubical_persistence
+from .knn_graph import make_features
 from .metrics import betti_curve
 from .metrics import betti_layer
 from .metrics import persistence_image
@@ -18,6 +19,7 @@ __all__ = [
     "make_knn_graphs_vector",
     "make_knn_graphs_pds",
     "make_cubical_persistence",
+    "make_features",
     "compute_zigzag_barcodes",
     "betti_curve",
     "betti_layer",

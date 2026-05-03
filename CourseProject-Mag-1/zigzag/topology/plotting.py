@@ -42,7 +42,7 @@ def plot_persistence_image(diagram: numpy.ndarray, num_layers: int, ax=None):
 
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-    im = ax.imshow(numpy.log10(pis_pers), cmap=CMAP, origin="lower")
+    im = ax.imshow(numpy.log10(pis_pers + 1e-8), cmap=CMAP, origin="lower")
     ax.set_xlabel("Birth Layer $(\\ell_{\\rm birth})$")
     ax.set_ylabel("Persistence $(\\ell_{\\rm death} - \\ell_{\\rm birth})$")
     ax.get_figure().colorbar(im, ax=ax).set_label("Log10 number of simplices")
