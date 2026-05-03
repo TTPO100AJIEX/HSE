@@ -65,7 +65,7 @@ class UniversalDumper(BaseDumper[torch.Tensor]):
             return file if os.path.exists(file) else None
         exist = set([ext for ext in EXTENSIONS if os.path.exists(self.get_file_name_(name, ext))])
         assert len(exist) <= 1, f"Ambiguous dump. Multiple files exist: {exist}"
-        return next(iter(exist)) if len(exist) == 1 else None
+        return self.get_file_name_(name, next(iter(exist))) if len(exist) == 1 else None
 
     def execute(self, function: typing.Callable[[typing.Any], T], name: str, *function_args, **function_kwargs) -> T:
         return_type = inspect.signature(function).return_annotation

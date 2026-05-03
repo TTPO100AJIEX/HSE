@@ -1,4 +1,5 @@
 import torch
+import cvtda.utils
 import torch.utils.data
 
 import zigzag.nn
@@ -10,13 +11,18 @@ def train_validate(
     train_ds: torch.utils.data.Dataset,
     test_ds: torch.utils.data.Dataset,
     dumper: zigzag.utils.UniversalDumper,
+    epochs: int = 10,
+    learning_rate: float = 1e-3,
 ):
+    cvtda.utils.set_random_seed(42)
     dumper.execute(
         zigzag.nn.train,
         "train_model_history",
         model,
         torch.utils.data.DataLoader(train_ds, batch_size=32, shuffle=True, num_workers=3),
         torch.utils.data.DataLoader(test_ds, batch_size=32, shuffle=False, num_workers=3),
+        epochs=epochs,
+        learning_rate=learning_rate
     )
     if not dumper.has_dump("trained_model"):
         dumper.save_dump(model, "trained_model")
@@ -30,6 +36,8 @@ def validate_pretrained(
     test_y: torch.Tensor,
     dumper: zigzag.utils.UniversalDumper,
 ):
+    cvtda.utils.set_random_seed(42)
+
     train_embeddings = dumper.execute(
         zigzag.nn.precompute_embeddings,
         "train_embeddings",

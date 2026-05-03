@@ -77,6 +77,8 @@ def _relative_frequency(diagram: typing.List[numpy.ndarray], num_layers: int, al
     weights = _weights(num_layers, alpha)
     pi = effective_persistence_image(diagram, num_layers)[:-1, :-1]
     result = numpy.sum(pi * weights, axis=axis) / numpy.sum(weights, axis=axis)
+    if numpy.sum(result) == 0:
+        return result
     return result / numpy.sum(result)
 
 
