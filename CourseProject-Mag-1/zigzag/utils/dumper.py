@@ -112,8 +112,10 @@ class UniversalDumper(BaseDumper[torch.Tensor]):
                     pass
             with cvtda.logging.DevNullLogger():
                 return [self.get_dump(f"{name}/{file}", ext) for file, ext in sorted(files, key=lambda file: file[0])]
-        elif file.endswith(".pt") or file.endswith(".pth"):
+        elif file.endswith(".pt"):
             return torch.load(file)
+        elif file.endswith(".pth"):
+            return torch.load(file, weights_only=False)
         elif file.endswith(".npy"):
             return numpy.load(file)
         elif file.endswith("csv"):

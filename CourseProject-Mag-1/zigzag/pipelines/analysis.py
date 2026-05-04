@@ -4,6 +4,7 @@ import dataclasses
 
 import numpy
 import torch
+import joblib
 import cvtda.logging
 import matplotlib.pyplot as plt
 from scipy.sparse import csr_matrix
@@ -57,43 +58,74 @@ def analyze_vector(
     analyze_knn_graphs(knn_graphs, params, subdumper)
 
 
-def analyze_cubical(hidden_states: typing.List[torch.Tensor], params: Params, dumper: zigzag.utils.UniversalDumper):
-    cvtda.logging.logger().print("Analyzing as persistence diagrams")
-    persistence_diagrams = dumper.execute(
-        zigzag.topology.make_cubical_persistence, "persistence_diagrams", hidden_states
+def analyze_cubical(
+    persistence_diagrams: typing.List[numpy.ndarray], metric: str, params: Params, dumper: zigzag.utils.UniversalDumper
+):
+    cvtda.logging.logger().print(f"Analyzing as persistence diagrams with metric {metric}")
+    subdumper = dumper.make_subdumper(f"{metric}/{params.k_neighbors}_neighbors")
+    knn_graphs = subdumper.execute(
+        zigzag.topology.make_knn_graphs_pds, "knn_graphs", persistence_diagrams, params.k_neighbors, metric
     )
-    for metric in ["landscape"]:  # "persistence_image", "bottleneck"
-        cvtda.logging.logger().print(f"Trying persistence diagram metric {metric}")
-        subdumper = dumper.make_subdumper(f"{metric}/{params.k_neighbors}_neighbors")
-        knn_graphs = subdumper.execute(
-            zigzag.topology.make_knn_graphs_pds, "knn_graphs", persistence_diagrams, params.k_neighbors, metric
-        )
-        analyze_knn_graphs(knn_graphs, params, subdumper)
+    analyze_knn_graphs(knn_graphs, params, subdumper)
 
 
-def analyze_vectorizer(hidden_states: typing.List[torch.Tensor], params: Params, dumper: zigzag.utils.UniversalDumper):
+def analyze_vectorizer(features: typing.List[numpy.ndarray], params: Params, dumper: zigzag.utils.UniversalDumper):
     cvtda.logging.logger().print("Analyzing using vectorization")
-    features = dumper.execute(
-        zigzag.topology.make_features, "features", hidden_states, dump_name=f"{dumper.directory_}/features"
-    )
     analyze_vector(features, params, dumper)
 
 
 def analyze_impl(
     hidden_states: typing.List[torch.Tensor],
-    params: Params,
+    params: typing.List[Params],
     dumper: zigzag.utils.UniversalDumper,
     class_labels: typing.Optional[torch.Tensor] = None,
 ):
-    analyze_vector(hidden_states, params, dumper.make_subdumper("vectors"))
+    analyzers = ["vector"]
     if len(hidden_states[0].shape) == 4:
-        analyze_vectorizer(hidden_states, params, dumper.make_subdumper("vectorizer"))
-        analyze_cubical(hidden_states, params, dumper.make_subdumper("cubical"))
+        features = dumper.execute(
+            zigzag.topology.make_features, "features", hidden_states, dump_name=f"{dumper.directory_}/features"
+        )
+        analyzers.append("vectorizer")
 
-    if class_labels is not None:
-        for class_name in torch.unique(class_labels):
-            subdumper = dumper.make_subdumper(f"class_{class_name}")
-            analyze([hs[class_labels == class_name] for hs in hidden_states], params, subdumper)
+        persistence_diagrams = dumper.execute(
+            zigzag.topology.make_cubical_persistence, "persistence_diagrams", hidden_states
+        )
+        analyzers.append("cubical_landscape")
+        # analyzers.append("cubical_persistence_image")
+        # analyzers.append("cubical_bottleneck")
+
+    def analyze_impl_one(func, *args, **kwargs):
+        func(*args, **kwargs)
+
+    def make_analyze_impl_one_call_params(class_name: typing.Optional[int], analyzer: str, param: Params):
+        result = []
+        match analyzer:
+            case "vector":
+                result.append(analyze_vector)
+                result.append(hidden_states)
+            case "vectorizer":
+                result.append(analyze_vectorizer)
+                result.append(features)
+            case "cubical_landscape":
+                result.append(analyze_cubical)
+                result.append(persistence_diagrams)
+                result.append("landscape")
+            case __:
+                assert False, f"Unsupported analyzer: {analyzer}"
+        subdumper = dumper.make_subdumper(analyzer)
+
+        if class_name is not None:
+            result[1] = [hs[class_labels == class_name] for hs in result[1]]
+            subdumper = subdumper.make_subdumper(f"class_{int(class_name)}")
+
+        return *result, param, subdumper
+
+    joblib.Parallel(n_jobs=-1)(
+        joblib.delayed(analyze_impl_one)(*make_analyze_impl_one_call_params(class_name, analyzer, param))
+        for class_name in [None, *torch.unique(class_labels)]
+        for analyzer in analyzers
+        for param in params
+    )
 
 
 class Verbosity(enum.Enum):
@@ -115,7 +147,6 @@ def analyze(
         case Verbosity.ONLY_PROGRESSBAR:
             for param in cvtda.logging.logger().pbar(params):
                 with cvtda.logging.DevNullLogger():
-                    analyze_impl(hidden_states, param, dumper, class_labels)
+                    analyze_impl(hidden_states, [param], dumper, class_labels)
         case __:
-            for param in params:
-                analyze_impl(hidden_states, param, dumper, class_labels)
+            analyze_impl(hidden_states, params, dumper, class_labels)

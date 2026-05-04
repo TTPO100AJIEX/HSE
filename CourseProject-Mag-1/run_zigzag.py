@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../Diploma/src")
+
 import typing
 
 import torch

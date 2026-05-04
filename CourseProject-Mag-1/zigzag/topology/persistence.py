@@ -73,7 +73,9 @@ def compute_zigzag_persistence(
     filtration: dionysus.Filtration, times: typing.List[typing.List[int]]
 ) -> typing.List[dionysus.Diagram]:
     cone = dionysus.fast_zigzag(filtration, times)
-    reduced_matrix, _ = dionysus.homology_persistence(cone, method="matrix_v")
+    reduced_matrix, _ = dionysus.homology_persistence(
+        cone, method="matrix_v", progress=(cvtda.logging.logger().verbosity() != 0)
+    )
     diagrams = []
     for diagram_map in dionysus.init_zigzag_diagrams(reduced_matrix, cone):
         merged_diagram = dionysus.Diagram()
