@@ -22,7 +22,7 @@ def train_validate(
         torch.utils.data.DataLoader(train_ds, batch_size=32, shuffle=True, num_workers=3),
         torch.utils.data.DataLoader(test_ds, batch_size=32, shuffle=False, num_workers=3),
         epochs=epochs,
-        learning_rate=learning_rate
+        learning_rate=learning_rate,
     )
     if not dumper.has_dump("trained_model"):
         dumper.save_dump(model, "trained_model")

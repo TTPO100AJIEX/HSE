@@ -70,7 +70,7 @@ def make_features(
             return None
         with cvtda.logging.DevNullLogger():
             return extractor.fit_transform(
-                (representations - mini) / (maxi - mini).numpy(),
+                ((representations - mini) / (maxi - mini)).numpy(),
                 dump_name=cvtda.dumping.dump_name_concat(dump_name, f"layer_{layer_idx}/channel_{channel_idx}"),
             )
 

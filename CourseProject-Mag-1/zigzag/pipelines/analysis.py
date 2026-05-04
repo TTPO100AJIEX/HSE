@@ -62,7 +62,7 @@ def analyze_cubical(hidden_states: typing.List[torch.Tensor], params: Params, du
     persistence_diagrams = dumper.execute(
         zigzag.topology.make_cubical_persistence, "persistence_diagrams", hidden_states
     )
-    for metric in ["landscape", "persistence_image", "bottleneck"]:
+    for metric in ["landscape"]:  # "persistence_image", "bottleneck"
         cvtda.logging.logger().print(f"Trying persistence diagram metric {metric}")
         subdumper = dumper.make_subdumper(f"{metric}/{params.k_neighbors}_neighbors")
         knn_graphs = subdumper.execute(

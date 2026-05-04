@@ -1,4 +1,4 @@
-# ported from https://github.com/RitAreaSciencePark/ZigZagLLMs/
+# adapted from https://github.com/RitAreaSciencePark/ZigZagLLMs/
 
 import itertools
 import typing
@@ -72,10 +72,16 @@ def compute_filtration_times(
 def compute_zigzag_persistence(
     filtration: dionysus.Filtration, times: typing.List[typing.List[int]]
 ) -> typing.List[dionysus.Diagram]:
-    zz, dgms, cells = dionysus.zigzag_homology_persistence(
-        filtration, times, progress=(cvtda.logging.logger().verbosity() != 0)
-    )
-    return dgms
+    cone = dionysus.fast_zigzag(filtration, times)
+    reduced_matrix, _ = dionysus.homology_persistence(cone, method="matrix_v")
+    diagrams = []
+    for diagram_map in dionysus.init_zigzag_diagrams(reduced_matrix, cone):
+        merged_diagram = dionysus.Diagram()
+        for _, diagram in diagram_map.items():
+            for point in diagram:
+                merged_diagram.append(point)
+        diagrams.append(merged_diagram)
+    return diagrams
 
 
 def convert_diagrams_to_numpy(diagrams: typing.List[dionysus.Diagram]) -> typing.List[numpy.ndarray]:

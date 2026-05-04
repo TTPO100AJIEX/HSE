@@ -103,16 +103,15 @@ class UniversalDumper(BaseDumper[torch.Tensor]):
         file = self.get_existing_file_name_(name, ext)
         cvtda.logging.logger().print(f"Got the result from {file}")
         if file.endswith(name):
-
-            def get_subfolder_dump(filename: str):
+            files: typing.List[typing.Tuple[str, str]] = []
+            for filename in os.listdir(file):
                 path = pathlib.Path(filename)
-                with cvtda.logging.DevNullLogger():
-                    return self.get_dump(f"{name}/{path.stem}", path.suffix[1:])
-
-            def file_key(filename):
-                return int(pathlib.Path(filename).stem)
-
-            return [get_subfolder_dump(filename) for filename in sorted(os.listdir(file), key=file_key)]
+                try:
+                    files.append((int(path.stem), path.suffix[1:]))
+                except:
+                    pass
+            with cvtda.logging.DevNullLogger():
+                return [self.get_dump(f"{name}/{file}", ext) for file, ext in sorted(files, key=lambda file: file[0])]
         elif file.endswith(".pt") or file.endswith(".pth"):
             return torch.load(file)
         elif file.endswith(".npy"):
