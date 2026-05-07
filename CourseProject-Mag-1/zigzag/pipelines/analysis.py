@@ -1,6 +1,4 @@
-import enum
 import typing
-import dataclasses
 
 import numpy
 import torch
@@ -12,12 +10,8 @@ from scipy.sparse import csr_matrix
 import zigzag.utils
 import zigzag.topology
 
-
-@dataclasses.dataclass()
-class Params:
-    k_neighbors: int
-    dimension: int
-    num_layers: typing.Optional[int] = None
+from .utils import Params
+from .utils import Verbosity
 
 
 def analyze_knn_graphs(knn_graphs: typing.List[csr_matrix], params: Params, dumper: zigzag.utils.UniversalDumper):
@@ -130,11 +124,6 @@ def analyze_impl(
         for analyzer in analyzers
         for param in params
     )
-
-
-class Verbosity(enum.Enum):
-    LOGS = 1
-    ONLY_PROGRESSBAR = 2
 
 
 def analyze(

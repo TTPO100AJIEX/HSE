@@ -12,13 +12,11 @@ import zigzag.utils
 import zigzag.pipelines
 
 PARAMS = [
-    # zigzag.pipelines.Params(k_neighbors=2, dimension=3),
-    # zigzag.pipelines.Params(k_neighbors=3, dimension=3),
+    zigzag.pipelines.Params(k_neighbors=2, dimension=3),
+    zigzag.pipelines.Params(k_neighbors=3, dimension=3),
     zigzag.pipelines.Params(k_neighbors=4, dimension=3),
-    # zigzag.pipelines.Params(k_neighbors=5, dimension=3),
-    # zigzag.pipelines.Params(k_neighbors=7, dimension=3),
-    # zigzag.pipelines.Params(k_neighbors=10, dimension=3),
-    # zigzag.pipelines.Params(k_neighbors=25, dimension=1),
+    zigzag.pipelines.Params(k_neighbors=5, dimension=3),
+    zigzag.pipelines.Params(k_neighbors=7, dimension=3),
 ]
 
 def run_model(make_model: typing.Callable[[torch.nn.Module], torch.nn.Module], model_name: str):
@@ -97,9 +95,9 @@ def make_resnet152(head: torch.nn.Module):
 
 run_model(make_vit_b_16, "vit_b_16")
 run_model(make_vit_b_32, "vit_b_32")
-run_model(make_vit_h_14, "vit_h_14")
-run_model(make_vit_l_16, "vit_l_16")
-run_model(make_vit_l_32, "vit_l_32")
+#run_model(make_vit_h_14, "vit_h_14")
+# run_model(make_vit_l_16, "vit_l_16")
+# run_model(make_vit_l_32, "vit_l_32")
 run_model(make_resnet18, "resnet18")
 run_model(make_resnet34, "resnet34")
 run_model(make_resnet50, "resnet50")
