@@ -33,14 +33,12 @@ def run_model(make_model: typing.Callable[[torch.nn.Module], torch.nn.Module], m
     pretrained_dumper = dumper.make_subdumper("pretrained")
     model, _ = make_model(torch.nn.Identity())
     zigzag.pipelines.validate_pretrained(model, train_ds, train_y, test_ds, test_y, pretrained_dumper)
-    hidden_states = pretrained_dumper.execute(zigzag.nn.collect_hidden_states, "hidden_states", model, train_ds)
-    zigzag.pipelines.analyze(hidden_states, PARAMS, pretrained_dumper, class_labels=train_y)
+    zigzag.pipelines.analyze_bulk(model, train_ds, PARAMS, pretrained_dumper, class_labels=train_y)
 
     finetuned_dumper = dumper.make_subdumper("finetuned")
     model, _ = make_model(pretrained_dumper.get_dump("trained_head"))
     zigzag.pipelines.train_validate(model, train_ds, test_ds, dumper, learning_rate=1e-5)
-    hidden_states = dumper.execute(zigzag.nn.collect_hidden_states, "hidden_states", model, train_ds)
-    zigzag.pipelines.analyze(hidden_states, PARAMS, finetuned_dumper, class_labels=train_y)
+    zigzag.pipelines.analyze_bulk(model, train_ds, PARAMS, finetuned_dumper, class_labels=train_y)
 
 def make_vit_b_16(head: torch.nn.Module):
     model = torchvision.models.vit_b_16(num_classes=1000, weights=torchvision.models.ViT_B_16_Weights.DEFAULT)
