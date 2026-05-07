@@ -29,7 +29,7 @@ def generate_simplex_tree(
         S = gudhi.SimplexTree()
         for point in range(knn_graph.shape[0]):
             S.insert([point])
-        for line in numpy.array(numpy.where(knn_graph.toarray() == 1)).T:
+        for line in numpy.array(knn_graph.nonzero()).T:
             S.insert(list(line))
         S.expansion(dimension)
 

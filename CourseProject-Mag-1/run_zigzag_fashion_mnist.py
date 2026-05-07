@@ -24,13 +24,13 @@ PARAMS = [
 def run_model(make_model: typing.Callable[[torch.nn.Module], torch.nn.Module], model_name: str):
     _, transforms = make_model(torch.nn.Identity())
     transforms = torchvision.transforms.v2.Compose([torchvision.transforms.v2.Grayscale(num_output_channels=3), transforms()])
-    train_ds = torchvision.datasets.MNIST("mnist", train=True, download=True, transform=transforms)
-    test_ds = torchvision.datasets.MNIST("mnist", train=False, download=True, transform=transforms)
+    train_ds = torchvision.datasets.FashionMNIST("fashion_mnist", train=True, download=True, transform=transforms)
+    test_ds = torchvision.datasets.FashionMNIST("fashion_mnist", train=False, download=True, transform=transforms)
 
     train_y = train_ds.targets
     test_y = test_ds.targets
 
-    dumper = zigzag.utils.UniversalDumper(f"zigzag_results/mnist/{model_name}")
+    dumper = zigzag.utils.UniversalDumper(f"zigzag_results/fashion_mnist/{model_name}")
 
     pretrained_dumper = dumper.make_subdumper("pretrained")
     model, _ = make_model(torch.nn.Identity())
@@ -95,11 +95,11 @@ def make_resnet152(head: torch.nn.Module):
     return model, torchvision.models.ResNet152_Weights.DEFAULT.transforms
 
 
-run_model(make_vit_b_16, "vit_b_16")
-run_model(make_vit_b_32, "vit_b_32")
-run_model(make_vit_h_14, "vit_h_14")
-run_model(make_vit_l_16, "vit_l_16")
-run_model(make_vit_l_32, "vit_l_32")
+# run_model(make_vit_b_16, "vit_b_16")
+# run_model(make_vit_b_32, "vit_b_32")
+# run_model(make_vit_h_14, "vit_h_14") # too long
+# run_model(make_vit_l_16, "vit_l_16")
+# run_model(make_vit_l_32, "vit_l_32")
 run_model(make_resnet18, "resnet18")
 run_model(make_resnet34, "resnet34")
 run_model(make_resnet50, "resnet50")

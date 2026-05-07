@@ -3,48 +3,58 @@ import typing
 import numpy
 import torch
 import joblib
+import scipy.sparse
 import cvtda.dumping
 import cvtda.logging
 import gtda.homology
 import gtda.diagrams
 import cvtda.topology
 import sklearn.neighbors
-from scipy.sparse import csr_matrix
+
+
+def make_knn_graph_vector(hidden_state: typing.Union[numpy.ndarray, torch.Tensor], k_neighbors: int):
+    if hidden_state is torch.Tensor:
+        hidden_state = hidden_state.numpy()
+    hidden_state = hidden_state.reshape(len(hidden_state), -1)
+    return sklearn.neighbors.kneighbors_graph(hidden_state, n_neighbors=k_neighbors, n_jobs=-1)
 
 
 def make_knn_graphs_vector(
     hidden_states: typing.List[typing.Union[numpy.ndarray, torch.Tensor]], k_neighbors: int
-) -> typing.List[csr_matrix]:
-    def impl(hs: typing.Union[numpy.ndarray, torch.Tensor]):
-        if hs is torch.Tensor:
-            hs = hs.numpy()
-        hs = hs.reshape(len(hs), -1)
-        return sklearn.neighbors.kneighbors_graph(hs, n_neighbors=k_neighbors, n_jobs=-1)
+) -> typing.List[scipy.sparse.csr_matrix]:
+    return [
+        make_knn_graph_vector(hs, k_neighbors) for hs in cvtda.logging.logger().pbar(hidden_states, desc="KNN graphs")
+    ]
 
-    return [impl(hs) for hs in cvtda.logging.logger().pbar(hidden_states, desc="KNN graphs")]
+
+def make_knn_graph_pds(
+    diagrams: numpy.ndarray, k_neighbors: int, metric: str, metric_params: typing.Optional[dict] = None
+):
+    return sklearn.neighbors.kneighbors_graph(
+        gtda.diagrams.PairwiseDistance(metric=metric, n_jobs=-1).fit_transform(diagrams),
+        n_neighbors=k_neighbors,
+        metric="precomputed",
+        metric_params=metric_params,
+        n_jobs=-1,
+    )
 
 
 def make_knn_graphs_pds(
     persistence: typing.List[numpy.ndarray], k_neighbors: int, metric: str, metric_params: typing.Optional[dict] = None
-) -> typing.List[csr_matrix]:
-    def impl(diagrams: numpy.ndarray):
-        return sklearn.neighbors.kneighbors_graph(
-            gtda.diagrams.PairwiseDistance(metric=metric, n_jobs=-1).fit_transform(diagrams),
-            n_neighbors=k_neighbors,
-            metric="precomputed",
-            metric_params=metric_params,
-            n_jobs=-1,
-        )
+) -> typing.List[scipy.sparse.csr_matrix]:
+    return [
+        make_knn_graph_pds(diagrams, k_neighbors, metric, metric_params)
+        for diagrams in cvtda.logging.logger().pbar(persistence, desc="KNN graphs")
+    ]
 
-    return [impl(diagrams) for diagrams in cvtda.logging.logger().pbar(persistence, desc="KNN graphs")]
+
+def make_cubical(hidden_state: torch.Tensor):
+    hidden_state = numpy.linalg.norm(hidden_state.numpy(), axis=1)
+    return gtda.homology.CubicalPersistence(n_jobs=-1).fit_transform(hidden_state)
 
 
 def make_cubical_persistence(hidden_states: typing.List[torch.Tensor]) -> typing.List[numpy.ndarray]:
-    def impl(hs: torch.Tensor):
-        hs = numpy.linalg.norm(hs.numpy(), axis=1)
-        return gtda.homology.CubicalPersistence(n_jobs=-1).fit_transform(hs)
-
-    return [impl(hs) for hs in cvtda.logging.logger().pbar(hidden_states, desc="Cubical persistence")]
+    return [make_cubical(hs) for hs in cvtda.logging.logger().pbar(hidden_states, desc="Cubical persistence")]
 
 
 def make_features(

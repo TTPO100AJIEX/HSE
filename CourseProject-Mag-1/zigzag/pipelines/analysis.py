@@ -95,7 +95,11 @@ def analyze_impl(
         # analyzers.append("cubical_bottleneck")
 
     def analyze_impl_one(func, *args, **kwargs):
-        func(*args, **kwargs)
+        desc = f"{len(args[0])} x {args[0][0].shape}, k_neighbors = {args[-2].k_neighbors}"
+        cvtda.logging.logger().print(f"Started {func.__name__} with {desc}")
+        with cvtda.logging.DevNullLogger():
+            func(*args, **kwargs)
+        cvtda.logging.logger().print(f"Finished {func.__name__} with {desc}")
 
     def make_analyze_impl_one_call_params(class_name: typing.Optional[int], analyzer: str, param: Params):
         result = []
