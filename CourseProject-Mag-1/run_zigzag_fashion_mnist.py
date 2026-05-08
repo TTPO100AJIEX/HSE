@@ -91,8 +91,8 @@ def make_resnet152(head: torch.nn.Module):
     return model, torchvision.models.ResNet152_Weights.DEFAULT.transforms
 
 
-run_model(make_vit_b_16, "vit_b_16")
-run_model(make_vit_b_32, "vit_b_32")
+# run_model(make_vit_b_16, "vit_b_16")
+# run_model(make_vit_b_32, "vit_b_32")
 #run_model(make_vit_h_14, "vit_h_14")
 # run_model(make_vit_l_16, "vit_l_16")
 # run_model(make_vit_l_32, "vit_l_32")
