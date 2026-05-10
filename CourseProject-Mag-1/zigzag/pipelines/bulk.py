@@ -22,7 +22,7 @@ def compute_knn_graph(
     dumper: zigzag.utils.UniversalDumper,
     class_labels: typing.Optional[torch.Tensor] = None,
 ):
-    dumper.save_dump(hidden_state, f"hidden_state/{layer_num}")
+    cvtda.logging.logger().print(f"Processing hidden states of shape {hidden_state.shape}")
     if len(hidden_state.shape) == 4:
         features = dumper.execute(
             zigzag.topology.make_features_layer,

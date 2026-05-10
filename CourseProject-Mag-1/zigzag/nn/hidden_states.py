@@ -69,10 +69,13 @@ def yield_hidden_states_resnet(
         return out
 
     x = model.conv1(x.to(device))
-    x = model.bn1(x).cpu()
-    yield model.maxpool(x.clone())
-    x = model.relu(x.to(device))
-    x = model.maxpool(x)
+    x = model.bn1(x)
+    hidden_state = model.maxpool(x.clone()).cpu()
+    x = model.relu(x)
+    x = model.maxpool(x).cpu()
+    yield hidden_state
+    del hidden_state
+    x = x.to(device)
 
     for layer in [model.layer1, model.layer2, model.layer3, model.layer4]:
         for block in layer:
@@ -112,7 +115,8 @@ def yield_hidden_states(
                 result.append(next(batch))
             except StopIteration:
                 return
-        yield torch.concat(result)
+        result = torch.concat(result)
+        yield result
 
 
 @torch.no_grad()
