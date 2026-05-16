@@ -119,15 +119,17 @@ class FeatureExtractor(cvtda.utils.FeatureExtractorBase):
         extractor_name, subfeature_name = self.unnest_feature_name(feature_name)
         match extractor_name:
             case "greyscale":
-                return self.greyscale_.explain(subfeature_name, image)
+                result = self.greyscale_.explain(subfeature_name, image)
             case "inverted":
-                return self.inverted_.explain(subfeature_name, image)
+                result = self.inverted_.explain(subfeature_name, image)
             case "point_clouds":
-                return self.point_clouds_.explain(subfeature_name, image)
+                result = self.point_clouds_.explain(subfeature_name, image)
             case "geometry":
-                return self.geometry_.explain(subfeature_name, image)
+                result = self.geometry_.explain(subfeature_name, image)
             case __:
-                return self.filtrations_.explain(feature_name, image)
+                result = self.filtrations_.explain(feature_name, image)
+        result.feature_name = feature_name
+        return result
 
     def process_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
         """

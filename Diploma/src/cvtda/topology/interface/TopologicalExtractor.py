@@ -110,7 +110,8 @@ class TopologicalExtractor(Extractor, abc.ABC):
         diagrams = numpy.nan_to_num(self.scaler_.transform(raw_diagrams), 0)
         explanation = self.vectorizer_.explain(feature_name, diagrams[0])
         for diagram_explanation in explanation.persistence_diagrams:
-            explanation.extend(self.explain_gray_diagram_(raw_diagrams[0], diagram_explanation, image))
+            diagram_explanation.diagram = self.scaler_.inverse_transform([diagram_explanation.diagram])[0]
+            explanation.extend(self.explain_gray_diagram_(feature_name, raw_diagrams[0], diagram_explanation, image))
         return explanation
 
     def do_work_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None):
@@ -185,6 +186,7 @@ class TopologicalExtractor(Extractor, abc.ABC):
     @abc.abstractmethod
     def explain_gray_diagram_(
         self,
+        feature_name: str,
         diagram: numpy.ndarray,
         diagram_explanation: cvtda.utils.FeatureExplanation.PersistenceDiagram,
         image: numpy.ndarray,

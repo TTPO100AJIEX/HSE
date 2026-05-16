@@ -85,18 +85,20 @@ class Extractor(cvtda.utils.FeatureExtractorBase, abc.ABC):
                 extractor_name, subfeature_name = self.unnest_feature_name(feature_name)
                 match extractor_name:
                     case "rgb":
-                        return self.explain_rgb_(subfeature_name, image)
+                        result = self.explain_rgb_(subfeature_name, image)
                     case "gray":
                         gray_image = cvtda.utils.rgb2gray([image], 1)[0]
-                        return self.gray_extractor_.explain(subfeature_name, gray_image)
+                        result = self.gray_extractor_.explain(subfeature_name, gray_image)
                     case "red":
-                        return self.red_extractor_.explain(subfeature_name, image[:, :, 0])
+                        result = self.red_extractor_.explain(subfeature_name, image[:, :, 0])
                     case "green":
-                        return self.green_extractor_.explain(subfeature_name, image[:, :, 1])
+                        result = self.green_extractor_.explain(subfeature_name, image[:, :, 1])
                     case "blue":
-                        return self.blue_extractor_.explain(subfeature_name, image[:, :, 2])
-                    case __:
+                        result = self.blue_extractor_.explain(subfeature_name, image[:, :, 2])
+                    case _:
                         assert False, f"Feature name {feature_name} is malformed"
+                result.feature_name = self.nest_feature_name(extractor_name, result.feature_name)
+                return result
             else:
                 return self.explain_gray_(feature_name, image)
 

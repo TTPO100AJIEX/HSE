@@ -102,6 +102,7 @@ class PointCloudsExtractor(TopologicalExtractor):
 
     def explain_gray_diagram_(
         self,
+        feature_name: str,
         diagram: numpy.ndarray,
         diagram_explanation: cvtda.utils.FeatureExplanation.PersistenceDiagram,
         image: numpy.ndarray,
@@ -116,7 +117,7 @@ class PointCloudsExtractor(TopologicalExtractor):
         assert len(diagram) == len(generators), f"Diagram size: {len(diagram)}, generators size: {len(generators)}"
         assert len(diagram) == len(explanations), f"Diagram size: {len(diagram)}, explanation size: {len(explanations)}"
 
-        result = cvtda.utils.FeatureExplanation()
+        result = cvtda.utils.FeatureExplanation(feature_name=feature_name)
         for diagram_point in diagram_explanation.get_best_points():
             birth, death, dim = diagram[diagram_point]
             result.visualizations.append(

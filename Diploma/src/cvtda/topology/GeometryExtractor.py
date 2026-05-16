@@ -30,7 +30,8 @@ class DAISY(BaseGeometricFeature):
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         _, visualization = self.run_(image, visualize=True)
         return FeatureExplanation(
-            visualizations=[FeatureExplanation.Visualization(image=image, mask=visualization, title="DAISY")]
+            feature_name=feature_name,
+            visualizations=[FeatureExplanation.Visualization(image=image, mask=visualization, title="DAISY")],
         )
 
     def run_(self, image: numpy.ndarray, **extra_params):
@@ -72,11 +73,12 @@ class SkimageDetectorBase(BaseGeometricFeature):
                 for ((x, y), s) in zip(self.extractor_.keypoints, self.extractor_.scales)
             ]
             return FeatureExplanation(
-                visualizations=[FeatureExplanation.Visualization(image=image, points=points, title="SIFT")]
+                feature_name=feature_name,
+                visualizations=[FeatureExplanation.Visualization(image=image, points=points, title="SIFT")],
             )
         except RuntimeError as exc:
             # sift may throw errors for degenerate images. We substitute those with zeros.
-            return FeatureExplanation(messages=[str(exc)])
+            return FeatureExplanation(feature_name=feature_name, messages=[str(exc)])
 
 
 class SIFT(SkimageDetectorBase):
@@ -96,7 +98,8 @@ class HOG(BaseGeometricFeature):
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         _, hog = self.run_(image, visualize=True)
         return FeatureExplanation(
-            visualizations=[FeatureExplanation.Visualization(image=image, mask=hog / hog.max(), title="HOG")]
+            feature_name=feature_name,
+            visualizations=[FeatureExplanation.Visualization(image=image, mask=hog / hog.max(), title="HOG")],
         )
 
     def run_(self, image: numpy.ndarray, **extra_params):
@@ -121,7 +124,8 @@ class BasicFeatures(BaseGeometricFeature):
         features = self.run_(image)
         feature = features[:, :, int(feature_name) // features.shape[2]]
         return FeatureExplanation(
-            visualizations=[FeatureExplanation.Visualization(image=feature, title=f"Basic Feature {feature_name}")]
+            feature_name=feature_name,
+            visualizations=[FeatureExplanation.Visualization(image=feature, title=f"Basic Feature {feature_name}")],
         )
 
     def run_(self, image: numpy.ndarray):
@@ -133,7 +137,9 @@ class BlurEffect(BaseGeometricFeature):
         return numpy.array([skimage.measure.blur_effect(image)])
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
-        return FeatureExplanation(messages=[f"Blur effect is {skimage.measure.blur_effect(image)}"])
+        return FeatureExplanation(
+            feature_name=feature_name, messages=[f"Blur effect is {skimage.measure.blur_effect(image)}"]
+        )
 
 
 class IntertiaTensorEigvals(BaseGeometricFeature):
@@ -146,7 +152,8 @@ class IntertiaTensorEigvals(BaseGeometricFeature):
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         return FeatureExplanation(
-            messages=[f"Inertia tensor eigenvalue {feature_name} is {self.transform(image)[int(feature_name)]}"]
+            feature_name=feature_name,
+            messages=[f"Inertia tensor eigenvalue {feature_name} is {self.transform(image)[int(feature_name)]}"],
         )
 
 
@@ -155,7 +162,7 @@ class Centroid(BaseGeometricFeature):
         return skimage.measure.centroid(image)
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
-        return FeatureExplanation(messages=[f"Centroid is {self.transform(image)}"])
+        return FeatureExplanation(feature_name=feature_name, messages=[f"Centroid is {self.transform(image)}"])
 
 
 class Moments(BaseGeometricFeature):
@@ -166,7 +173,9 @@ class Moments(BaseGeometricFeature):
         return skimage.measure.moments(image, order=self.order_).flatten()
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
-        return FeatureExplanation(messages=[f"Moment {feature_name} is {self.transform(image)[int(feature_name)]}"])
+        return FeatureExplanation(
+            feature_name=feature_name, messages=[f"Moment {feature_name} is {self.transform(image)[int(feature_name)]}"]
+        )
 
 
 class MomentsCentral(BaseGeometricFeature):
@@ -178,7 +187,8 @@ class MomentsCentral(BaseGeometricFeature):
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         return FeatureExplanation(
-            messages=[f"Central moment {feature_name} is {self.transform(image)[int(feature_name)]}"]
+            feature_name=feature_name,
+            messages=[f"Central moment {feature_name} is {self.transform(image)[int(feature_name)]}"],
         )
 
 
@@ -193,7 +203,8 @@ class MomentsHu(BaseGeometricFeature):
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         return FeatureExplanation(
-            messages=[f"Hu's moment {feature_name} is {self.transform(image)[int(feature_name)]}"]
+            feature_name=feature_name,
+            messages=[f"Hu's moment {feature_name} is {self.transform(image)[int(feature_name)]}"],
         )
 
 
@@ -202,7 +213,9 @@ class ShannonEntropy(BaseGeometricFeature):
         return numpy.array([skimage.measure.shannon_entropy(image)])
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
-        return FeatureExplanation(messages=[f"Shannon entropy is {skimage.measure.shannon_entropy(image)}"])
+        return FeatureExplanation(
+            feature_name=feature_name, messages=[f"Shannon entropy is {skimage.measure.shannon_entropy(image)}"]
+        )
 
 
 class PearsonCorrCoeff(BaseGeometricFeature):
@@ -217,7 +230,8 @@ class PearsonCorrCoeff(BaseGeometricFeature):
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         return FeatureExplanation(
-            messages=[f"Pearson correlation coefficient {feature_name} is {self.transform(image)[int(feature_name)]}"]
+            feature_name=feature_name,
+            messages=[f"Pearson correlation coefficient {feature_name} is {self.transform(image)[int(feature_name)]}"],
         )
 
 
@@ -254,23 +268,25 @@ class Curvature(BaseGeometricFeature):
         series = self.run_(image)
         match self.unnest_feature_name(feature_name)[0]:
             case "euler_number":
-                return self.make_explanation_("Euler number", series[0])
+                return self.make_explanation_(feature_name, "Euler number", series[0])
             case "area":
-                return self.make_explanation_("Area", series[1])
+                return self.make_explanation_(feature_name, "Area", series[1])
             case "perimeter":
-                return self.make_explanation_("Perimeter", series[2])
+                return self.make_explanation_(feature_name, "Perimeter", series[2])
             case "euler_number_diff":
-                return self.make_explanation_("Euler number (derivative)", numpy.diff(series[0]))
+                return self.make_explanation_(feature_name, "Euler number (derivative)", numpy.diff(series[0]))
             case "area_diff":
-                return self.make_explanation_("Area (derivative)", numpy.diff(series[1]))
+                return self.make_explanation_(feature_name, "Area (derivative)", numpy.diff(series[1]))
             case "perimeter_diff":
-                return self.make_explanation_("Perimeter (derivative)", numpy.diff(series[2]))
+                return self.make_explanation_(feature_name, "Perimeter (derivative)", numpy.diff(series[2]))
             case __:
                 raise NotImplementedError(f"Unknown feature {feature_name}")
 
-    def make_explanation_(self, title: str, series: numpy.ndarray) -> FeatureExplanation:
+    def make_explanation_(self, feature_name: str, title: str, series: numpy.ndarray) -> FeatureExplanation:
         line = FeatureExplanation.Visualization.Line(x=Curvature.THRESHOLDS[: len(series)], y=series)
-        return FeatureExplanation(visualizations=[FeatureExplanation.Visualization(lines=[line], title=title)])
+        return FeatureExplanation(
+            feature_name=feature_name, visualizations=[FeatureExplanation.Visualization(lines=[line], title=title)]
+        )
 
     def run_(self, image: numpy.ndarray):
         min_, max_ = image.min(), image.max()
@@ -317,7 +333,9 @@ class BaseGeometryExtractor(cvtda.utils.FeatureExtractorBase):
         prefix, suffix = self.unnest_feature_name(feature_name)
         for name, feature in self.features_:
             if name == prefix:
-                return feature.explain(suffix, input)
+                result = feature.explain(suffix, input)
+                result.feature_name = self.nest_feature_name(prefix, result.feature_name)
+                return result
         raise NotImplementedError(f"Unknown feature {feature_name}")
 
     def calc_raw_(self, image: numpy.ndarray) -> typing.List[numpy.ndarray]:

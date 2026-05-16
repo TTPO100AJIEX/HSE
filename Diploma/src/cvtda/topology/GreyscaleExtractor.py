@@ -100,6 +100,7 @@ class GreyscaleExtractor(TopologicalExtractor):
 
     def explain_gray_diagram_(
         self,
+        feature_name: str,
         diagram: numpy.ndarray,
         diagram_explanation: cvtda.utils.FeatureExplanation.PersistenceDiagram,
         image: numpy.ndarray,
@@ -108,7 +109,7 @@ class GreyscaleExtractor(TopologicalExtractor):
         cc.persistence(homology_coeff_field=2, min_persistence=0)
         reps, _ = cc.cofaces_of_persistence_pairs()
 
-        result = cvtda.utils.FeatureExplanation()
+        result = cvtda.utils.FeatureExplanation(feature_name=feature_name)
         for point in diagram_explanation.get_best_points():
             birth, death, dim = diagram[point]
             for i, (birth_idx, death_idx) in enumerate(reps[int(dim)]):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import typing
 import inspect
@@ -6,16 +8,7 @@ import dataclasses
 import numpy
 import sklearn.base
 import matplotlib.axes
-import matplotlib.figure
 import matplotlib.pyplot as plt
-
-
-def make_axes(num_items: int, size: int) -> typing.Tuple[matplotlib.figure.Figure, typing.List[matplotlib.axes.Axes]]:
-    num_axes = min(num_items, max(0, 10 - size))
-    fig, axes = plt.subplots(1, num_axes, figsize=(size * num_axes, size))
-    if not isinstance(axes, numpy.ndarray):
-        return fig, [axes]
-    return fig, axes
 
 
 @dataclasses.dataclass
@@ -28,7 +21,6 @@ class FeatureExplanation:
         def get_best_points(self):
             non_zero_stats = self.per_point_stats[self.diagram[:, 1] - self.diagram[:, 0] > 0]
             threshold = max(numpy.percentile(non_zero_stats, 75), 1e-8)
-
             best_idx = numpy.argsort(self.per_point_stats)[::-1]
             return best_idx[self.per_point_stats[best_idx] >= threshold]
 
@@ -44,7 +36,6 @@ class FeatureExplanation:
             draw(self.diagram[self.get_best_points(), :], "Good")
             draw(numpy.delete(self.diagram, self.get_best_points(), axis=0), "Bad")
             ax.plot(limits, limits, linestyle="dashed", color="black")
-
             ax.set_xlim(*limits)
             ax.set_ylim(*limits)
             ax.legend(loc="lower right")
@@ -84,38 +75,50 @@ class FeatureExplanation:
                 ax.plot(line.x, line.y)
             if self.mask is not None:
                 ax.imshow(self.mask, cmap="gray", alpha=0.75)
-            ax.legend()
+            _, labels = ax.get_legend_handles_labels()
+            if labels:
+                ax.legend()
             ax.axis("off")
 
+    def readeable_feature_name(self):
+        parts = self.feature_name.split(" -> ")
+        return f"{parts[0]}\n{" · ".join(parts[1:-1])} [{parts[-1]}]"
+
+    feature_name: str
     persistence_diagrams: typing.List[PersistenceDiagram] = dataclasses.field(default_factory=lambda: [])
     messages: typing.List[str] = dataclasses.field(default_factory=lambda: [])
     visualizations: typing.List[Visualization] = dataclasses.field(default_factory=lambda: [])
+
+    @staticmethod
+    def display_many(items: typing.List[FeatureExplanation], title: str):
+        nrows = max(len(exp.persistence_diagrams) + len(exp.visualizations) or 1 for exp in items)
+        fig, axes = plt.subplots(nrows, len(items), figsize=(len(items) * 2.5, nrows * 2.8), squeeze=False)
+        for col, exp in enumerate(items):
+            axes[0][col].set_title(exp.readeable_feature_name())
+            panels = (exp.persistence_diagrams + exp.visualizations) or [None]
+            for row, panel in enumerate(panels):
+                ax = axes[row][col]
+                if panel is not None:
+                    panel.display(ax)
+                else:
+                    text = "\n".join(exp.messages) or "(no visualization)"
+                    ax.text(0.5, 0.5, text, ha="center", va="center", color="#555555", wrap=True)
+                    ax.set_facecolor("#F5F5F5")
+                    ax.axis("off")
+
+            for row in range(len(panels) or 1, nrows):
+                axes[row][col].axis("off")
+
+        fig.suptitle(title, fontweight="bold")
+        return fig.tight_layout()
+
+    def display(self, with_diagrams: bool = True):
+        FeatureExplanation.display_many([self if with_diagrams else dataclasses.replace(self, persistence_diagrams=[])])
 
     def extend(self, other):
         self.persistence_diagrams.extend(other.persistence_diagrams)
         self.messages.extend(other.messages)
         self.visualizations.extend(other.visualizations)
-
-    def display(self, feature_name: str, with_diagrams: bool = True):
-        print(f"Explaining {feature_name}:")
-        for message in self.messages:
-            print(f"    {message}")
-
-        matplotlib.rcParams.update({"font.size": 6})
-
-        if with_diagrams and len(self.persistence_diagrams) != 0:
-            fig, axes = make_axes(len(self.persistence_diagrams), 3)
-            fig.suptitle(feature_name)
-            for ax, diagram_explanation in zip(axes, self.persistence_diagrams):
-                diagram_explanation.display(ax)
-            fig.tight_layout()
-
-        if len(self.visualizations) != 0:
-            fig, axes = make_axes(len(self.visualizations), 2)
-            fig.suptitle(feature_name)
-            for ax, visualization in zip(axes, self.visualizations):
-                visualization.display(ax)
-            fig.tight_layout()
 
 
 class FeatureExtractorBase(sklearn.base.TransformerMixin, abc.ABC):
@@ -156,8 +159,11 @@ class FeatureExtractorBase(sklearn.base.TransformerMixin, abc.ABC):
         if cls.PRESETS is None:
             raise TypeError(f"{cls.__name__} must define PRESETS")
 
+    def nest_feature_name(self, prefix: str, name: str) -> str:
+        return f"{prefix} -> {name}"
+
     def nest_feature_names(self, prefix: str, names: typing.List[str]) -> typing.List[str]:
-        return [f"{prefix} -> {name}" for name in names]
+        return [self.nest_feature_name(prefix, name) for name in names]
 
     def unnest_feature_name(self, name: str) -> typing.Tuple[str, str]:
         idx = name.index(" -> ")

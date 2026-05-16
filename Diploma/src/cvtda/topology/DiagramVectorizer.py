@@ -59,7 +59,7 @@ class Vectorizer(cvtda.utils.FeatureExtractorBase):
 
     def explain(self, feature_name: str, diagram: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
         if (diagram[:, 1] - diagram[:, 0] > 0).sum() == 0:
-            return cvtda.utils.FeatureExplanation(messages=["Persistence diagram is empty"])
+            return cvtda.utils.FeatureExplanation(feature_name=feature_name, messages=["Persistence diagram is empty"])
         feature_idx = int(feature_name)
         original = self.transform(numpy.array([diagram]))[0][feature_idx]
         stats = []
@@ -72,7 +72,7 @@ class Vectorizer(cvtda.utils.FeatureExtractorBase):
         explanation = cvtda.utils.FeatureExplanation.PersistenceDiagram(
             diagram=diagram.copy(), per_point_stats=numpy.array(stats)
         )
-        return cvtda.utils.FeatureExplanation(persistence_diagrams=[explanation])
+        return cvtda.utils.FeatureExplanation(feature_name=feature_name, persistence_diagrams=[explanation])
 
 
 class SequenceStats(Vectorizer):
@@ -392,7 +392,8 @@ class NumberOfPoints(Proxy):
         feature_idx = int(feature_name)
         features = self.transform(numpy.array([diagram]))[0]
         return cvtda.utils.FeatureExplanation(
-            messages=[f"Number of points in the H{feature_idx} diagram is {features[feature_idx]}"]
+            feature_name=feature_name,
+            messages=[f"Number of points in the H{feature_idx} diagram is {features[feature_idx]}"],
         )
 
 
@@ -646,4 +647,6 @@ class DiagramVectorizer(cvtda.utils.FeatureExtractorBase):
         assert self.fitted_ is True, "fit() must be called before feature_names()"
         extractor_name, subfeature_name = self.unnest_feature_name(feature_name)
         extractor_idx = DiagramVectorizer.EXTRACTOR_NAMES.index(extractor_name)
-        return self.extractors_[extractor_idx].explain(subfeature_name, diagram)
+        result = self.extractors_[extractor_idx].explain(subfeature_name, diagram)
+        result.feature_name = self.nest_feature_name(extractor_name, result.feature_name)
+        return result

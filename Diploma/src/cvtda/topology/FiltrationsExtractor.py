@@ -85,12 +85,13 @@ class FiltrationExtractor(GreyscaleExtractor):
 
     def explain_gray_diagram_(
         self,
+        feature_name: str,
         diagram: numpy.ndarray,
         diagram_explanation: cvtda.utils.FeatureExplanation.PersistenceDiagram,
         image: numpy.ndarray,
     ) -> cvtda.utils.FeatureExplanation:
         image = self.process_images_(numpy.array([image]), False)[0]
-        return super().explain_gray_diagram_(diagram, diagram_explanation, image)
+        return super().explain_gray_diagram_(feature_name, diagram, diagram_explanation, image)
 
 
 class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
@@ -219,7 +220,9 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
         extractor_name, subfeature_name = self.unnest_feature_name(feature_name)
         for extractor, _, readable_name in self.filtration_extractors_:
             if readable_name == extractor_name:
-                return extractor.explain(subfeature_name, image)
+                result = extractor.explain(subfeature_name, image)
+                result.feature_name = self.nest_feature_name(extractor_name, result.feature_name)
+                return result
         assert False, f"Feature name {feature_name} is malformed"
 
     def do_work_(self, images: numpy.ndarray, do_fit: bool, dump_name: typing.Optional[str] = None) -> numpy.ndarray:
@@ -322,7 +325,7 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
                         gtda.images.HeightFiltration, {"direction": numpy.array(direction)}, binarizer_threshold
                     ),
                     f"{int(binarizer_threshold * 10)}/HeightFiltration_{direction[0]}_{direction[1]}",
-                    f"HeightFiltration with d = ({direction[0]}, {direction[1]}), bin. thr. = 0.{int(binarizer_threshold * 10)}",
+                    f"Height, d=({direction[0]}, {direction[1]}), t=0.{int(binarizer_threshold * 10)}",
                 )
             )
 
@@ -335,7 +338,7 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
                         gtda.images.RadialFiltration, {"center": numpy.array(center)}, binarizer_threshold
                     ),
                     f"{int(binarizer_threshold * 10)}/RadialFiltration_{center[0]}_{center[1]}",
-                    f"RadialFiltration with c = ({center[0]}, {center[1]}), bin. thr. = 0.{int(binarizer_threshold * 10)}",
+                    f"Radial, c=({center[0]}, {center[1]}), t=0.{int(binarizer_threshold * 10)}",
                 )
             )
 
@@ -346,7 +349,7 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
             (
                 self.make_filtration_(gtda.images.DilationFiltration, {}, binarizer_threshold),
                 f"{int(binarizer_threshold * 10)}/DilationFiltration",
-                f"DilationFiltration, bin. thr. = 0.{int(binarizer_threshold * 10)}",
+                f"Dilation, t=0.{int(binarizer_threshold * 10)}",
             )
         )
 
@@ -357,7 +360,7 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
             (
                 self.make_filtration_(gtda.images.ErosionFiltration, {}, binarizer_threshold),
                 f"{int(binarizer_threshold * 10)}/ErosionFiltration",
-                f"ErosionFiltration, bin. thr. = 0.{int(binarizer_threshold * 10)}",
+                f"Erosion, t=0.{int(binarizer_threshold * 10)}",
             )
         )
 
@@ -368,7 +371,7 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
             (
                 self.make_filtration_(gtda.images.SignedDistanceFiltration, {}, binarizer_threshold),
                 f"{int(binarizer_threshold * 10)}/SignedDistanceFiltration",
-                f"SignedDistanceFiltration, bin. thr. = 0.{int(binarizer_threshold * 10)}",
+                f"SignedDistance, t=0.{int(binarizer_threshold * 10)}",
             )
         )
 
@@ -378,6 +381,6 @@ class FiltrationsExtractor(cvtda.utils.FeatureExtractorBase):
                 (
                     self.make_filtration_(gtda.images.DensityFiltration, {"radius": radius}, binarizer_threshold),
                     f"{int(binarizer_threshold * 10)}/DensityFiltration_{radius}",
-                    f"DensityFiltration with r = {radius}, bin. thr. = 0.{int(binarizer_threshold * 10)}",
+                    f"Density, r={radius}, t=0.{int(binarizer_threshold * 10)}",
                 )
             )
