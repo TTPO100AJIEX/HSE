@@ -39,6 +39,7 @@ class FeatureExplanation:
             ax.set_xlim(*limits)
             ax.set_ylim(*limits)
             ax.legend(loc="lower right")
+            ax.set_aspect('equal')
 
     @dataclasses.dataclass
     class Visualization:
@@ -82,7 +83,7 @@ class FeatureExplanation:
 
     def readeable_feature_name(self):
         parts = self.feature_name.split(" -> ")
-        return f"{parts[0]}\n{" · ".join(parts[1:-1])} [{parts[-1]}]"
+        return f"{parts[0]}\n{' · '.join(parts[1:-1])} [{parts[-1]}]"
 
     feature_name: str
     persistence_diagrams: typing.List[PersistenceDiagram] = dataclasses.field(default_factory=lambda: [])
@@ -92,9 +93,8 @@ class FeatureExplanation:
     @staticmethod
     def display_many(items: typing.List[FeatureExplanation], title: str):
         nrows = max(len(exp.persistence_diagrams) + len(exp.visualizations) or 1 for exp in items)
-        fig, axes = plt.subplots(nrows, len(items), figsize=(len(items) * 2.5, nrows * 2.8), squeeze=False)
+        fig, axes = plt.subplots(nrows, len(items), figsize=(len(items) * 3, nrows * 3), squeeze=False)
         for col, exp in enumerate(items):
-            axes[0][col].set_title(exp.readeable_feature_name())
             panels = (exp.persistence_diagrams + exp.visualizations) or [None]
             for row, panel in enumerate(panels):
                 ax = axes[row][col]
@@ -108,9 +108,11 @@ class FeatureExplanation:
 
             for row in range(len(panels) or 1, nrows):
                 axes[row][col].axis("off")
+            axes[0][col].set_title(exp.readeable_feature_name())
 
         fig.suptitle(title, fontweight="bold")
-        return fig.tight_layout()
+        fig.tight_layout()
+        return fig
 
     def display(self, with_diagrams: bool = True):
         FeatureExplanation.display_many([self if with_diagrams else dataclasses.replace(self, persistence_diagrams=[])])
