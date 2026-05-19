@@ -204,7 +204,7 @@ class Landscape(SequenceStats):
         super().__init__([impl], settings.enabled, settings.reduced_stats)
 
     def transform(self, diagrams: numpy.ndarray) -> numpy.ndarray:
-        assert self.fitted_ is True, "fit() must be called before feature_names()"
+        assert self.fitted_ is True, "fit() must be called before transform()"
         if len(self.impl_) == 0:
             return numpy.empty((len(diagrams), 0))
         impl: gtda.diagrams.PersistenceLandscape = self.impl_[0]
@@ -644,7 +644,7 @@ class DiagramVectorizer(cvtda.utils.FeatureExtractorBase):
         return numpy.hstack([extractor.transform(batch) for extractor in self.extractors_])
 
     def explain(self, feature_name: str, diagram: numpy.ndarray) -> cvtda.utils.FeatureExplanation:
-        assert self.fitted_ is True, "fit() must be called before feature_names()"
+        assert self.fitted_ is True, "fit() must be called before explain()"
         extractor_name, subfeature_name = self.unnest_feature_name(feature_name)
         extractor_idx = DiagramVectorizer.EXTRACTOR_NAMES.index(extractor_name)
         result = self.extractors_[extractor_idx].explain(subfeature_name, diagram)

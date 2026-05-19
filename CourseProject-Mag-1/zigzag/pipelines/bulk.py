@@ -31,9 +31,9 @@ def compute_knn_graph(
             layer_num,
             dump_name=f"{dumper.directory_}/features",
         )
-        persistence_diagrams = dumper.execute(
-            zigzag.topology.make_cubical, f"persistence_diagrams/{layer_num}", hidden_state
-        )
+        # persistence_diagrams = dumper.execute(
+        #     zigzag.topology.make_cubical, f"persistence_diagrams/{layer_num}", hidden_state
+        # )
 
     class_names = [None]
     if class_labels is not None:
@@ -41,21 +41,26 @@ def compute_knn_graph(
 
     for k in k_neighbors:
         for class_name in class_names:
-            name_suffix, hs = f"{k}_neighbors/knn_graphs/{layer_num}", hidden_state
+            name_suffix = f"{k}_neighbors/knn_graphs/{layer_num}"
             if class_name is not None:
                 name_suffix = f"class_{class_name}/{name_suffix}"
-                hs = hs[class_labels == class_name]
-            if len(hidden_state.shape) == 4:
-                fs, pds = features, persistence_diagrams
+
+            def get(data):
                 if class_name is not None:
-                    fs = fs[class_labels == class_name]
-                    pds = pds[class_labels == class_name]
-            dumper.execute(zigzag.topology.make_knn_graph_vector, f"vector/{name_suffix}", hs, k)
+                    return data[class_labels == class_name]
+                return data
+
             if len(hidden_state.shape) == 4:
-                dumper.execute(zigzag.topology.make_knn_graph_vector, f"vectorizer/{name_suffix}", fs, k)
-                dumper.execute(
-                    zigzag.topology.make_knn_graph_pds, f"cubical_landscape/{name_suffix}", pds, k, "landscape"
-                )
+                dumper.execute(zigzag.topology.make_knn_graph_vector, f"vectorizer/{name_suffix}", get(features), k)
+                # dumper.execute(
+                #     zigzag.topology.make_knn_graph_pds,
+                #     f"cubical_landscape/{name_suffix}",
+                #     get(persistence_diagrams),
+                #     k,
+                #     "landscape",
+                # )
+            else:
+                dumper.execute(zigzag.topology.make_knn_graph_vector, f"vector/{name_suffix}", get(hidden_state), k)
 
 
 def compute_knn_graphs(
@@ -100,11 +105,12 @@ def analyze_bulk(
             return
 
         cvtda.logging.logger().print(f"Started {subdumper.directory_}")
-        with cvtda.logging.DevNullLogger():
-            analyze_knn_graphs(subdumper.get_dump("knn_graphs"), param, subdumper)
+        # with cvtda.logging.DevNullLogger():
+        #     analyze_knn_graphs(subdumper.get_dump("knn_graphs"), param, subdumper)
+        analyze_knn_graphs(subdumper.get_dump("knn_graphs"), param, subdumper)
         cvtda.logging.logger().print(f"Finished {subdumper.directory_}")
 
-    joblib.Parallel(n_jobs=-1)(
+    joblib.Parallel(n_jobs=1)(
         joblib.delayed(analyze_one)(analyzer, class_name, param)
         for class_name in class_names
         for analyzer in ["vector", "vectorizer", "cubical_landscape"]

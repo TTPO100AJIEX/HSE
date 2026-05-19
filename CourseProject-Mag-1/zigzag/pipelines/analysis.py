@@ -37,6 +37,14 @@ def analyze_knn_graphs(knn_graphs: typing.List[csr_matrix], params: Params, dump
     fig.savefig(f"{dumper.directory_}/births_relative_frequency.png")
     fig.savefig(f"{dumper.directory_}/births_relative_frequency.svg")
     plt.close(fig)
+    
+    fig, axes = plt.subplots(1, 3, figsize=(12, 3.5))
+    zigzag.topology.plot_persistence_image(diagrams[1], params.num_layers, ax=axes[0])
+    zigzag.topology.plot_weighted_inter_layer_persistence(diagrams[1], params.num_layers, ax=axes[1])
+    zigzag.topology.plot_births_relative_frequency(diagrams[1], params.num_layers, ax=axes[2])
+    fig.savefig(f"{dumper.directory_}/dimension_1.png")
+    fig.savefig(f"{dumper.directory_}/dimension_1.svg")
+    plt.close(fig)
 
 
 def analyze_vector(
@@ -74,25 +82,27 @@ def analyze_impl(
     dumper: zigzag.utils.UniversalDumper,
     class_labels: typing.Optional[torch.Tensor] = None,
 ):
-    analyzers = ["vector"]
     if len(hidden_states[0].shape) == 4:
         features = dumper.execute(
             zigzag.topology.make_features, "features", hidden_states, dump_name=f"{dumper.directory_}/features"
         )
-        analyzers.append("vectorizer")
+        analyzers = ["vectorizer"]
 
-        persistence_diagrams = dumper.execute(
-            zigzag.topology.make_cubical_persistence, "persistence_diagrams", hidden_states
-        )
-        analyzers.append("cubical_landscape")
+        # persistence_diagrams = dumper.execute(
+        #     zigzag.topology.make_cubical_persistence, "persistence_diagrams", hidden_states
+        # )
+        # analyzers.append("cubical_landscape")
         # analyzers.append("cubical_persistence_image")
         # analyzers.append("cubical_bottleneck")
+    else:
+        analyzers = ["vector"]
 
     def analyze_impl_one(func, *args, **kwargs):
         desc = f"{len(args[0])} x {args[0][0].shape}, k_neighbors = {args[-2].k_neighbors}"
         cvtda.logging.logger().print(f"Started {func.__name__} with {desc}")
-        with cvtda.logging.DevNullLogger():
-            func(*args, **kwargs)
+        # with cvtda.logging.DevNullLogger():
+        #     func(*args, **kwargs)
+        func(*args, **kwargs)
         cvtda.logging.logger().print(f"Finished {func.__name__} with {desc}")
 
     def make_analyze_impl_one_call_params(class_name: typing.Optional[int], analyzer: str, param: Params):
@@ -118,9 +128,9 @@ def analyze_impl(
 
         return *result, param, subdumper
 
-    joblib.Parallel(n_jobs=-1)(
+    joblib.Parallel(n_jobs=1)(
         joblib.delayed(analyze_impl_one)(*make_analyze_impl_one_call_params(class_name, analyzer, param))
-        for class_name in [None, *torch.unique(class_labels)]
+        for class_name in [None, *torch.unique(class_labels or torch.tensor([]))]
         for analyzer in analyzers
         for param in params
     )

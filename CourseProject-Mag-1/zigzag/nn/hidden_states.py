@@ -102,7 +102,7 @@ def yield_hidden_states(
     device: torch.device = cvtda.neural_network.default_device,
 ) -> typing.Generator[torch.Tensor, None, None]:
     model = model.to(device).eval()
-    data = torch.utils.data.DataLoader(dataset, batch_size=128, shuffle=False, num_workers=3)
+    data = torch.utils.data.DataLoader(dataset, batch_size=128, shuffle=False)
     data = cvtda.logging.logger().pbar(data, desc=f"Create generators")
     generators = [yield_hidden_states_batch(model, X, device) for X, *_ in data]
 

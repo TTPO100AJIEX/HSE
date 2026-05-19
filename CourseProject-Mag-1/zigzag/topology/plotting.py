@@ -44,10 +44,10 @@ def plot_persistence_image(diagram: numpy.ndarray, num_layers: int, ax=None):
 
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-    im = ax.imshow(numpy.log10(pis_pers + 1e-8), cmap=CMAP, origin="lower")
-    ax.set_xlabel("Birth Layer $(\\ell_{\\rm birth})$")
-    ax.set_ylabel("Persistence $(\\ell_{\\rm death} - \\ell_{\\rm birth})$")
-    ax.get_figure().colorbar(im, ax=ax).set_label("Log10 number of simplices")
+    im = ax.imshow(numpy.log10(pis_pers + 1e-8), vmin = 0, cmap=CMAP, origin="lower")
+    ax.set_xlabel("Слой появления $(\\ell_{\\rm birth})$")
+    ax.set_ylabel("Устойчивости $(\\ell_{\\rm death} - \\ell_{\\rm birth})$")
+    ax.get_figure().colorbar(im, ax=ax).set_label("Log10 количества симплексов")
     return ax.get_figure().tight_layout()
 
 
@@ -59,8 +59,8 @@ def plot_weighted_inter_layer_persistence(
     for alpha, color in zip(alphas, _CB_PALETTE):
         w_pers = metrics.weighed_inter_layer_persistence(diagram, num_layers, alpha)
         ax.plot(w_pers, color=color, label="$\\alpha=%.2f$" % alpha)
-    ax.set_xlabel("Layer")
-    ax.set_ylabel("Inter-Layer Persistence")
+    ax.set_xlabel("Номер слоя")
+    ax.set_ylabel("Межслойная устойчивость")
     ax.legend()
     return ax.get_figure().tight_layout()
 
@@ -73,8 +73,8 @@ def plot_births_relative_frequency(
     for alpha, color in zip(alphas, _CB_PALETTE):
         freq = metrics.births_relative_frequency(diagram, num_layers, alpha)
         ax.plot(freq, color=color, label="$\\alpha=%.1f$" % alpha)
-    ax.axhline(y=1 / num_layers, label="Uniform Distribution", color="black", linestyle="--", lw=1)
-    ax.set_xlabel("Layer")
-    ax.set_ylabel("Births Relative Frequency")
+    ax.axhline(y=1 / num_layers, label="Равномерное распр.", color="black", linestyle="--", lw=1)
+    ax.set_xlabel("Номер слоя")
+    ax.set_ylabel("Относительная частота рождений")
     ax.legend()
     return ax.get_figure().tight_layout()

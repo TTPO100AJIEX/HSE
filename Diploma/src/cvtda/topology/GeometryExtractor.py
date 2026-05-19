@@ -138,7 +138,7 @@ class BlurEffect(BaseGeometricFeature):
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         return FeatureExplanation(
-            feature_name=feature_name, messages=[f"Blur effect is {skimage.measure.blur_effect(image)}"]
+            feature_name=feature_name, messages=[f"Blur effect is {skimage.measure.blur_effect(image):.2f}"]
         )
 
 
@@ -153,7 +153,7 @@ class IntertiaTensorEigvals(BaseGeometricFeature):
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         return FeatureExplanation(
             feature_name=feature_name,
-            messages=[f"Inertia tensor eigenvalue {feature_name} is {self.transform(image)[int(feature_name)]}"],
+            messages=[f"Inertia tensor eigenvalue {feature_name} is {self.transform(image)[int(feature_name)]:.2f}"],
         )
 
 
@@ -162,7 +162,7 @@ class Centroid(BaseGeometricFeature):
         return skimage.measure.centroid(image)
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
-        return FeatureExplanation(feature_name=feature_name, messages=[f"Centroid is {self.transform(image)}"])
+        return FeatureExplanation(feature_name=feature_name, messages=[f"Centroid is {self.transform(image):.2f}"])
 
 
 class Moments(BaseGeometricFeature):
@@ -174,7 +174,7 @@ class Moments(BaseGeometricFeature):
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         return FeatureExplanation(
-            feature_name=feature_name, messages=[f"Moment {feature_name} is {self.transform(image)[int(feature_name)]}"]
+            feature_name=feature_name, messages=[f"Moment {feature_name} is {self.transform(image)[int(feature_name)]:.2f}"]
         )
 
 
@@ -188,7 +188,7 @@ class MomentsCentral(BaseGeometricFeature):
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         return FeatureExplanation(
             feature_name=feature_name,
-            messages=[f"Central moment {feature_name} is {self.transform(image)[int(feature_name)]}"],
+            messages=[f"Central moment {feature_name} is {self.transform(image)[int(feature_name)]:.2f}"],
         )
 
 
@@ -204,7 +204,7 @@ class MomentsHu(BaseGeometricFeature):
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         return FeatureExplanation(
             feature_name=feature_name,
-            messages=[f"Hu's moment {feature_name} is {self.transform(image)[int(feature_name)]}"],
+            messages=[f"Hu's moment {feature_name} is {self.transform(image)[int(feature_name)]:.2f}"],
         )
 
 
@@ -214,7 +214,7 @@ class ShannonEntropy(BaseGeometricFeature):
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         return FeatureExplanation(
-            feature_name=feature_name, messages=[f"Shannon entropy is {skimage.measure.shannon_entropy(image)}"]
+            feature_name=feature_name, messages=[f"Shannon entropy is {skimage.measure.shannon_entropy(image):.2f}"]
         )
 
 
@@ -231,7 +231,7 @@ class PearsonCorrCoeff(BaseGeometricFeature):
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
         return FeatureExplanation(
             feature_name=feature_name,
-            messages=[f"Pearson correlation coefficient {feature_name} is {self.transform(image)[int(feature_name)]}"],
+            messages=[f"Pearson correlation coefficient {feature_name} is {self.transform(image)[int(feature_name)]:.2f}"],
         )
 
 
