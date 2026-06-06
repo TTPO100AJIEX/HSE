@@ -162,7 +162,7 @@ class Centroid(BaseGeometricFeature):
         return skimage.measure.centroid(image)
 
     def explain(self, feature_name: str, image: numpy.ndarray) -> FeatureExplanation:
-        return FeatureExplanation(feature_name=feature_name, messages=[f"Centroid is {self.transform(image):.2f}"])
+        return FeatureExplanation(feature_name=feature_name, messages=[f"Centroid is {self.transform(image).round(2)}"])
 
 
 class Moments(BaseGeometricFeature):
