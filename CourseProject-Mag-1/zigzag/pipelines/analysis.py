@@ -37,7 +37,7 @@ def analyze_knn_graphs(knn_graphs: typing.List[csr_matrix], params: Params, dump
     fig.savefig(f"{dumper.directory_}/births_relative_frequency.png")
     fig.savefig(f"{dumper.directory_}/births_relative_frequency.svg")
     plt.close(fig)
-    
+
     fig, axes = plt.subplots(1, 3, figsize=(12, 3.5))
     zigzag.topology.plot_persistence_image(diagrams[1], params.num_layers, ax=axes[0])
     zigzag.topology.plot_weighted_inter_layer_persistence(diagrams[1], params.num_layers, ax=axes[1])

@@ -32,7 +32,7 @@ def build_patch_cloud(
     return cloud
 
 
-def density_filter(X: numpy.ndarray, k: int, top_p: float) -> numpy.ndarray:
-    nn = NearestNeighbors(n_neighbors=k + 1, n_jobs=-1).fit(X)
+def density_filter(X: numpy.ndarray, k: int, top_p: float, n_jobs: int = -1) -> numpy.ndarray:
+    nn = NearestNeighbors(n_neighbors=k + 1, n_jobs=n_jobs).fit(X)
     rho_k = nn.kneighbors(X)[0][:, -1]
     return X[rho_k <= numpy.quantile(rho_k, top_p)]
