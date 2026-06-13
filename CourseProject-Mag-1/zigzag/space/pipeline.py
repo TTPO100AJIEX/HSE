@@ -82,6 +82,8 @@ def plot(plan: typing.List[typing.Tuple[str, str, int]], ax: matplotlib.axes.Axe
         ax.bar(x, bar, label=label, width=width)
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.set_xlabel("Номер слоя")
+    ax.set_ylabel("Число устойчивых признаков")
 
 
 def make_report(plan: typing.List[typing.Tuple[str, str, int]]) -> dict:
