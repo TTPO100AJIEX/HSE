@@ -39,7 +39,7 @@ def process(in_file: str, out_file: str, n_components: int):
     var = pca.explained_variance_ratio_.sum()
 
     if len(X) > 15000:
-        X = density_filter(X, 500, 0.3, n_jobs=1)
+        X = density_filter(X, 300, 0.5, n_jobs=1)
     X = denoise(X, k=20, iterations=3, n_jobs=1)
     results = get_space_betti(X)
 

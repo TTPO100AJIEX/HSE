@@ -26,10 +26,11 @@ def measured_betti(dgms: typing.List[numpy.ndarray], min_life: float = 0.15) -> 
         lifes = finite[:, 1] - finite[:, 0]
         ps = numpy.sort(lifes[lifes > min_life])[::-1]
         if len(ps) < 2:
-            betti.append(1)
+            betti.append(len(ps))
             continue
         diffs = ps[:-1] / ps[1:]
         betti.append(numpy.argmax(diffs) + 1)
+    betti[0] += 1
     return tuple(betti)
 
 
