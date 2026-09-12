@@ -5,7 +5,10 @@ import typing
 
 import numpy
 import gudhi
-import dionysus
+try:
+    import dionysus
+except ModuleNotFoundError:
+    pass
 import scipy.sparse
 
 import cvtda.logging
@@ -58,7 +61,7 @@ def compute_layers_with_intersection(simplices_padded: typing.List[typing.List[i
 
 def compute_filtration_times(
     simplices: typing.List[typing.List[int]], layers: typing.List[typing.List[int]]
-) -> typing.Tuple[dionysus.Filtration, typing.List[typing.List[int]]]:
+): # -> typing.Tuple[dionysus.Filtration, typing.List[typing.List[int]]]:
     appearance_matrix = numpy.zeros((len(layers), len(simplices)), dtype=int)
     for k in cvtda.logging.logger().pbar(list(range(len(layers))), desc="Appearance matrix"):
         appearance_matrix[k, layers[k]] = 1
@@ -70,8 +73,9 @@ def compute_filtration_times(
 
 
 def compute_zigzag_persistence(
-    filtration: dionysus.Filtration, times: typing.List[typing.List[int]]
-) -> typing.List[dionysus.Diagram]:
+    # filtration: dionysus.Filtration, times: typing.List[typing.List[int]]
+    filtration, times: typing.List[typing.List[int]]
+): # -> typing.List[dionysus.Diagram]:
     cone = dionysus.fast_zigzag(filtration, times)
     reduced_matrix, _ = dionysus.homology_persistence(
         cone, method="matrix_v", progress=(cvtda.logging.logger().verbosity() != 0)
@@ -86,7 +90,8 @@ def compute_zigzag_persistence(
     return diagrams
 
 
-def convert_diagrams_to_numpy(diagrams: typing.List[dionysus.Diagram]) -> typing.List[numpy.ndarray]:
+# def convert_diagrams_to_numpy(diagrams: typing.List[dionysus.Diagram]) -> typing.List[numpy.ndarray]:
+def convert_diagrams_to_numpy(diagrams) -> typing.List[numpy.ndarray]:
     return [
         numpy.array([[int(interval.birth) - 1, int(interval.death) - 1] for interval in diag])
         for diag in cvtda.logging.logger().pbar(diagrams, desc="To numpy")
